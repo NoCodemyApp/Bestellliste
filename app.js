@@ -1,6 +1,7 @@
 const SUPABASE_URL = "https://fniweelbmnsrdmotkmzu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_q8KSsPOtjWq5u2bGStAoDg_v1WAhzMt";
 
+
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -39,10 +40,7 @@ async function getCurrentUser() {
     error
   } = await db.auth.getUser();
 
-  if (error) {
-    return null;
-  }
-
+  if (error) return null;
   return user;
 }
 
@@ -239,13 +237,18 @@ authForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const { error } = await db.auth.signInWithPassword({
+  const { data, error } = await db.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
     setMessage(error.message, true);
+    return;
+  }
+
+  if (!data?.session?.user) {
+    setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true);
     return;
   }
 
@@ -264,7 +267,10 @@ signupBtn.addEventListener("click", async () => {
 
   const { data, error } = await db.auth.signUp({
     email,
-    password
+    password,
+    options: {
+      emailRedirectTo: "https://bestellliste.bastian-jonas.workers.dev/"
+    }
   });
 
   if (error) {
@@ -277,7 +283,7 @@ signupBtn.addEventListener("click", async () => {
     return;
   }
 
-  setMessage("Registrierung erfolgreich. Das Profil wird automatisch im Hintergrund angelegt. Bitte E-Mail bestätigen, falls Supabase das verlangt.");
+  setMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
 });
 
 logoutBtn.addEventListener("click", async () => {
