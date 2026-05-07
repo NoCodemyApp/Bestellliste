@@ -125,3 +125,37 @@ button.secondary {
   font-weight: 700;
   color: var(--primary);
 }
+
+.product-actions {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.qty-box {
+  min-width: 110px;
+}
+
+.qty-box input {
+  margin-top: 6px;
+}
+
+.small-btn {
+  padding: 10px 14px;
+}
+
+.cart-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.remove-btn {
+  background: #f3d8de;
+  color: #6d1830;
+}
+
+.remove-btn:hover {
+  background: #eac3cc;
+}
