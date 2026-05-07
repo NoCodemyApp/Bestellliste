@@ -401,7 +401,7 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
     },
     body: JSON.stringify({
       orderId,
-      recipientEmail: "bastian-berg@outlook.de"
+      recipientEmail: "bastian-jonas@gmx.net"
     })
   });
 
