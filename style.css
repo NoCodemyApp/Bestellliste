@@ -159,3 +159,12 @@ button.secondary {
 .remove-btn:hover {
   background: #eac3cc;
 }
+
+.cart-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
