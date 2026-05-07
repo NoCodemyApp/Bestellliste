@@ -2,7 +2,13 @@ const SUPABASE_URL = "https://fniweelbmnsrdmotkmzu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_q8KSsPOtjWq5u2bGStAoDg_v1WAhzMt";
 
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 const authSection = document.getElementById("auth-section");
 const productsSection = document.getElementById("products-section");
@@ -286,8 +292,10 @@ logoutBtn.addEventListener("click", async () => {
   await updateUI();
 });
 
-db.auth.onAuthStateChange(async () => {
-  await updateUI();
+db.auth.onAuthStateChange(() => {
+  setTimeout(() => {
+    updateUI();
+  }, 0);
 });
 
 updateUI();
