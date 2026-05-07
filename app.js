@@ -385,22 +385,42 @@ async function submitOrder() {
   await loadCart();
 }
 async function sendOrderEmailViaEdgeFunction(orderId) {
-  const { data, error } = await db.functions.invoke("resend-email", {
-    body: {
+  const { data: sessionData } = await db.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error("Kein Access Token gefunden.");
+  }
+
+  const response = await fetch("https://fniweelbmnsrdmotkmzu.supabase.co/functions/v1/send-order-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${accessToken}`,
+      "apikey": SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({
       orderId,
-      recipientEmail: "bastian-berg@outlook.de" // -------------------------------------------------------------------------------------------- HIER DIE MAILADRESSE WO SIE HINSOLL
-    }
+      recipientEmail: "bastian-berg@outlook.de"
+    })
   });
 
-  if (error) {
-    throw new Error(error.message || "Edge Function Fehler");
+  const rawText = await response.text();
+  console.log("Edge Function status:", response.status);
+  console.log("Edge Function raw response:", rawText);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    parsed = { raw: rawText };
   }
 
-  if (!data?.success) {
-    throw new Error("Mailversand war nicht erfolgreich.");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${rawText}`);
   }
 
-  return data;
+  return parsed;
 }
 
 submitOrderBtn.addEventListener("click", async () => {
