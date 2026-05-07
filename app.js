@@ -392,7 +392,7 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
     throw new Error("Kein Access Token gefunden.");
   }
 
-  const response = await fetch("https://fniweelbmnsrdmotkmzu.supabase.co/functions/v1/send-order-email", {
+  const response = await fetch("https://fniweelbmnsrdmotkmzu.supabase.co/functions/v1/resend-email", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
