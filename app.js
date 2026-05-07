@@ -54,17 +54,26 @@ async function loadProducts() {
 }
 
 async function updateUI() {
-  const { data: { session } } = await db.auth.getSession();
+  const {
+    data: { session },
+    error
+  } = await db.auth.getSession();
+
+  if (error) {
+    setMessage(`Sitzung konnte nicht geladen werden: ${error.message}`, true);
+    return;
+  }
 
   if (session?.user) {
     authSection.classList.add("hidden");
     productsSection.classList.remove("hidden");
-    userBox.textContent = session.user.email;
+    userBox.textContent = session.user.email || "";
     await loadProducts();
   } else {
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     userBox.textContent = "";
+    productsList.innerHTML = "";
   }
 }
 
@@ -73,6 +82,11 @@ authForm.addEventListener("submit", async (event) => {
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    setMessage("Bitte E-Mail und Passwort eingeben.", true);
+    return;
+  }
 
   const { error } = await db.auth.signInWithPassword({
     email,
@@ -107,26 +121,22 @@ signupBtn.addEventListener("click", async () => {
     return;
   }
 
-  const user = data?.user;
-  if (user) {
-    const { error: profileError } = await db.from("profiles").upsert({
-      id: user.id,
-      email: user.email,
-      full_name: "",
-      role: "member"
-    });
-
-    if (profileError) {
-      setMessage(`Registriert, aber Profil nicht gespeichert: ${profileError.message}`, true);
-      return;
-    }
+  if (data?.user?.identities?.length === 0) {
+    setMessage("Diese E-Mail ist bereits registriert oder konnte nicht neu angelegt werden.", true);
+    return;
   }
 
-  setMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen, falls Supabase das verlangt.");
+  setMessage("Registrierung erfolgreich. Das Profil wird automatisch im Hintergrund angelegt. Bitte E-Mail bestätigen, falls Supabase das verlangt.");
 });
 
 logoutBtn.addEventListener("click", async () => {
-  await db.auth.signOut();
+  const { error } = await db.auth.signOut();
+
+  if (error) {
+    setMessage(`Fehler beim Abmelden: ${error.message}`, true);
+    return;
+  }
+
   setMessage("Abgemeldet.");
   await updateUI();
 });
