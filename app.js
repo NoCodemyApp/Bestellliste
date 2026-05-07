@@ -385,7 +385,7 @@ async function submitOrder() {
   await loadCart();
 }
 async function sendOrderEmailViaEdgeFunction(orderId) {
-  const { data, error } = await db.functions.invoke("send-order-email", {
+  const { data, error } = await db.functions.invoke("resend-email", {
     body: {
       orderId,
       recipientEmail: "bastian-berg@outlook.de" // -------------------------------------------------------------------------------------------- HIER DIE MAILADRESSE WO SIE HINSOLL
