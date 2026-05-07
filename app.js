@@ -21,6 +21,14 @@ const authMessage = document.getElementById("auth-message");
 const userBox = document.getElementById("user-box");
 const productsList = document.getElementById("products-list");
 const cartList = document.getElementById("cart-list");
+const submitOrderBtn = document.getElementById("submit-order-btn");
+const cartTotal = document.getElementById("cart-total");
+const orderMessage = document.getElementById("order-message");
+
+function setOrderMessage(text, isError = false) {
+  orderMessage.textContent = text;
+  orderMessage.style.color = isError ? "#a12c45" : "#666";
+}
 
 function setMessage(text, isError = false) {
   authMessage.textContent = text;
@@ -129,7 +137,8 @@ async function loadCart() {
 
   if (!user) {
     cartList.innerHTML = "";
-    return;
+    cartTotal.textContent = "";
+    return [];
   }
 
   const { data, error } = await db
@@ -151,17 +160,22 @@ async function loadCart() {
 
   if (error) {
     cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${error.message}</p>`;
-    return;
+    cartTotal.textContent = "";
+    return [];
   }
 
   if (!data || data.length === 0) {
     cartList.innerHTML = `<p>Dein Warenkorb ist noch leer.</p>`;
-    return;
+    cartTotal.textContent = "Gesamt: 0,00 €";
+    return [];
   }
+
+  let total = 0;
 
   cartList.innerHTML = data.map(item => {
     const product = item.products || {};
     const lineTotal = Number(product.price_eur || 0) * Number(item.quantity || 0);
+    total += lineTotal;
 
     return `
       <article class="product">
@@ -175,12 +189,16 @@ async function loadCart() {
     `;
   }).join("");
 
+  cartTotal.textContent = `Gesamt: ${formatPrice(total)}`;
+
   document.querySelectorAll("[data-remove-cart]").forEach(button => {
     button.addEventListener("click", async () => {
       const cartItemId = button.getAttribute("data-remove-cart");
       await removeFromCart(cartItemId);
     });
   });
+
+  return data;
 }
 
 async function removeFromCart(cartItemId) {
@@ -296,6 +314,72 @@ logoutBtn.addEventListener("click", async () => {
 
   setMessage("Abgemeldet.");
   await updateUI();
+});
+
+async function submitOrder() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    setOrderMessage("Du musst eingeloggt sein.", true);
+    return;
+  }
+
+  const cartItems = await loadCart();
+
+  if (!cartItems || cartItems.length === 0) {
+    setOrderMessage("Dein Warenkorb ist leer.", true);
+    return;
+  }
+
+  const { data: orderData, error: orderError } = await db
+    .from("orders")
+    .insert({
+      user_id: user.id,
+      status: "submitted",
+      note: null
+    })
+    .select()
+    .single();
+
+  if (orderError || !orderData) {
+    setOrderMessage(`Bestellung konnte nicht angelegt werden: ${orderError?.message || "Unbekannter Fehler"}`, true);
+    return;
+  }
+
+  const itemRows = cartItems.map(item => ({
+    order_id: orderData.id,
+    product_id: item.product_id,
+    product_name: item.products?.name || "Produkt",
+    product_sku: item.products?.sku || null,
+    quantity: item.quantity,
+    unit_price_eur: Number(item.products?.price_eur || 0)
+  }));
+
+  const { error: itemsError } = await db
+    .from("order_items")
+    .insert(itemRows);
+
+  if (itemsError) {
+    setOrderMessage(`Bestellpositionen konnten nicht gespeichert werden: ${itemsError.message}`, true);
+    return;
+  }
+
+  const { error: clearCartError } = await db
+    .from("cart_items")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (clearCartError) {
+    setOrderMessage(`Bestellung gespeichert, aber Warenkorb nicht geleert: ${clearCartError.message}`, true);
+    return;
+  }
+
+  setOrderMessage(`Bestellung erfolgreich abgesendet. Bestell-ID: ${orderData.id}`);
+  await loadCart();
+}
+
+submitOrderBtn.addEventListener("click", async () => {
+  await submitOrder();
 });
 
 db.auth.onAuthStateChange(() => {
