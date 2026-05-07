@@ -403,6 +403,10 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
   return data;
 }
 
+submitOrderBtn.addEventListener("click", async () => {
+  await submitOrder();
+});
+
 db.auth.onAuthStateChange(() => {
   setTimeout(() => {
     updateUI();
