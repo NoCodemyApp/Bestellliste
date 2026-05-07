@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vereinsbestellung</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div>
+      <h1>Vereinsbestellung</h1>
+      <p>Interne Sammelbestellung für Vereinsmitglieder</p>
+    </div>
+    <div id="user-box"></div>
+  </header>
+
+  <main class="container">
+    <section class="card" id="auth-section">
+      <h2>Login</h2>
+      <form id="auth-form">
+        <label>
+          E-Mail
+          <input type="email" id="email" required>
+        </label>
+        <label>
+          Passwort
+          <input type="password" id="password" required>
+        </label>
+        <div class="actions">
+          <button type="submit" id="login-btn">Einloggen</button>
+          <button type="button" id="signup-btn" class="secondary">Registrieren</button>
+        </div>
+      </form>
+      <p id="auth-message" class="message"></p>
+    </section>
+
+    <section class="card hidden" id="products-section">
+      <div class="section-head">
+        <h2>Produkte</h2>
+        <button id="logout-btn" class="secondary">Ausloggen</button>
+      </div>
+      <div id="products-list" class="products-list"></div>
+    </section>
+  </main>
+</body>
+</html>
