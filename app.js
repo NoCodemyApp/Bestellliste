@@ -364,6 +364,13 @@ async function submitOrder() {
     return;
   }
 
+  try {
+    await sendOrderEmailViaEdgeFunction(orderData.id);
+  } catch (mailError) {
+    setOrderMessage(`Bestellung gespeichert, aber E-Mail konnte nicht gesendet werden: ${mailError.message}`, true);
+    return;
+  }
+
   const { error: clearCartError } = await db
     .from("cart_items")
     .delete()
@@ -377,10 +384,24 @@ async function submitOrder() {
   setOrderMessage(`Bestellung erfolgreich abgesendet. Bestell-ID: ${orderData.id}`);
   await loadCart();
 }
+async function sendOrderEmailViaEdgeFunction(orderId) {
+  const { data, error } = await db.functions.invoke("send-order-email", {
+    body: {
+      orderId,
+      recipientEmail: "bastian-berg@outlook.de" // -------------------------------------------------------------------------------------------- HIER DIE MAILADRESSE WO SIE HINSOLL
+    }
+  });
 
-submitOrderBtn.addEventListener("click", async () => {
-  await submitOrder();
-});
+  if (error) {
+    throw new Error(error.message || "Edge Function Fehler");
+  }
+
+  if (!data?.success) {
+    throw new Error("Mailversand war nicht erfolgreich.");
+  }
+
+  return data;
+}
 
 db.auth.onAuthStateChange(() => {
   setTimeout(() => {
