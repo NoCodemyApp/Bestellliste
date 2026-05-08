@@ -68,7 +68,7 @@ async function loadProducts() {
       )
     `)
     .eq("active", true)
-    .order("created_at", { ascending: false });
+    .order("category", { ascending: true });
 
   console.log("PRODUCTS RESULT:", { data, error });
 
@@ -211,7 +211,7 @@ async function loadCart() {
       )
     `)
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("category", { ascending: true });
 
   if (error) {
     cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${error.message}</p>`;
