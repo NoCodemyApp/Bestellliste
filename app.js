@@ -197,21 +197,20 @@ async function loadCart() {
   }
 
   const { data, error } = await db
-    .from("cart_items")
-    .select(`
+  .from("cart_items")
+  .select(`
+    id,
+    quantity,
+    product_id,
+    products (
       id,
-      quantity,
-      product_id,
-      products (
-        id,
-        name,
-        sku,
-        price_custom,
-        category
-      )
-    `)
-    .eq("user_id", user.id)
-    .order("category", { ascending: true });
+      name,
+      sku,
+      price_custom
+    )
+  `)
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
 
   if (error) {
     cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${error.message}</p>`;
