@@ -47,61 +47,67 @@
       <p id="auth-message" class="message"></p>
     </section>
 
-    <section id="products-section" class="shop hidden">
-      <aside class="shop-sidebar">
-        <div class="sidebar-block">
-          <p class="sidebar-label">Shop</p>
-          <h2>Produkte</h2>
-          <p class="sidebar-text">
-            Wähle deine Artikel aus und lege sie in den Warenkorb.
-          </p>
+   <section id="products-section" class="shop hidden">
+    <aside class="shop-sidebar">
+      <div class="sidebar-block">
+        <p class="sidebar-label">Shop</p>
+        <h2>Produkte</h2>
+        <p class="sidebar-text">
+          Wähle deine Artikel aus und lege sie in den Warenkorb.
+        </p>
+      </div>
+  
+      <div class="sidebar-block">
+        <h3>Information</h3>
+        <p class="sidebar-text">
+          Die Produkte werden rechts als Grid dargestellt. Filter können später hier ergänzt werden.
+        </p>
+      </div>
+  
+      <div class="sidebar-block">
+        <h3>Hinweis</h3>
+        <p class="sidebar-text">
+          Nach dem Einloggen kannst du Produkte auswählen, Mengen festlegen und die Bestellung absenden.
+        </p>
+      </div>
+    </aside>
+  
+    <section class="shop-content" aria-labelledby="products-heading">
+      <div class="shop-topbar">
+        <div>
+          <p class="sidebar-label">Sortiment</p>
+          <h2 id="products-heading">Verfügbare Artikel</h2>
         </div>
-
-        <div class="sidebar-block">
-          <h3>Information</h3>
-          <p class="sidebar-text">
-            Die Produkte werden rechts als Grid dargestellt. Filter können später hier ergänzt werden.
-          </p>
-        </div>
-
-        <div class="sidebar-block">
-          <h3>Hinweis</h3>
-          <p class="sidebar-text">
-            Nach dem Einloggen kannst du Produkte auswählen, Mengen festlegen und die Bestellung absenden.
-          </p>
-        </div>
-      </aside>
-
-      <section class="shop-content" aria-labelledby="products-heading">
-        <div class="shop-topbar">
-          <div>
-            <p class="sidebar-label">Sortiment</p>
-            <h2 id="products-heading">Verfügbare Artikel</h2>
+      </div>
+  
+      <div class="shop-main-layout">
+        <div class="shop-main-products">
+          <div id="products-list" class="products-grid">
+            <!-- Produkte werden per app.js eingefügt -->
           </div>
         </div>
-
-        <div id="products-list" class="products-grid">
-          <!-- Produkte werden per app.js eingefügt -->
-        </div>
-      </section>
+  
+        <aside class="shop-cart-sidebar">
+          <section class="card cart-card hidden" id="cart-section">
+            <div class="section-head">
+              <h2>Warenkorb</h2>
+            </div>
+  
+            <div id="cart-list" class="cart-list">
+              <!-- Warenkorb-Elemente werden per app.js eingefügt -->
+            </div>
+  
+            <div class="cart-footer">
+              <p id="cart-total" class="price"></p>
+              <button id="submit-order-btn" type="button">Bestellung absenden</button>
+            </div>
+  
+            <p id="order-message" class="message"></p>
+          </section>
+        </aside>
+      </div>
     </section>
-
-    <section class="card hidden" id="cart-section">
-      <div class="section-head">
-        <h2>Warenkorb</h2>
-      </div>
-
-      <div id="cart-list" class="cart-list">
-        <!-- Warenkorb-Elemente werden per app.js eingefügt -->
-      </div>
-
-      <div class="cart-footer">
-        <p id="cart-total" class="price"></p>
-        <button id="submit-order-btn" type="button">Bestellung absenden</button>
-      </div>
-
-      <p id="order-message" class="message"></p>
-    </section>
-  </main>
+  </section>  
+</main>
 </body>
 </html>
