@@ -56,7 +56,11 @@ async function loadProducts() {
   const { data, error } = await db
     .from("products")
     .select(`
-      *,
+      id,
+      name,
+      sku,
+      price_custom,
+      product_url,
       product_images (
         image_id,
         image_url,
@@ -66,6 +70,8 @@ async function loadProducts() {
     `)
     .eq("active", true)
     .order("created_at", { ascending: false });
+
+  console.log("PRODUCTS RESULT:", { data, error });
 
   if (error) {
     productsList.innerHTML = `<p>Fehler beim Laden der Produkte: ${error.message}</p>`;
@@ -78,7 +84,9 @@ async function loadProducts() {
   }
 
   productsList.innerHTML = data.map(product => {
-    const images = Array.isArray(product.product_images) ? [...product.product_images] : [];
+    const images = Array.isArray(product.product_images)
+      ? [...product.product_images]
+      : [];
 
     images.sort((a, b) => {
       if (a.is_primary === b.is_primary) {
@@ -91,10 +99,22 @@ async function loadProducts() {
       images[0]?.image_url ||
       "https://via.placeholder.com/600x600?text=Kein+Bild";
 
+    console.log("RENDER PRODUCT:", product.sku, mainImage);
+
     return `
       <article class="product-card">
-        <a href="${product.product_url || "#"}" class="product-image-wrap" target="_blank" rel="noopener noreferrer">
-          <img src="${mainImage}" alt="${product.name}">
+        <a
+          href="${product.product_url || "#"}"
+          class="product-image-wrap"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="${mainImage}"
+            alt="${product.name}"
+            loading="lazy"
+            onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';"
+          >
         </a>
 
         <div class="product-info">
@@ -107,7 +127,9 @@ async function loadProducts() {
             Menge
             <input type="number" min="1" value="1" data-qty-for="${product.id}">
           </label>
-          <button class="small-btn" data-add-to-cart="${product.id}">In den Warenkorb</button>
+          <button class="small-btn" data-add-to-cart="${product.id}">
+            In den Warenkorb
+          </button>
         </div>
       </article>
     `;
