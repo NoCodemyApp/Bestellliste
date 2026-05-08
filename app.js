@@ -52,23 +52,24 @@ async function getCurrentUser() {
   return user;
 }
 
-async function loadProducts() {
-  const { data, error } = await db
-    .from("products")
-    .select(`
-      id,
-      name,
-      sku,
-      price_custom,
-      product_images (
-        image_id,
-        image_url,
-        sort_order,
-        is_primary
-      )
-    `)
-    .eq("active", true)
-    .order("created_at", { ascending: false });
+const { data, error } = await db
+  .from("products")
+  .select(`
+    id,
+    name,
+    sku,
+    category,
+    price_custom,
+    product_images (
+      image_id,
+      image_url,
+      sort_order,
+      is_primary
+    )
+  `)
+  .eq("active", true)
+  .order("category", { ascending: true })
+  .order("name", { ascending: true });
 
   console.log("PRODUCTS RESULT:", { data, error });
 
