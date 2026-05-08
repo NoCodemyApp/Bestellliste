@@ -97,20 +97,29 @@ async function loadProducts() {
       return aPrimary ? -1 : 1;
     });
 
-    const mainImage =
+    const firstImage =
       images[0]?.image_url ||
       "https://via.placeholder.com/600x600?text=Kein+Bild";
 
-    console.log("RENDER PRODUCT:", product.sku, mainImage);
+    const secondImage =
+      images[1]?.image_url || firstImage;
 
     return `
       <article class="product-card">
         <div class="product-image-wrap">
           <img
-            src="${mainImage}"
+            class="product-image product-image-primary"
+            src="${firstImage}"
             alt="${product.name}"
             loading="lazy"
             onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';"
+          >
+          <img
+            class="product-image product-image-hover"
+            src="${secondImage}"
+            alt="${product.name}"
+            loading="lazy"
+            onerror="this.src='${firstImage}';"
           >
         </div>
 
