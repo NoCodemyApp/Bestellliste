@@ -513,3 +513,38 @@ button.secondary:hover {
     width: 100%;
   }
 }
+
+.product-image-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f3f3f3;
+}
+
+.product-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.25s ease;
+}
+
+.product-image-primary {
+  opacity: 1;
+  z-index: 1;
+}
+
+.product-image-hover {
+  opacity: 0;
+  z-index: 2;
+}
+
+.product-card:hover .product-image-hover {
+  opacity: 1;
+}
+
+.product-card:hover .product-image-primary {
+  opacity: 0;
+}
