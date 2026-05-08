@@ -306,12 +306,9 @@ button.secondary:hover {
   top: 92px; /* gleiche Höhe wie deine linke Sidebar */
 }
 
-.cart-summary-inner {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 16px 18px;
-  box-shadow: var(--shadow);
+/* statt .cart-summary-inner -> .cart-card */
+.cart-card {
+  margin-bottom: 0;
 }
 
 /* Mobile: Cart wieder untereinander anzeigen */
