@@ -76,7 +76,7 @@ async function loadProducts() {
       </a>
       <div class="product-info">
         <h3 class="product-title">${product.name}</h3>
-        <p class="product-price">${formatPrice(product.price_eur)}</p>
+        <p class="product-price">${formatPrice(product.price_custom)}</p>
       </div>
       <div class="product-actions">
         <label class="qty-box">
@@ -153,7 +153,7 @@ async function loadCart() {
         id,
         name,
         sku,
-        price_eur,
+        price_custom,
         category
       )
     `)
@@ -176,7 +176,7 @@ async function loadCart() {
 
   cartList.innerHTML = data.map(item => {
     const product = item.products || {};
-    const lineTotal = Number(product.price_eur || 0) * Number(item.quantity || 0);
+    const lineTotal = Number(product.price_custom || 0) * Number(item.quantity || 0);
     total += lineTotal;
 
     return `
@@ -184,7 +184,7 @@ async function loadCart() {
         <h3>${product.name || "Produkt"}</h3>
         <p><strong>Artikelnummer:</strong> ${product.sku || "-"}</p>
         <p class="cart-meta">Menge: ${item.quantity}</p>
-        <p class="cart-meta">Einzelpreis: ${formatPrice(product.price_eur)}</p>
+        <p class="cart-meta">Einzelpreis: ${formatPrice(product.price_custom)}</p>
         <p class="price">Gesamt: ${formatPrice(lineTotal)}</p>
         <button class="remove-btn small-btn" data-remove-cart="${item.id}">Entfernen</button>
       </article>
@@ -354,7 +354,7 @@ async function submitOrder() {
     product_name: item.products?.name || "Produkt",
     product_sku: item.products?.sku || null,
     quantity: item.quantity,
-    unit_price_eur: Number(item.products?.price_eur || 0)
+    unit_price_custom: Number(item.products?.price_custom || 0)
   }));
 
   const { error: itemsError } = await db
