@@ -70,12 +70,14 @@ async function loadProducts() {
   }
 
   productsList.innerHTML = data.map(product => `
-    <article class="product">
-      <h3>${product.name}</h3>
-      <p><strong>Artikelnummer:</strong> ${product.sku || "-"}</p>
-      <p><strong>Kategorie:</strong> ${product.category || "-"}</p>
-      <p class="price">${formatPrice(product.price_eur)}</p>
-      ${product.product_url ? `<p><a href="${product.product_url}" target="_blank" rel="noopener noreferrer">Produktlink öffnen</a></p>` : ""}
+    <article class="product-card">
+      <a href="${product.product_url || "#"}" class="product-image-wrap">
+        <img src="${product.image_url || "/platzhalter.jpg"}" alt="${product.name}">
+      </a>
+      <div class="product-info">
+        <h3 class="product-title">${product.name}</h3>
+        <p class="product-price">${formatPrice(product.price_eur)}</p>
+      </div>
       <div class="product-actions">
         <label class="qty-box">
           Menge
