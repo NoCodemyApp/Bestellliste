@@ -104,8 +104,8 @@ async function loadProducts() {
     const secondImage =
       images[1]?.image_url || firstImage;
 
-    return `
-      <article class="product-card">
+     return `
+      <article class="product-card" data-product-card="${product.id}">
         <div class="product-image-wrap">
           <img
             class="product-image product-image-primary"
@@ -122,12 +122,12 @@ async function loadProducts() {
             onerror="this.src='${firstImage}';"
           >
         </div>
-
+    
         <div class="product-info">
           <h3 class="product-title">${product.name}</h3>
           <p class="product-price">${formatPrice(product.price_custom)}</p>
         </div>
-
+    
         <div class="product-actions">
           <label class="qty-box">
             Menge
@@ -185,6 +185,10 @@ async function addToCart(productId, quantity) {
 
   setMessage("Produkt zum Warenkorb hinzugefügt.");
   await loadCart();
+
+  cartSection.classList.remove("cart-bump");
+  void cartSection.offsetWidth;
+  cartSection.classList.add("cart-bump");
 }
 
 async function loadCart() {
@@ -234,12 +238,20 @@ async function loadCart() {
   return `
     <article class="cart-line">
       <div class="cart-line-top">
-        <p class="cart-line-name">${product.name || "Produkt"}</p>
+        <button
+          class="cart-line-link"
+          type="button"
+          data-scroll-to-product="${product.id}"
+        >
+          ${product.name || "Produkt"}
+        </button>
+
         <p class="cart-line-total">${formatPrice(lineTotal)}</p>
       </div>
 
       <div class="cart-line-bottom">
         <span class="cart-line-qty">Menge: ${item.quantity}</span>
+
         <button
           class="remove-btn icon-btn"
           data-remove-cart="${item.id}"
@@ -272,12 +284,24 @@ async function loadCart() {
 
   cartTotal.textContent = `Gesamt: ${formatPrice(total)}`;
 
-  document.querySelectorAll("[data-remove-cart]").forEach(button => {
-    button.addEventListener("click", async () => {
-      const cartItemId = button.getAttribute("data-remove-cart");
-      await removeFromCart(cartItemId);
+  document.querySelectorAll("[data-scroll-to-product]").forEach(button => {
+  button.addEventListener("click", () => {
+    const productId = button.getAttribute("data-scroll-to-product");
+    const productCard = document.querySelector(`[data-product-card="${productId}"]`);
+
+    if (!productCard) return;
+
+    productCard.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
     });
+
+    productCard.classList.add("product-card-highlight");
+    setTimeout(() => {
+      productCard.classList.remove("product-card-highlight");
+    }, 1600);
   });
+});
 
   return data;
 }
