@@ -60,7 +60,6 @@ async function loadProducts() {
       name,
       sku,
       price_custom,
-      product_url,
       product_images (
         image_id,
         image_url,
@@ -104,7 +103,6 @@ async function loadProducts() {
     return `
       <article class="product-card">
         <a
-          href="${product.product_url || "#"}"
           class="product-image-wrap"
           target="_blank"
           rel="noopener noreferrer"
