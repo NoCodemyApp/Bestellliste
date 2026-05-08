@@ -55,7 +55,15 @@ async function getCurrentUser() {
 async function loadProducts() {
   const { data, error } = await db
     .from("products")
-    .select("*")
+    .select(`
+      *,
+      product_images (
+        image_id,
+        image_url,
+        sort_order,
+        is_primary
+      )
+    `)
     .eq("active", true)
     .order("created_at", { ascending: false });
 
@@ -69,24 +77,41 @@ async function loadProducts() {
     return;
   }
 
-  productsList.innerHTML = data.map(product => `
-    <article class="product-card">
-      <a href="${product.product_url || "#"}" class="product-image-wrap">
-        <img src="${product.image_url || "/platzhalter.jpg"}" alt="${product.name}">
-      </a>
-      <div class="product-info">
-        <h3 class="product-title">${product.name}</h3>
-        <p class="product-price">${formatPrice(product.price_custom)}</p>
-      </div>
-      <div class="product-actions">
-        <label class="qty-box">
-          Menge
-          <input type="number" min="1" value="1" data-qty-for="${product.id}">
-        </label>
-        <button class="small-btn" data-add-to-cart="${product.id}">In den Warenkorb</button>
-      </div>
-    </article>
-  `).join("");
+  productsList.innerHTML = data.map(product => {
+    const images = Array.isArray(product.product_images) ? [...product.product_images] : [];
+
+    images.sort((a, b) => {
+      if (a.is_primary === b.is_primary) {
+        return (a.sort_order ?? 999) - (b.sort_order ?? 999);
+      }
+      return a.is_primary ? -1 : 1;
+    });
+
+    const mainImage =
+      images[0]?.image_url ||
+      "https://via.placeholder.com/600x600?text=Kein+Bild";
+
+    return `
+      <article class="product-card">
+        <a href="${product.product_url || "#"}" class="product-image-wrap" target="_blank" rel="noopener noreferrer">
+          <img src="${mainImage}" alt="${product.name}">
+        </a>
+
+        <div class="product-info">
+          <h3 class="product-title">${product.name}</h3>
+          <p class="product-price">${formatPrice(product.price_custom)}</p>
+        </div>
+
+        <div class="product-actions">
+          <label class="qty-box">
+            Menge
+            <input type="number" min="1" value="1" data-qty-for="${product.id}">
+          </label>
+          <button class="small-btn" data-add-to-cart="${product.id}">In den Warenkorb</button>
+        </div>
+      </article>
+    `;
+  }).join("");
 
   document.querySelectorAll("[data-add-to-cart]").forEach(button => {
     button.addEventListener("click", async () => {
