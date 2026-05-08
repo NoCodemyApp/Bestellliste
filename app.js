@@ -88,10 +88,13 @@ async function loadProducts() {
       : [];
 
     images.sort((a, b) => {
-      if (a.is_primary === b.is_primary) {
+      const aPrimary = !!a.is_primary;
+      const bPrimary = !!b.is_primary;
+
+      if (aPrimary === bPrimary) {
         return (a.sort_order ?? 999) - (b.sort_order ?? 999);
       }
-      return a.is_primary ? -1 : 1;
+      return aPrimary ? -1 : 1;
     });
 
     const mainImage =
@@ -102,18 +105,14 @@ async function loadProducts() {
 
     return `
       <article class="product-card">
-        <a
-          class="product-image-wrap"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <div class="product-image-wrap">
           <img
             src="${mainImage}"
             alt="${product.name}"
             loading="lazy"
             onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';"
           >
-        </a>
+        </div>
 
         <div class="product-info">
           <h3 class="product-title">${product.name}</h3>
