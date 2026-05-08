@@ -10,50 +10,98 @@
 </head>
 <body>
   <header class="header">
-    <div>
+    <div class="branding">
       <h1>Vereinsbestellung</h1>
       <p>Interne Sammelbestellung für Vereinsmitglieder</p>
     </div>
-    <div id="user-box"></div>
+
+    <div class="header-right">
+      <div id="user-box" class="user-box"></div>
+      <button id="logout-btn" class="secondary hidden" type="button">Ausloggen</button>
+    </div>
   </header>
 
-  <main class="container">
-    <section class="card" id="auth-section">
-      <h2>Login</h2>
-      <form id="auth-form">
+  <main class="page">
+    <section class="card auth-card" id="auth-section">
+      <div class="section-head">
+        <h2>Login</h2>
+      </div>
+
+      <form id="auth-form" class="auth-form">
         <label>
-          E-Mail
-          <input type="email" id="email" required>
+          <span>E-Mail</span>
+          <input type="email" id="email" required autocomplete="email">
         </label>
+
         <label>
-          Passwort
-          <input type="password" id="password" required>
+          <span>Passwort</span>
+          <input type="password" id="password" required autocomplete="current-password">
         </label>
+
         <div class="actions">
           <button type="submit" id="login-btn">Einloggen</button>
           <button type="button" id="signup-btn" class="secondary">Registrieren</button>
         </div>
       </form>
+
       <p id="auth-message" class="message"></p>
     </section>
 
-    <section class="card hidden" id="products-section">
-  <div class="section-head">
-    <h2>Produkte</h2>
-    <button id="logout-btn" class="secondary">Ausloggen</button>
-  </div>
+    <section id="products-section" class="shop hidden">
+      <aside class="shop-sidebar">
+        <div class="sidebar-block">
+          <p class="sidebar-label">Shop</p>
+          <h2>Produkte</h2>
+          <p class="sidebar-text">
+            Wähle deine Artikel aus und lege sie in den Warenkorb.
+          </p>
+        </div>
 
-  <div id="products-list" class="products-list"></div>
-</section>
+        <div class="sidebar-block">
+          <h3>Information</h3>
+          <p class="sidebar-text">
+            Die Produkte werden rechts als Grid dargestellt. Filter können später hier ergänzt werden.
+          </p>
+        </div>
 
-<section class="card hidden" id="cart-section">
-  <div class="section-head">
-    <h2>Warenkorb</h2>
-  </div>
-  <div id="cart-list" class="products-list"></div>
-  <div class="cart-footer">
-  <p id="cart-total" class="price"></p>
-  <button id="submit-order-btn">Bestellung absenden</button>
-</div>
-<p id="order-message" class="message"></p>
-</section>
+        <div class="sidebar-block">
+          <h3>Hinweis</h3>
+          <p class="sidebar-text">
+            Nach dem Einloggen kannst du Produkte auswählen, Mengen festlegen und die Bestellung absenden.
+          </p>
+        </div>
+      </aside>
+
+      <section class="shop-content" aria-labelledby="products-heading">
+        <div class="shop-topbar">
+          <div>
+            <p class="sidebar-label">Sortiment</p>
+            <h2 id="products-heading">Verfügbare Artikel</h2>
+          </div>
+        </div>
+
+        <div id="products-list" class="products-grid">
+          <!-- Produkte werden per app.js eingefügt -->
+        </div>
+      </section>
+    </section>
+
+    <section class="card hidden" id="cart-section">
+      <div class="section-head">
+        <h2>Warenkorb</h2>
+      </div>
+
+      <div id="cart-list" class="cart-list">
+        <!-- Warenkorb-Elemente werden per app.js eingefügt -->
+      </div>
+
+      <div class="cart-footer">
+        <p id="cart-total" class="price"></p>
+        <button id="submit-order-btn" type="button">Bestellung absenden</button>
+      </div>
+
+      <p id="order-message" class="message"></p>
+    </section>
+  </main>
+</body>
+</html>
