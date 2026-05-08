@@ -290,6 +290,41 @@ button.secondary:hover {
   line-height: 1.15;
 }
 
+.shop-main-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) 260px;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.shop-main-products {
+  min-width: 0;
+}
+
+.shop-cart-sidebar {
+  position: sticky;
+  top: 92px; /* gleiche Höhe wie deine linke Sidebar */
+}
+
+.cart-summary-inner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+/* Mobile: Cart wieder untereinander anzeigen */
+@media (max-width: 980px) {
+  .shop-main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-cart-sidebar {
+    position: static;
+  }
+}
+
 /* Product grid */
 
 .products-grid {
