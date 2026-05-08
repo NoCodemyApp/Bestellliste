@@ -432,8 +432,60 @@ button.secondary:hover {
 
 .cart-list {
   display: grid;
-  gap: 16px;
-  margin-top: 18px;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cart-line {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0 10px;
+}
+
+.cart-line:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cart-line-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cart-line-name {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+  min-width: 0;
+}
+
+.cart-line-total {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cart-line-bottom {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-line-qty {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cart-line .small-btn {
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
 .cart-meta {
