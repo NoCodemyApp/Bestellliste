@@ -184,14 +184,14 @@ async function addToCart(productId, quantity) {
   }
 
   setMessage("Produkt zum Warenkorb hinzugefügt.");
-  await loadCart();
+  await loadCart(productId);
 
   cartSection.classList.remove("cart-bump");
   void cartSection.offsetWidth;
   cartSection.classList.add("cart-bump");
 }
 
-async function loadCart() {
+async function loadCart(highlightProductId = null) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -236,7 +236,7 @@ async function loadCart() {
   total += lineTotal;
 
   return `
-    <article class="cart-line">
+    <article class="cart-line" data-cart-product-id="${item.product_id}">
       <div class="cart-line-top">
         <button
           class="cart-line-link"
@@ -282,30 +282,53 @@ async function loadCart() {
   `;
 }).join("");
 
-  cartTotal.textContent = `Gesamt: ${formatPrice(total)}`;
+    cartTotal.textContent = `Gesamt: ${formatPrice(total)}`;
+
+  document.querySelectorAll("[data-remove-cart]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const cartItemId = button.getAttribute("data-remove-cart");
+      await removeFromCart(cartItemId);
+    });
+  });
 
   document.querySelectorAll("[data-scroll-to-product]").forEach(button => {
-  button.addEventListener("click", () => {
-    const productId = button.getAttribute("data-scroll-to-product");
-    const productCard = document.querySelector(`[data-product-card="${productId}"]`);
+    button.addEventListener("click", () => {
+      const productId = button.getAttribute("data-scroll-to-product");
+      const productCard = document.querySelector(`[data-product-card="${productId}"]`);
 
-    if (!productCard) return;
+      if (!productCard) return;
 
-    productCard.scrollIntoView({
-      behavior: "smooth",
-      block: "center"
+      productCard.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+
+      productCard.classList.add("product-card-highlight");
+      setTimeout(() => {
+        productCard.classList.remove("product-card-highlight");
+      }, 1600);
     });
-
-    productCard.classList.add("product-card-highlight");
-    setTimeout(() => {
-      productCard.classList.remove("product-card-highlight");
-    }, 1600);
   });
-});
+
+  if (highlightProductId) {
+    const newCartItem = cartList.querySelector(
+      `[data-cart-product-id="${highlightProductId}"]`
+    );
+
+    if (newCartItem) {
+      newCartItem.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+
+      newCartItem.classList.remove("cart-line-highlight");
+      void newCartItem.offsetWidth;
+      newCartItem.classList.add("cart-line-highlight");
+    }
+  }
 
   return data;
 }
-
 async function removeFromCart(cartItemId) {
   const { error } = await db
     .from("cart_items")
