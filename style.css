@@ -459,6 +459,10 @@ button.secondary:hover {
   line-height: 1.35;
   color: var(--text);
   min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .cart-line-total {
@@ -495,11 +499,18 @@ button.secondary:hover {
 
 .cart-footer {
   margin-top: 18px;
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 12px;
+}
+
+#cart-total {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.01em;
 }
 
 /* Links inside cards */
@@ -631,4 +642,20 @@ button.secondary:hover {
 
 .product-card:hover .product-image-primary {
   opacity: 0;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
 }
