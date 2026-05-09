@@ -776,3 +776,28 @@ button.secondary:hover {
   display: grid;
   gap: 10px;
 }
+
+.cart-group-rows {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.cart-size-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.cart-size-row-left {
+  min-width: 0;
+}
+
+.cart-size-row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
