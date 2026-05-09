@@ -396,57 +396,94 @@ async function loadCart(highlightProductId = null) {
 
   let total = 0;
 
-  cartList.innerHTML = data.map(item => {
+const groupedItems = {};
+
+data.forEach(item => {
   const product = item.products || {};
-  const lineTotal = Number(product.price_custom || 0) * Number(item.quantity || 0);
-  const sizeLabel =
-  item.sizes_clothing?.code ||
-  item.sizes_weight?.code ||
-  null;
-  total += lineTotal;
+  const productId = item.product_id;
+
+  if (!groupedItems[productId]) {
+    groupedItems[productId] = {
+      productId,
+      productName: product.name || "Produkt",
+      productSku: product.sku || null,
+      productPrice: Number(product.price_custom || 0),
+      items: []
+    };
+  }
+
+  groupedItems[productId].items.push(item);
+});
+
+cartList.innerHTML = Object.values(groupedItems).map(group => {
+  const productTotal = group.items.reduce((sum, item) => {
+    return sum + (group.productPrice * Number(item.quantity || 0));
+  }, 0);
+
+  total += productTotal;
+
+  const rowsHtml = group.items.map(item => {
+    const sizeLabel =
+      item.sizes_clothing?.code ||
+      item.sizes_weight?.code ||
+      null;
+
+    const lineTotal = group.productPrice * Number(item.quantity || 0);
+
+    return `
+      <div class="cart-size-row">
+        <div class="cart-size-row-left">
+          <span class="cart-line-qty">${sizeLabel ? `Größe: ${sizeLabel} · ` : ""}Menge: ${item.quantity}</span>
+        </div>
+
+        <div class="cart-size-row-right">
+          <span class="cart-line-total">${formatPrice(lineTotal)}</span>
+          <button
+            class="remove-btn icon-btn"
+            data-remove-cart="${item.id}"
+            type="button"
+            aria-label="Produkt aus dem Warenkorb entfernen"
+            title="Entfernen"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M19 6l-1 14H6L5 6"></path>
+              <path d="M10 11v6"></path>
+              <path d="M14 11v6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
 
   return `
-    <article class="cart-line" data-cart-product-id="${item.product_id}">
+    <article class="cart-line" data-cart-product-id="${group.productId}">
       <div class="cart-line-top">
         <button
           class="cart-line-link"
           type="button"
-          data-scroll-to-product="${product.id}"
+          data-scroll-to-product="${group.productId}"
         >
-          ${product.name || "Produkt"}
+          ${group.productName}
         </button>
 
-        <p class="cart-line-total">${formatPrice(lineTotal)}</p>
+        <p class="cart-line-total">${formatPrice(productTotal)}</p>
       </div>
 
-      <div class="cart-line-bottom">
-       <span class="cart-line-qty">${sizeLabel ? `Größe: ${sizeLabel} · ` : ""}Menge: ${item.quantity}</span>
-
-        <button
-          class="remove-btn icon-btn"
-          data-remove-cart="${item.id}"
-          type="button"
-          aria-label="Produkt aus dem Warenkorb entfernen"
-          title="Entfernen"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M3 6h18"></path>
-            <path d="M8 6V4h8v2"></path>
-            <path d="M19 6l-1 14H6L5 6"></path>
-            <path d="M10 11v6"></path>
-            <path d="M14 11v6"></path>
-          </svg>
-        </button>
+      <div class="cart-group-rows">
+        ${rowsHtml}
       </div>
     </article>
   `;
