@@ -696,6 +696,7 @@ async function submitOrder() {
   }
 
   try {
+    console.log("Sending order email for order:", orderData.id);
     await sendOrderEmailViaEdgeFunction(orderData.id);
   } catch (mailError) {
     setOrderMessage(`Bestellung gespeichert, aber E-Mail konnte nicht gesendet werden: ${mailError.message}`, true);
