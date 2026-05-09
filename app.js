@@ -120,7 +120,37 @@ async function loadProducts() {
     const secondImage =
       images[1]?.image_url || firstImage;
 
-     return `
+    const clothingSizes = (product.product_clothing_sizes || [])
+      .map(row => row.sizes_clothing)
+      .filter(Boolean)
+      .sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+
+    const weightSizes = (product.product_weight_sizes || [])
+      .map(row => row.sizes_weight)
+      .filter(Boolean)
+      .sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+
+    const sizeType =
+      clothingSizes.length > 0 ? "clothing" :
+      weightSizes.length > 0 ? "weight" :
+      null;
+
+    const sizes = sizeType === "clothing" ? clothingSizes : weightSizes;
+
+    const sizesHtml = sizes.map(size => `
+      <button
+        type="button"
+        class="size-btn"
+        data-size-select="${product.id}"
+        data-size-id="${size.id}"
+        data-size-type="${sizeType}"
+        data-size-code="${size.code}"
+      >
+        ${size.code}
+      </button>
+    `).join("");
+
+    return `
       <article class="product-card" data-product-card="${product.id}">
         <div class="product-image-wrap">
           <img
@@ -138,42 +168,93 @@ async function loadProducts() {
             onerror="this.src='${firstImage}';"
           >
         </div>
-    
+
         <div class="product-info">
           <h3 class="product-title">${product.name}</h3>
           <p class="product-price">${formatPrice(product.price_custom)}</p>
         </div>
-    
-        <div class="product-actions">
-          <label class="qty-box">
-            Menge
-            <input type="number" min="1" value="1" data-qty-for="${product.id}">
-          </label>
-          <button class="small-btn" data-add-to-cart="${product.id}">
-            In den Warenkorb
-          </button>
+
+        <div class="product-actions product-actions-vertical">
+          <div class="size-selector">
+            ${sizesHtml || `<p class="sidebar-text">Keine Größen hinterlegt</p>`}
+          </div>
+
+          <div class="purchase-panel hidden" data-purchase-panel="${product.id}">
+            <label class="qty-box">
+              Menge
+              <input type="number" min="1" value="1" data-qty-for="${product.id}">
+            </label>
+            <button class="small-btn" data-add-to-cart="${product.id}">
+              In den Warenkorb
+            </button>
+          </div>
         </div>
       </article>
     `;
   }).join("");
 
+  document.querySelectorAll("[data-size-select]").forEach(button => {
+    button.addEventListener("click", () => {
+      const productId = button.getAttribute("data-size-select");
+      const sizeId = button.getAttribute("data-size-id");
+      const sizeType = button.getAttribute("data-size-type");
+      const productCard = document.querySelector(`[data-product-card="${productId}"]`);
+      const panel = document.querySelector(`[data-purchase-panel="${productId}"]`);
+
+      if (!productCard || !panel) return;
+
+      productCard.querySelectorAll("[data-size-select]").forEach(btn => {
+        btn.classList.remove("size-btn-active");
+      });
+
+      button.classList.add("size-btn-active");
+      productCard.setAttribute("data-selected-size-id", sizeId);
+      productCard.setAttribute("data-selected-size-type", sizeType);
+
+      panel.classList.remove("hidden");
+    });
+  });
+
   document.querySelectorAll("[data-add-to-cart]").forEach(button => {
     button.addEventListener("click", async () => {
       const productId = button.getAttribute("data-add-to-cart");
+      const productCard = document.querySelector(`[data-product-card="${productId}"]`);
       const qtyInput = document.querySelector(`[data-qty-for="${productId}"]`);
+
       const quantity = Number(qtyInput?.value || 1);
+      const selectedSizeId = productCard?.getAttribute("data-selected-size-id");
+      const selectedSizeType = productCard?.getAttribute("data-selected-size-type");
+
+      if (!selectedSizeId || !selectedSizeType) {
+        setMessage("Bitte zuerst eine Größe auswählen.", true);
+        return;
+      }
 
       if (!quantity || quantity < 1) {
         setMessage("Bitte eine gültige Menge eingeben.", true);
         return;
       }
 
-      await addToCart(productId, quantity);
+      await addToCart(productId, quantity, {
+        sizeId: selectedSizeId,
+        sizeType: selectedSizeType
+      });
+
+      qtyInput.value = 1;
+      productCard.removeAttribute("data-selected-size-id");
+      productCard.removeAttribute("data-selected-size-type");
+      productCard.querySelectorAll("[data-size-select]").forEach(btn => {
+        btn.classList.remove("size-btn-active");
+      });
+
+      const panel = document.querySelector(`[data-purchase-panel="${productId}"]`);
+      panel?.classList.add("hidden");
     });
   });
 }
 
-async function addToCart(productId, quantity) {
+
+async function addToCart(productId, quantity, selectedSize) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -181,22 +262,58 @@ async function addToCart(productId, quantity) {
     return;
   }
 
-  const { error } = await db
+  const isClothing = selectedSize?.sizeType === "clothing";
+  const isWeight = selectedSize?.sizeType === "weight";
+
+  const clothingSizeId = isClothing ? selectedSize.sizeId : null;
+  const weightSizeId = isWeight ? selectedSize.sizeId : null;
+
+  let existingQuery = db
     .from("cart_items")
-    .upsert(
-      {
+    .select("id, quantity")
+    .eq("user_id", user.id)
+    .eq("product_id", productId);
+
+  if (isClothing) {
+    existingQuery = existingQuery.eq("clothing_size_id", clothingSizeId);
+  } else if (isWeight) {
+    existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
+  }
+
+  const { data: existingItem, error: existingError } = await existingQuery.maybeSingle();
+
+  if (existingError) {
+    setMessage(`Fehler beim Prüfen des Warenkorbs: ${existingError.message}`, true);
+    return;
+  }
+
+  if (existingItem) {
+    const newQuantity = Number(existingItem.quantity || 0) + Number(quantity || 0);
+
+    const { error: updateError } = await db
+      .from("cart_items")
+      .update({ quantity: newQuantity })
+      .eq("id", existingItem.id);
+
+    if (updateError) {
+      setMessage(`Fehler beim Aktualisieren des Warenkorbs: ${updateError.message}`, true);
+      return;
+    }
+  } else {
+    const { error: insertError } = await db
+      .from("cart_items")
+      .insert({
         user_id: user.id,
         product_id: productId,
-        quantity
-      },
-      {
-        onConflict: "user_id,product_id"
-      }
-    );
+        quantity,
+        clothing_size_id: clothingSizeId,
+        weight_size_id: weightSizeId
+      });
 
-  if (error) {
-    setMessage(`Fehler beim Speichern im Warenkorb: ${error.message}`, true);
-    return;
+    if (insertError) {
+      setMessage(`Fehler beim Speichern im Warenkorb: ${insertError.message}`, true);
+      return;
+    }
   }
 
   setMessage("Produkt zum Warenkorb hinzugefügt.");
@@ -219,16 +336,26 @@ async function loadCart(highlightProductId = null) {
   const { data, error } = await db
   .from("cart_items")
   .select(`
+  id,
+  quantity,
+  product_id,
+  clothing_size_id,
+  weight_size_id,
+  products (
     id,
-    quantity,
-    product_id,
-    products (
-      id,
-      name,
-      sku,
-      price_custom
-    )
-  `)
+    name,
+    sku,
+    price_custom
+  ),
+  sizes_clothing (
+    id,
+    code
+  ),
+  sizes_weight (
+    id,
+    code
+  )
+`)
   .eq("user_id", user.id)
   .order("created_at", { ascending: false });
 
@@ -249,6 +376,10 @@ async function loadCart(highlightProductId = null) {
   cartList.innerHTML = data.map(item => {
   const product = item.products || {};
   const lineTotal = Number(product.price_custom || 0) * Number(item.quantity || 0);
+  const sizeLabel =
+  item.sizes_clothing?.code ||
+  item.sizes_weight?.code ||
+  null;
   total += lineTotal;
 
   return `
@@ -266,7 +397,7 @@ async function loadCart(highlightProductId = null) {
       </div>
 
       <div class="cart-line-bottom">
-        <span class="cart-line-qty">Menge: ${item.quantity}</span>
+       <span class="cart-line-qty">${sizeLabel ? `Größe: ${sizeLabel} · ` : ""}Menge: ${item.quantity}</span>
 
         <button
           class="remove-btn icon-btn"
