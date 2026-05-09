@@ -358,20 +358,9 @@ async function loadCart(highlightProductId = null) {
   product_id,
   clothing_size_id,
   weight_size_id,
-  products (
-    id,
-    name,
-    sku,
-    price_brutto
-  ),
-  sizes_clothing (
-    id,
-    code
-  ),
-  sizes_weight (
-    id,
-    code
-  )
+  products(id,name,sku,price_brutto,price_netto),
+  sizes_clothing(id,code),
+  sizes_weight(id,code)
 `)
   .eq("user_id", user.id)
   .order("created_at", { ascending: false });
