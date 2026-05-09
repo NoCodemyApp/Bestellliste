@@ -88,6 +88,12 @@ async function loadProducts() {
 
   console.log("PRODUCTS RESULT:", { data, error });
 
+  if (data?.length) {
+  console.log("FIRST PRODUCT RAW:", data[0]);
+  console.log("FIRST PRODUCT CLOTHING:", data[0].product_clothing_sizes);
+  console.log("FIRST PRODUCT WEIGHT:", data[0].product_weight_sizes);
+}
+
   if (error) {
     productsList.innerHTML = `<p>Fehler beim Laden der Produkte: ${error.message}</p>`;
     return;
