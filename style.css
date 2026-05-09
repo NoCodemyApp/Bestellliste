@@ -745,7 +745,6 @@ button.secondary:hover {
   border-radius: 8px;
 }
 
-
 .size-selector {
   display: flex;
   flex-wrap: wrap;
@@ -760,6 +759,7 @@ button.secondary:hover {
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .size-btn:hover {
