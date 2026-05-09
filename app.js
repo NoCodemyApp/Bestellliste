@@ -59,7 +59,7 @@ async function loadProducts() {
       id,
       name,
       sku,
-      price_custom,
+      price_brutto,
       product_images (
         image_id,
         image_url,
@@ -179,7 +179,7 @@ return `
 
     <div class="product-info">
       <h3 class="product-title">${product.name}</h3>
-      <p class="product-price">${formatPrice(product.price_custom)}</p>
+      <p class="product-price">${formatPrice(product.price_brutto)}</p>
     </div>
 
     <div class="product-actions ${hasSizes ? 'product-actions-vertical' : ''}">
@@ -368,7 +368,7 @@ async function loadCart(highlightProductId = null) {
     id,
     name,
     sku,
-    price_custom
+    price_brutto
   ),
   sizes_clothing (
     id,
@@ -407,7 +407,7 @@ data.forEach(item => {
       productId,
       productName: product.name || "Produkt",
       productSku: product.sku || null,
-      productPrice: Number(product.price_custom || 0),
+      productPrice: Number(product.price_brutto || 0),
       items: []
     };
   }
@@ -696,7 +696,7 @@ async function submitOrder() {
     product_name: item.products?.name || "Produkt",
     product_sku: item.products?.sku || null,
     quantity: item.quantity,
-    unit_price_eur: Number(item.products?.price_custom || 0),
+    unit_price_netto: Number(item.products?.price_netto || 0),
     clothing_size_id: item.clothing_size_id || null,
     weight_size_id: item.weight_size_id || null,
     size_label: sizeLabel
