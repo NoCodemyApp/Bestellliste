@@ -143,60 +143,72 @@ async function loadProducts() {
 
     const sizes = sizeType === "clothing" ? clothingSizes : weightSizes;
 
-    const sizesHtml = sizes.map(size => `
-      <button
-        type="button"
-        class="size-btn"
-        data-size-select="${product.id}"
-        data-size-id="${size.id}"
-        data-size-type="${sizeType}"
-        data-size-code="${size.code}"
+   const sizesHtml = sizes.map(size => `
+  <button
+    type="button"
+    class="size-btn"
+    data-size-select="${product.id}"
+    data-size-id="${size.id}"
+    data-size-type="${sizeType}"
+    data-size-code="${size.code}"
+  >
+    ${size.code}
+  </button>
+`).join("");
+
+const hasSizes = sizes.length > 0;
+
+return `
+  <article class="product-card" data-product-card="${product.id}">
+    <div class="product-image-wrap">
+      <img
+        class="product-image product-image-primary"
+        src="${firstImage}"
+        alt="${product.name}"
+        loading="lazy"
+        onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';"
       >
-        ${size.code}
-      </button>
-    `).join("");
+      <img
+        class="product-image product-image-hover"
+        src="${secondImage}"
+        alt="${product.name}"
+        loading="lazy"
+        onerror="this.src='${firstImage}';"
+      >
+    </div>
 
-    return `
-      <article class="product-card" data-product-card="${product.id}">
-        <div class="product-image-wrap">
-          <img
-            class="product-image product-image-primary"
-            src="${firstImage}"
-            alt="${product.name}"
-            loading="lazy"
-            onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';"
-          >
-          <img
-            class="product-image product-image-hover"
-            src="${secondImage}"
-            alt="${product.name}"
-            loading="lazy"
-            onerror="this.src='${firstImage}';"
-          >
+    <div class="product-info">
+      <h3 class="product-title">${product.name}</h3>
+      <p class="product-price">${formatPrice(product.price_custom)}</p>
+    </div>
+
+    <div class="product-actions ${hasSizes ? 'product-actions-vertical' : ''}">
+      ${hasSizes ? `
+        <div class="size-selector">
+          ${sizesHtml}
         </div>
 
-        <div class="product-info">
-          <h3 class="product-title">${product.name}</h3>
-          <p class="product-price">${formatPrice(product.price_custom)}</p>
+        <div class="purchase-panel hidden" data-purchase-panel="${product.id}">
+          <label class="qty-box">
+            Menge
+            <input type="number" min="1" value="1" data-qty-for="${product.id}">
+          </label>
+          <button class="small-btn" data-add-to-cart="${product.id}">
+            In den Warenkorb
+          </button>
         </div>
-
-        <div class="product-actions product-actions-vertical">
-          <div class="size-selector">
-            ${sizesHtml || `<p class="sidebar-text">Keine Größen hinterlegt</p>`}
-          </div>
-
-          <div class="purchase-panel hidden" data-purchase-panel="${product.id}">
-            <label class="qty-box">
-              Menge
-              <input type="number" min="1" value="1" data-qty-for="${product.id}">
-            </label>
-            <button class="small-btn" data-add-to-cart="${product.id}">
-              In den Warenkorb
-            </button>
-          </div>
-        </div>
-      </article>
-    `;
+      ` : `
+        <label class="qty-box">
+          Menge
+          <input type="number" min="1" value="1" data-qty-for="${product.id}">
+        </label>
+        <button class="small-btn" data-add-to-cart="${product.id}">
+          In den Warenkorb
+        </button>
+      `}
+    </div>
+  </article>
+`;
   }).join("");
 
   document.querySelectorAll("[data-size-select]").forEach(button => {
@@ -221,32 +233,36 @@ async function loadProducts() {
     });
   });
 
-  document.querySelectorAll("[data-add-to-cart]").forEach(button => {
-    button.addEventListener("click", async () => {
-      const productId = button.getAttribute("data-add-to-cart");
-      const productCard = document.querySelector(`[data-product-card="${productId}"]`);
-      const qtyInput = document.querySelector(`[data-qty-for="${productId}"]`);
+document.querySelectorAll("[data-add-to-cart]").forEach(button => {
+  button.addEventListener("click", async () => {
+    const productId = button.getAttribute("data-add-to-cart");
+    const productCard = document.querySelector(`[data-product-card="${productId}"]`);
+    const qtyInput = document.querySelector(`[data-qty-for="${productId}"]`);
 
-      const quantity = Number(qtyInput?.value || 1);
-      const selectedSizeId = productCard?.getAttribute("data-selected-size-id");
-      const selectedSizeType = productCard?.getAttribute("data-selected-size-type");
+    const quantity = Number(qtyInput?.value || 1);
+    const selectedSizeId = productCard?.getAttribute("data-selected-size-id");
+    const selectedSizeType = productCard?.getAttribute("data-selected-size-type");
 
-      if (!selectedSizeId || !selectedSizeType) {
-        setMessage("Bitte zuerst eine Größe auswählen.", true);
-        return;
-      }
+    const hasSizeSelector = productCard?.querySelector(".size-selector");
 
-      if (!quantity || quantity < 1) {
-        setMessage("Bitte eine gültige Menge eingeben.", true);
-        return;
-      }
+    if (hasSizeSelector && (!selectedSizeId || !selectedSizeType)) {
+      setMessage("Bitte zuerst eine Größe auswählen.", true);
+      return;
+    }
 
-      await addToCart(productId, quantity, {
-        sizeId: selectedSizeId,
-        sizeType: selectedSizeType
-      });
+    if (!quantity || quantity < 1) {
+      setMessage("Bitte eine gültige Menge eingeben.", true);
+      return;
+    }
 
-      qtyInput.value = 1;
+    await addToCart(productId, quantity, selectedSizeId && selectedSizeType ? {
+      sizeId: selectedSizeId,
+      sizeType: selectedSizeType
+    } : undefined);
+
+    qtyInput.value = 1;
+    
+    if (hasSizeSelector) {
       productCard.removeAttribute("data-selected-size-id");
       productCard.removeAttribute("data-selected-size-type");
       productCard.querySelectorAll("[data-size-select]").forEach(btn => {
@@ -255,8 +271,9 @@ async function loadProducts() {
 
       const panel = document.querySelector(`[data-purchase-panel="${productId}"]`);
       panel?.classList.add("hidden");
-    });
+    }
   });
+});
 }
 
 
