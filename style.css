@@ -408,6 +408,8 @@ button.secondary:hover {
 
 /* Product actions */
 
+/* Product actions */
+
 .product-actions {
   display: flex;
   gap: 10px;
@@ -416,6 +418,11 @@ button.secondary:hover {
   flex-wrap: wrap;
   padding: 10px 14px 14px;
   border-top: 1px solid var(--border);
+}
+
+.product-actions-vertical {
+  display: grid;
+  gap: 12px;
 }
 
 .qty-box {
@@ -736,4 +743,36 @@ button.secondary:hover {
 .cart-line-highlight {
   animation: cartLineFlash 1s ease;
   border-radius: 8px;
+}
+
+
+.size-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.size-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.size-btn:hover {
+  border-color: var(--accent);
+}
+
+.size-btn-active {
+  background: var(--accent);
+  color: #161616;
+  border-color: var(--accent);
+}
+
+.purchase-panel {
+  display: grid;
+  gap: 10px;
 }
