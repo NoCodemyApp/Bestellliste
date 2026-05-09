@@ -684,14 +684,24 @@ async function submitOrder() {
     return;
   }
 
-  const itemRows = cartItems.map(item => ({
+  const itemRows = cartItems.map(item => {
+  const sizeLabel =
+    item.sizes_clothing?.code ||
+    item.sizes_weight?.code ||
+    null;
+
+  return {
     order_id: orderData.id,
     product_id: item.product_id,
     product_name: item.products?.name || "Produkt",
     product_sku: item.products?.sku || null,
     quantity: item.quantity,
-    unit_price_custom: Number(item.products?.price_custom || 0)
-  }));
+    unit_price_eur: Number(item.products?.price_custom || 0),
+    clothing_size_id: item.clothing_size_id || null,
+    weight_size_id: item.weight_size_id || null,
+    size_label: sizeLabel
+  };
+});
 
   const { error: itemsError } = await db
     .from("order_items")
