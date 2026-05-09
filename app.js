@@ -65,6 +65,22 @@ async function loadProducts() {
         image_url,
         sort_order,
         is_primary
+      ),
+      product_clothing_sizes (
+        size_id,
+        sizes_clothing (
+          id,
+          code,
+          sort_order
+        )
+      ),
+      product_weight_sizes (
+        size_id,
+        sizes_weight (
+          id,
+          code,
+          sort_order
+        )
       )
     `)
     .eq("active", true)
