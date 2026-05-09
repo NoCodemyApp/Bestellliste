@@ -433,7 +433,10 @@ cartList.innerHTML = Object.values(groupedItems).map(group => {
     return `
       <div class="cart-size-row">
         <div class="cart-size-row-left">
-          <span class="cart-line-qty">${sizeLabel ? `Größe: ${sizeLabel} · ` : ""}Menge: ${item.quantity}</span>
+         <div class="cart-line-meta">
+          ${sizeLabel ? `<span class="cart-line-qty">Größe: ${sizeLabel}</span>` : ""}
+            <span class="cart-line-qty">Menge: ${item.quantity}</span>
+          </div>
         </div>
 
         <div class="cart-size-row-right">
