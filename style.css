@@ -42,6 +42,10 @@
 
   /* Header-Höhe für sticky-offsets */
   --header-h: 64px;
+
+  /* Drawer */
+  --drawer-radius: 20px;
+  --drawer-max-h: 88dvh;
 }
 
 /* ============================================================
@@ -929,4 +933,328 @@ button.secondary {
 .cart-line-highlight {
   animation: cartLineFlash 1s ease;
   border-radius: 8px;
+}
+
+/* ============================================================
+   MOBILE CART BADGE (Header-Button)
+   Nur auf < 1024px sichtbar. Zeigt Artikelanzahl.
+   ============================================================ */
+
+.cart-badge-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  flex-shrink: 0;
+  /* Override globales button-hover */
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.cart-badge-btn svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .cart-badge-btn:hover {
+    background: var(--secondary-hover);
+    border-color: var(--accent);
+    transform: none;
+  }
+}
+
+.cart-badge-btn:active {
+  transform: scale(0.93);
+  opacity: 1;
+}
+
+/* Badge-Zähler-Pill */
+.cart-badge-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #161616;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+  border: 2px solid #0d0f12;
+}
+
+/* Pop-Animation beim Hinzufügen */
+@keyframes badgePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.45); }
+  70%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.badge-pop {
+  animation: badgePop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Ab Desktop: Badge-Button verstecken */
+@media (min-width: 1024px) {
+  .cart-badge-btn {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   CART OVERLAY (Dimm-Schicht hinter Drawer)
+   ============================================================ */
+
+.cart-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 199;
+  /* Kein pointer-events wenn unsichtbar */
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+.cart-overlay.cart-overlay--visible {
+  display: block;
+  pointer-events: all;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: overlayFadeIn 0.25s ease forwards;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Ab Desktop: Overlay nie anzeigen */
+@media (min-width: 1024px) {
+  .cart-overlay {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   CART DRAWER — Bottom Sheet (Mobile)
+   2026 Custom Experience Standard:
+   - Fährt von unten hoch (Bottom Sheet)
+   - Abgerundete obere Ecken
+   - Drag-Handle als visueller Hinweis
+   - Safe-Area für iPhone Home-Indicator
+   - Scrollbarer Body, fixierter Header + Footer
+   ============================================================ */
+
+.cart-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  max-height: var(--drawer-max-h);
+  height: auto;
+
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--drawer-radius) var(--drawer-radius) 0 0;
+  box-shadow:
+    0 -4px 24px rgba(0, 0, 0, 0.35),
+    0 -1px 4px rgba(0, 0, 0, 0.2);
+
+  display: flex;
+  flex-direction: column;
+
+  /* Versteckt: komplett unten */
+  transform: translateY(100%);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity   0.28s ease,
+    visibility 0s linear 0.38s;
+
+  /* Safe Area für iPhone Notch / Home-Bar */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  will-change: transform;
+}
+
+/* Geöffnet: slide-up */
+.cart-drawer.cart-drawer--open {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    transform 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity   0.22s ease,
+    visibility 0s linear 0s;
+}
+
+/* Scroll-Lock: wenn Drawer offen, Body nicht scrollen */
+body.drawer-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* Ab Desktop: Drawer nie anzeigen */
+@media (min-width: 1024px) {
+  .cart-drawer {
+    display: none !important;
+  }
+}
+
+/* --- Drag Handle --- */
+.cart-drawer-header::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 0 auto var(--sp-4);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* --- Drawer Header --- */
+.cart-drawer-header {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4) var(--sp-5) var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.cart-drawer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cart-drawer-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.cart-drawer-close {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.cart-drawer-close svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .cart-drawer-close:hover {
+    background: var(--surface-3);
+    color: var(--text);
+    transform: none;
+  }
+}
+
+.cart-drawer-close:active {
+  transform: scale(0.9);
+  opacity: 1;
+}
+
+/* --- Drawer Body (scrollbar) --- */
+.cart-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sp-4) var(--sp-5);
+
+  /* Scrollbar dezent */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.cart-drawer-body::-webkit-scrollbar {
+  width: 4px;
+}
+.cart-drawer-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cart-drawer-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* Cart-List im Drawer: gleiche Styles wie Desktop */
+.cart-drawer-body .cart-list {
+  margin-top: 0;
+}
+
+/* --- Drawer Footer --- */
+.cart-drawer-footer {
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.cart-drawer-total-text {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+
+.cart-drawer-submit-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: var(--text-base);
+  font-weight: 700;
+  border-radius: 12px;
+  min-height: 52px;
+  /* Dezenter Glow beim Hover */
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+@media (hover: hover) {
+  .cart-drawer-submit-btn:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 0 0 3px rgba(244, 177, 88, 0.2);
+    transform: none;
+  }
+}
+
+.cart-drawer-submit-btn:active {
+  transform: scale(0.98);
+  opacity: 1;
+}
+
+/* Fehlermeldung im Drawer */
+.cart-drawer-footer .message {
+  margin-top: 0;
 }
