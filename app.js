@@ -621,7 +621,7 @@ async function removeFromCart(cartItemId) {
 }
 
 // ============================================================
-// AUTH + UI
+// AUTH + UI user.email
 // ============================================================
 
 async function updateUI() {
@@ -634,6 +634,8 @@ async function updateUI() {
     cartSection.classList.remove("hidden");
     logoutBtn.classList.remove("hidden");
     userBox.textContent = session.user.email || "";
+    document.getElementById("user-menu-btn").classList.remove("hidden");
+    document.getElementById("user-dropdown-email").textContent = session.user.email || "";
     await loadProducts();
     await loadCart();
   } else {
@@ -642,6 +644,8 @@ async function updateUI() {
     cartSection.classList.add("hidden");
     logoutBtn.classList.add("hidden");
     userBox.textContent = "";
+    document.getElementById("user-menu-btn").classList.add("hidden");
+    document.getElementById("user-dropdown-email").textContent = "";
     productsList.innerHTML = "";
     cartList.innerHTML = "";
     updateCartBadge(0);
