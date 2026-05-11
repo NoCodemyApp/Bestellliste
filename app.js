@@ -43,6 +43,10 @@ const filterResetDesktop = document.getElementById("filter-reset-btn-desktop");
 const filterActiveCount  = document.getElementById("filter-active-count");
 const activeFilterBar    = document.getElementById("active-filter-bar");
 
+// --- Filter FAB ---
+const filterFab      = document.getElementById("filter-fab");
+const filterFabCount = document.getElementById("filter-fab-count");
+
 // Filter State
 let allProducts = [];
 let activeFilters = { category: null, supplier: null };
@@ -101,6 +105,11 @@ filterToggleBtn.addEventListener("click", openFilterDrawer);
 filterDrawerClose.addEventListener("click", closeFilterDrawer);
 filterApplyBtn.addEventListener("click", closeFilterDrawer);
 
+// FAB öffnet ebenfalls den Filter-Drawer
+if (filterFab) {
+  filterFab.addEventListener("click", openFilterDrawer);
+}
+
 // Swipe-down Cart Drawer schliessen
 let touchStartY = 0;
 cartDrawer.addEventListener("touchstart", e => { touchStartY = e.touches[0].clientY; }, { passive: true });
@@ -118,6 +127,36 @@ document.addEventListener("keydown", e => {
 cartDrawerSubmit.addEventListener("click", async () => { await submitOrder(); });
 
 // ============================================================
+// FILTER FAB — Scroll-aware visibility
+// ============================================================
+
+(function initFilterFabScroll() {
+  if (!filterFab) return;
+
+  let lastScrollY = window.scrollY;
+  const THRESHOLD = 80; // Mindest-Scrolltiefe, ab der der FAB erscheinen kann
+
+  function updateFabVisibility() {
+    const currentScrollY = window.scrollY;
+    const scrollingUp    = currentScrollY < lastScrollY;
+
+    if (scrollingUp && currentScrollY > THRESHOLD) {
+      // Hochscrollen und nicht ganz oben → FAB anzeigen
+      filterFab.classList.add("filter-fab--visible");
+      filterFab.setAttribute("aria-hidden", "false");
+    } else {
+      // Runterscrollen oder ganz oben → FAB verstecken
+      filterFab.classList.remove("filter-fab--visible");
+      filterFab.setAttribute("aria-hidden", "true");
+    }
+
+    lastScrollY = currentScrollY;
+  }
+
+  window.addEventListener("scroll", updateFabVisibility, { passive: true });
+})();
+
+// ============================================================
 // FILTER LOGIC
 // ============================================================
 
@@ -128,7 +167,7 @@ function buildFilterChips(products) {
   renderChips("filter-chips-category",        categories, "category", false);
   renderChips("filter-chips-supplier",         suppliers,  "supplier",  false);
   renderChips("filter-chips-category-mobile",  categories, "category", true);
-  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier",  true);
+  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier\",  true);
 }
 
 function renderChips(containerId, values, filterKey, isMobileDrawer) {
@@ -180,6 +219,15 @@ function updateFilterUI() {
 
   filterActiveCount.textContent = total;
   filterActiveCount.classList.toggle("hidden", total === 0);
+
+  // FAB-Badge synchronisieren
+  if (filterFabCount) {
+    filterFabCount.textContent = total;
+    filterFabCount.classList.toggle("hidden", total === 0);
+  }
+  if (filterFab) {
+    filterFab.classList.toggle("filter-fab--active", total > 0);
+  }
 
   activeFilterBar.innerHTML = "";
   if (total === 0) {
