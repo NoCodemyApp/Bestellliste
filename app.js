@@ -742,6 +742,27 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
 
 submitOrderBtn.addEventListener("click", async () => { await submitOrder(); });
 
+// ============================================================
+// USER MENU DROPDOWN TOGGLE
+// ============================================================
+
+const userMenuBtn = document.getElementById("user-menu-btn");
+const userDropdown = document.getElementById("user-dropdown");
+
+userMenuBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = userDropdown.classList.contains("user-dropdown--open");
+  userDropdown.classList.toggle("user-dropdown--open", !isOpen);
+  userMenuBtn.setAttribute("aria-expanded", String(!isOpen));
+  userDropdown.setAttribute("aria-hidden", String(isOpen));
+});
+
+document.addEventListener("click", () => {
+  userDropdown.classList.remove("user-dropdown--open");
+  userMenuBtn.setAttribute("aria-expanded", "false");
+  userDropdown.setAttribute("aria-hidden", "true");
+});
+
 db.auth.onAuthStateChange(() => { setTimeout(() => { updateUI(); }, 0); });
 
 updateUI();
