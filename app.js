@@ -22,15 +22,16 @@ const orderMessage    = document.getElementById("order-message");
 const productsEmpty   = document.getElementById("products-empty");
 
 // --- Mobile Cart Drawer ---
-const cartBadgeBtn     = document.getElementById("cart-badge-btn");
-const cartBadgeCount   = document.getElementById("cart-badge-count");
-const cartDrawer       = document.getElementById("cart-drawer");
-const cartOverlay      = document.getElementById("cart-overlay");
-const cartDrawerClose  = document.getElementById("cart-drawer-close");
-const cartDrawerBody   = document.querySelector(".cart-drawer-body");
-const cartDrawerTotal  = document.getElementById("cart-drawer-total");
-const cartDrawerMsg    = document.getElementById("cart-drawer-message");
-const cartDrawerSubmit = document.getElementById("cart-drawer-submit");
+const cartBadgeBtn        = document.getElementById("cart-badge-btn");
+const cartBadgeCount      = document.getElementById("cart-badge-count");
+const cartDrawer          = document.getElementById("cart-drawer");
+const cartOverlay         = document.getElementById("cart-overlay");
+const cartDrawerClose     = document.getElementById("cart-drawer-close");
+const cartDrawerBody      = document.querySelector(".cart-drawer-body");
+const cartDrawerTotal     = document.getElementById("cart-drawer-total");
+const cartDrawerMsg       = document.getElementById("cart-drawer-message");
+const cartDrawerSubmit    = document.getElementById("cart-drawer-submit");
+const cartDrawerItemCount = document.getElementById("cart-drawer-item-count");
 
 // --- Mobile Filter Drawer ---
 const filterDrawer       = document.getElementById("filter-drawer");
@@ -88,7 +89,7 @@ function closeFilterDrawer() {
   filterToggleBtn.setAttribute("aria-expanded", "false");
 }
 
-// Overlay-Klick schließt den jeweils offenen Drawer
+// Overlay-Klick schliesst den jeweils offenen Drawer
 cartOverlay.addEventListener("click", () => {
   if (cartDrawer.classList.contains("cart-drawer--open")) closeCartDrawer();
   if (filterDrawer.classList.contains("filter-drawer--open")) closeFilterDrawer();
@@ -100,12 +101,12 @@ filterToggleBtn.addEventListener("click", openFilterDrawer);
 filterDrawerClose.addEventListener("click", closeFilterDrawer);
 filterApplyBtn.addEventListener("click", closeFilterDrawer);
 
-// Swipe-down Cart Drawer schließen
+// Swipe-down Cart Drawer schliessen
 let touchStartY = 0;
 cartDrawer.addEventListener("touchstart", e => { touchStartY = e.touches[0].clientY; }, { passive: true });
 cartDrawer.addEventListener("touchend",   e => { if (e.changedTouches[0].clientY - touchStartY > 60) closeCartDrawer(); }, { passive: true });
 
-// Swipe-left Filter Drawer schließen
+// Swipe-left Filter Drawer schliessen
 let touchStartX = 0;
 filterDrawer.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
 filterDrawer.addEventListener("touchend",   e => { if (touchStartX - e.changedTouches[0].clientX > 60) closeFilterDrawer(); }, { passive: true });
@@ -153,9 +154,7 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-filter-key");
       const val = btn.getAttribute("data-filter-val");
-      // Toggle: nochmal klicken → deaktivieren
       activeFilters[key] = activeFilters[key] === val ? null : val;
-      // Beide Chip-Listen synchronisieren
       buildFilterChips(allProducts);
       applyFilters();
     });
@@ -179,11 +178,9 @@ function updateFilterUI() {
   const { category, supplier } = activeFilters;
   const total = (category ? 1 : 0) + (supplier ? 1 : 0);
 
-  // Badge-Zähler am Toggle-Button
   filterActiveCount.textContent = total;
   filterActiveCount.classList.toggle("hidden", total === 0);
 
-  // Aktive-Filter-Leiste
   activeFilterBar.innerHTML = "";
   if (total === 0) {
     activeFilterBar.classList.add("hidden");
@@ -236,10 +233,19 @@ function updateCartBadge(itemCount) {
 // DRAWER SYNC
 // ============================================================
 
-function syncDrawer(totalText) {
+function syncDrawer(totalText, itemCount) {
+  // Inhalt spiegeln
   cartDrawerBody.innerHTML = cartList.innerHTML;
+
+  // Zähler-Badge im Drawer-Titel aktualisieren
+  if (cartDrawerItemCount) {
+    cartDrawerItemCount.textContent = itemCount > 99 ? "99+" : itemCount;
+  }
+
+  // Gesamtbetrag
   cartDrawerTotal.textContent = totalText;
 
+  // Event-Listener im Drawer neu binden
   cartDrawerBody.querySelectorAll("[data-remove-cart]").forEach(btn => {
     btn.addEventListener("click", async () => { await removeFromCart(btn.getAttribute("data-remove-cart")); });
   });
@@ -287,7 +293,7 @@ async function getCurrentUser() {
 }
 
 // ============================================================
-// RENDER PRODUCTS (gefiltert)
+// RENDER PRODUCTS
 // ============================================================
 
 function renderProducts(products) {
@@ -345,7 +351,6 @@ function renderProducts(products) {
     </article>`;
   }).join("");
 
-  // Size-Button Listener
   document.querySelectorAll("[data-size-select]").forEach(button => {
     button.addEventListener("click", () => {
       const productId = button.getAttribute("data-size-select");
@@ -362,7 +367,6 @@ function renderProducts(products) {
     });
   });
 
-  // Add-to-cart Listener
   document.querySelectorAll("[data-add-to-cart]").forEach(button => {
     button.addEventListener("click", async () => {
       const productId      = button.getAttribute("data-add-to-cart");
@@ -374,10 +378,10 @@ function renderProducts(products) {
       const hasSizeSelector = card?.querySelector(".size-selector");
 
       if (hasSizeSelector && (!selectedSizeId || !selectedSizeType)) {
-        setMessage("Bitte zuerst eine Größe auswählen.", true); return;
+        setMessage("Bitte zuerst eine Groesse auswaehlen.", true); return;
       }
       if (!quantity || quantity < 1) {
-        setMessage("Bitte eine gültige Menge eingeben.", true); return;
+        setMessage("Bitte eine gueltige Menge eingeben.", true); return;
       }
 
       await addToCart(productId, quantity, selectedSizeId && selectedSizeType ? { sizeId: selectedSizeId, sizeType: selectedSizeType } : undefined);
@@ -408,8 +412,6 @@ async function loadProducts() {
     `)
     .eq("active", true)
     .order("category", { ascending: true });
-
-  console.log("PRODUCTS RESULT:", { data, error });
 
   if (error) {
     productsList.innerHTML = `<p>Fehler beim Laden der Produkte: ${error.message}</p>`;
@@ -444,7 +446,7 @@ async function addToCart(productId, quantity, selectedSize) {
   else if (isWeight) existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
 
   const { data: existingItem, error: existingError } = await existingQuery.maybeSingle();
-  if (existingError) { setMessage(`Fehler beim Prüfen des Warenkorbs: ${existingError.message}`, true); return; }
+  if (existingError) { setMessage(`Fehler beim Pruefen des Warenkorbs: ${existingError.message}`, true); return; }
 
   if (existingItem) {
     const { error: updateError } = await db.from("cart_items").update({ quantity: Number(existingItem.quantity||0) + Number(quantity||0) }).eq("id", existingItem.id);
@@ -454,7 +456,7 @@ async function addToCart(productId, quantity, selectedSize) {
     if (insertError) { setMessage(`Fehler beim Speichern im Warenkorb: ${insertError.message}`, true); return; }
   }
 
-  setMessage("Produkt zum Warenkorb hinzugefügt.");
+  setMessage("Produkt zum Warenkorb hinzugefuegt.");
   await loadCart(productId);
   cartSection.classList.remove("cart-bump");
   void cartSection.offsetWidth;
@@ -479,7 +481,7 @@ async function loadCart(highlightProductId = null) {
     cartList.innerHTML = "<p>Dein Warenkorb ist noch leer.</p>";
     cartTotal.textContent = "Gesamt: 0,00 \u20ac";
     updateCartBadge(0);
-    syncDrawer("Gesamt: 0,00 \u20ac");
+    syncDrawer("0,00 \u20ac", 0);
     return [];
   }
 
@@ -507,7 +509,7 @@ async function loadCart(highlightProductId = null) {
       const lineTotal = group.productPrice * Number(item.quantity || 0);
       return `<div class="cart-size-row">
         <div class="cart-size-row-left"><div class="cart-line-meta">
-          ${sizeLabel ? `<span class="cart-line-qty">Größe: ${sizeLabel}</span>` : ""}
+          ${sizeLabel ? `<span class="cart-line-qty">Groesse: ${sizeLabel}</span>` : ""}
           <span class="cart-line-qty">Menge: ${item.quantity}</span>
         </div></div>
         <div class="cart-size-row-right">
@@ -530,9 +532,11 @@ async function loadCart(highlightProductId = null) {
     </article>`;
   }).join("");
 
-  const totalText = `Gesamt: ${formatPrice(total)}`;
-  cartTotal.textContent = totalText;
-  syncDrawer(totalText);
+  const totalText = formatPrice(total);
+  cartTotal.textContent = `Gesamt: ${totalText}`;
+
+  // Drawer mit aktuellem Zähler synchronisieren
+  syncDrawer(totalText, totalItems);
 
   document.querySelectorAll("#cart-section [data-remove-cart]").forEach(btn => {
     btn.addEventListener("click", async () => { await removeFromCart(btn.getAttribute("data-remove-cart")); });
@@ -624,7 +628,7 @@ signupBtn.addEventListener("click", async () => {
   const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: "https://bestellliste.bastian-jonas.workers.dev/" } });
   if (error) { setMessage(error.message, true); return; }
   if (data?.user?.identities?.length === 0) { setMessage("Diese E-Mail ist bereits registriert oder konnte nicht neu angelegt werden.", true); return; }
-  setMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
+  setMessage("Registrierung erfolgreich. Bitte E-Mail bestaetigen.");
 });
 
 logoutBtn.addEventListener("click", async () => {
@@ -659,7 +663,6 @@ async function submitOrder() {
   if (itemsError) { setOrderMessage(`Bestellpositionen konnten nicht gespeichert werden: ${itemsError.message}`, true); return; }
 
   try {
-    console.log("Sending order email for order:", orderData.id);
     await sendOrderEmailViaEdgeFunction(orderData.id);
   } catch (mailError) {
     setOrderMessage(`Bestellung gespeichert, aber E-Mail konnte nicht gesendet werden: ${mailError.message}`, true);
@@ -686,9 +689,6 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
   });
 
   const rawText = await response.text();
-  console.log("Edge Function status:", response.status);
-  console.log("Edge Function raw response:", rawText);
-
   let parsed;
   try { parsed = JSON.parse(rawText); } catch { parsed = { raw: rawText }; }
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${rawText}`);
