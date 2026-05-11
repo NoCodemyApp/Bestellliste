@@ -39,7 +39,7 @@
     </div>
   </header>
 
-  <!-- Cart-Drawer Overlay (Mobile) -->
+  <!-- Shared Overlay für Cart-Drawer UND Filter-Drawer -->
   <div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
 
   <main class="page">
@@ -68,91 +68,146 @@
       <p id="auth-message" class="message"></p>
     </section>
 
-   <section id="products-section" class="shop hidden">
-    <aside class="shop-sidebar">
-      <div class="sidebar-block">
-        <p class="sidebar-label">Shop</p>
-        <h2>Produkte</h2>
-        <p class="sidebar-text">
-          Wähle deine Artikel aus und lege sie in den Warenkorb.
-        </p>
-      </div>
-  
-      <div class="sidebar-block">
-        <h3>Information</h3>
-        <p class="sidebar-text">
-          Die Produkte werden rechts als Grid dargestellt. Filter können später hier ergänzt werden.
-        </p>
-      </div>
-  
-      <div class="sidebar-block">
-        <h3>Hinweis</h3>
-        <p class="sidebar-text">
-          Nach dem Einloggen kannst du Produkte auswählen, Mengen festlegen und die Bestellung absenden.
-        </p>
-      </div>
-    </aside>
-  
-    <section class="shop-content" aria-labelledby="products-heading">
-      <div class="shop-topbar">
-        <div>
-          <p class="sidebar-label">Sortiment</p>
-          <h2 id="products-heading">Verfügbare Artikel</h2>
+    <section id="products-section" class="shop hidden">
+
+      <!-- Desktop: Sidebar links (Filter) -->
+      <aside class="shop-sidebar" id="shop-sidebar-desktop">
+        <div class="sidebar-block">
+          <p class="sidebar-label">Shop</p>
+          <h2>Filter</h2>
         </div>
-      </div>
-  
-      <div class="shop-main-layout">
-        <div class="shop-main-products">
-          <div id="products-list" class="products-grid">
-            <!-- Produkte werden per app.js eingefügt -->
+
+        <div class="sidebar-block" id="filter-block-category">
+          <p class="sidebar-label">Kategorie</p>
+          <div class="filter-chip-list" id="filter-chips-category"></div>
+        </div>
+
+        <div class="sidebar-block" id="filter-block-supplier">
+          <p class="sidebar-label">Lieferant</p>
+          <div class="filter-chip-list" id="filter-chips-supplier"></div>
+        </div>
+
+        <div class="sidebar-block">
+          <button id="filter-reset-btn-desktop" class="secondary small-btn filter-reset-btn" type="button">
+            Filter zurücksetzen
+          </button>
+        </div>
+      </aside>
+
+      <section class="shop-content" aria-labelledby="products-heading">
+        <div class="shop-topbar">
+          <div>
+            <p class="sidebar-label">Sortiment</p>
+            <h2 id="products-heading">Verfügbare Artikel</h2>
           </div>
+
+          <!-- Mobile: Filter-Toggle-Button -->
+          <button
+            id="filter-toggle-btn"
+            class="filter-toggle-btn secondary"
+            type="button"
+            aria-label="Filter öffnen"
+            aria-expanded="false"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="11" y1="18" x2="13" y2="18"/>
+            </svg>
+            Filter
+            <span id="filter-active-count" class="filter-active-count hidden">0</span>
+          </button>
         </div>
-  
-        <!-- Desktop: Warenkorb als Sidebar -->
-        <aside class="shop-cart-sidebar" id="cart-desktop-slot">
-          <section class="card cart-card hidden" id="cart-section">
-            <div class="section-head">
-              <h2>Warenkorb</h2>
+
+        <!-- Aktive Filter als Chips unter dem Topbar -->
+        <div id="active-filter-bar" class="active-filter-bar hidden"></div>
+
+        <div class="shop-main-layout">
+          <div class="shop-main-products">
+            <div id="products-list" class="products-grid">
+              <!-- Produkte werden per app.js eingefügt -->
             </div>
-  
-            <div id="cart-list" class="cart-list">
-              <!-- Warenkorb-Elemente werden per app.js eingefügt -->
-            </div>
-  
-            <div class="cart-footer">
-              <p id="cart-total" class="price"></p>
-              <button id="submit-order-btn" type="button">Bestellung absenden</button>
-            </div>
-  
-            <p id="order-message" class="message"></p>
-          </section>
-        </aside>
-      </div>
+            <p id="products-empty" class="products-empty hidden">Keine Produkte für diese Filter.</p>
+          </div>
+
+          <!-- Desktop: Warenkorb als Sidebar -->
+          <aside class="shop-cart-sidebar" id="cart-desktop-slot">
+            <section class="card cart-card hidden" id="cart-section">
+              <div class="section-head">
+                <h2>Warenkorb</h2>
+              </div>
+
+              <div id="cart-list" class="cart-list">
+                <!-- Warenkorb-Elemente werden per app.js eingefügt -->
+              </div>
+
+              <div class="cart-footer">
+                <p id="cart-total" class="price"></p>
+                <button id="submit-order-btn" type="button">Bestellung absenden</button>
+              </div>
+
+              <p id="order-message" class="message"></p>
+            </section>
+          </aside>
+        </div>
+      </section>
     </section>
-  </section>  
 
-  <!-- Mobile Cart Drawer -->
-  <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
-    <div class="cart-drawer-header">
-      <h2 class="cart-drawer-title">Warenkorb</h2>
-      <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-             stroke-linecap="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+    <!-- Mobile Cart Drawer -->
+    <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
+      <div class="cart-drawer-header">
+        <h2 class="cart-drawer-title">Warenkorb</h2>
+        <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="cart-drawer-body">
+        <!-- Inhalt wird per JS gespiegelt -->
+      </div>
+      <div class="cart-drawer-footer">
+        <p id="cart-drawer-total" class="price cart-drawer-total-text"></p>
+        <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Bestellung absenden</button>
+        <p id="cart-drawer-message" class="message"></p>
+      </div>
     </div>
-    <div class="cart-drawer-body">
-      <!-- Inhalt wird per JS gespiegelt -->
-    </div>
-    <div class="cart-drawer-footer">
-      <p id="cart-drawer-total" class="price cart-drawer-total-text"></p>
-      <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Bestellung absenden</button>
-      <p id="cart-drawer-message" class="message"></p>
-    </div>
-  </div>
 
-</main>
+    <!-- Mobile Filter Drawer (Left Sheet) -->
+    <div id="filter-drawer" class="filter-drawer" aria-hidden="true" role="dialog" aria-label="Filter">
+      <div class="filter-drawer-header">
+        <h2 class="filter-drawer-title">Filter</h2>
+        <button id="filter-drawer-close" class="cart-drawer-close" type="button" aria-label="Filter schließen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filter-drawer-body">
+        <div class="filter-drawer-section">
+          <p class="sidebar-label">Kategorie</p>
+          <div class="filter-chip-list" id="filter-chips-category-mobile"></div>
+        </div>
+        <div class="filter-drawer-section">
+          <p class="sidebar-label">Lieferant</p>
+          <div class="filter-chip-list" id="filter-chips-supplier-mobile"></div>
+        </div>
+      </div>
+
+      <div class="filter-drawer-footer">
+        <button id="filter-reset-btn-mobile" class="secondary filter-reset-btn" type="button">
+          Filter zurücksetzen
+        </button>
+        <button id="filter-apply-btn" type="button">Anwenden</button>
+      </div>
+    </div>
+
+  </main>
 </body>
 </html>
