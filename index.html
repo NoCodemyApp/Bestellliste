@@ -4,58 +4,115 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vereinsbestellung</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
+
+  <!-- ======================================================
+       HEADER
+  ====================================================== -->
   <header class="header">
-    <div class="branding">
-      <h1>Vereinsbestellung</h1>
-      <p>Interne Sammelbestellung für Vereinsmitglieder</p>
-    </div>
+    <div class="header-inner">
 
-    <div class="header-right">
-      <div id="user-box" class="user-box"></div>
+      <!-- Logo + Titel -->
+      <div class="header-brand">
+        <div class="header-logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+            <rect width="32" height="32" rx="9" fill="currentColor" opacity="0.12"/>
+            <path d="M7 10h3l2.5 9L15 12h4l2.5 7L24 10h3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="16" cy="24" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <span class="header-title">Vereinsbestellung</span>
+      </div>
 
-      <button
-        id="cart-badge-btn"
-        class="cart-badge-btn hidden"
-        type="button"
-        aria-label="Warenkorb öffnen"
-        aria-expanded="false"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="9" cy="21" r="1"/>
-          <circle cx="20" cy="21" r="1"/>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-        <span id="cart-badge-count" class="cart-badge-count">0</span>
-      </button>
+      <!-- Rechte Seite: User-Email + Cart + Logout -->
+      <div class="header-actions">
+        <span id="user-box" class="user-pill"></span>
 
-      <button id="logout-btn" class="secondary hidden" type="button">Ausloggen</button>
+        <button
+          id="cart-badge-btn"
+          class="cart-btn hidden"
+          type="button"
+          aria-label="Warenkorb öffnen"
+          aria-expanded="false"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span id="cart-badge-count" class="cart-btn-badge">0</span>
+        </button>
+
+        <button id="logout-btn" class="btn-ghost hidden" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span class="btn-ghost-label">Abmelden</span>
+        </button>
+      </div>
     </div>
   </header>
 
+  <!-- Shared Overlay -->
   <div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
 
   <main class="page">
-    <section class="card auth-card" id="auth-section">
-      <div class="section-head"><h2>Login</h2></div>
-      <form id="auth-form" class="auth-form">
-        <label><span>E-Mail</span><input type="email" id="email" required autocomplete="email"></label>
-        <label><span>Passwort</span><input type="password" id="password" required autocomplete="current-password"></label>
-        <div class="actions">
-          <button type="submit" id="login-btn">Einloggen</button>
-          <button type="button" id="signup-btn" class="secondary">Registrieren</button>
+
+    <!-- ======================================================
+         AUTH
+    ====================================================== -->
+    <section class="auth-section" id="auth-section">
+      <div class="auth-card">
+        <div class="auth-logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+            <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
+            <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
+          </svg>
         </div>
-      </form>
-      <p id="auth-message" class="message"></p>
+        <h1 class="auth-headline">Willkommen</h1>
+        <p class="auth-sub">Melde dich an, um die Sammelbestellung einzusehen.</p>
+
+        <form id="auth-form" class="auth-form" novalidate>
+          <div class="form-field">
+            <label for="email" class="form-label">E-Mail</label>
+            <input type="email" id="email" name="email"
+                   placeholder="name@beispiel.de"
+                   required autocomplete="email">
+          </div>
+          <div class="form-field">
+            <label for="password" class="form-label">Passwort</label>
+            <input type="password" id="password" name="password"
+                   placeholder="Passwort"
+                   required autocomplete="current-password">
+          </div>
+          <button type="submit" id="login-btn" class="btn-primary btn-full">Einloggen</button>
+        </form>
+
+        <div class="auth-divider"><span>oder</span></div>
+
+        <button type="button" id="signup-btn" class="btn-outline btn-full">Neu registrieren</button>
+
+        <p id="auth-message" class="auth-message"></p>
+      </div>
     </section>
 
+    <!-- ======================================================
+         SHOP
+    ====================================================== -->
     <section id="products-section" class="shop hidden">
 
+      <!-- Desktop Sidebar -->
       <aside class="shop-sidebar" id="shop-sidebar-desktop">
         <div class="sidebar-block">
           <p class="sidebar-label">Shop</p>
@@ -70,26 +127,26 @@
           <div class="filter-chip-list" id="filter-chips-supplier"></div>
         </div>
         <div class="sidebar-block">
-          <button id="filter-reset-btn-desktop" class="secondary small-btn filter-reset-btn" type="button">Filter zurücksetzen</button>
+          <button id="filter-reset-btn-desktop" class="btn-outline small-btn filter-reset-btn" type="button">Filter zurücksetzen</button>
         </div>
       </aside>
 
+      <!-- Content -->
       <section class="shop-content" aria-labelledby="products-heading">
         <div class="shop-topbar">
           <div>
             <p class="sidebar-label">Sortiment</p>
             <h2 id="products-heading">Verfügbare Artikel</h2>
           </div>
-          <!-- Topbar-Filter-Button: nur ganz oben sichtbar (vor erstem Scroll) -->
           <button
             id="filter-toggle-btn"
-            class="filter-toggle-btn secondary"
+            class="filter-toggle-btn btn-outline"
             type="button"
             aria-label="Filter öffnen"
             aria-expanded="false"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="15" height="15">
               <line x1="4" y1="6" x2="20" y2="6"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
               <line x1="11" y1="18" x2="13" y2="18"/>
@@ -122,7 +179,9 @@
       </section>
     </section>
 
-    <!-- Filter FAB: floating pill, erscheint beim Hochscrollen -->
+    <!-- ======================================================
+         FILTER FAB — fixed, erscheint beim Hochscrollen
+    ====================================================== -->
     <button
       id="filter-fab"
       class="filter-fab"
@@ -140,7 +199,9 @@
       <span id="filter-fab-count" class="filter-fab-count hidden">0</span>
     </button>
 
-    <!-- Mobile Cart Drawer -->
+    <!-- ======================================================
+         MOBILE CART DRAWER
+    ====================================================== -->
     <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
       <div class="cart-drawer-handle" aria-hidden="true"></div>
       <div class="cart-drawer-header">
@@ -151,8 +212,7 @@
           </div>
           <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
@@ -168,14 +228,15 @@
       </div>
     </div>
 
-    <!-- Mobile Filter Drawer -->
+    <!-- ======================================================
+         MOBILE FILTER DRAWER
+    ====================================================== -->
     <div id="filter-drawer" class="filter-drawer" aria-hidden="true" role="dialog" aria-label="Filter">
       <div class="filter-drawer-header">
         <h2 class="filter-drawer-title">Filter</h2>
         <button id="filter-drawer-close" class="cart-drawer-close" type="button" aria-label="Filter schließen">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
