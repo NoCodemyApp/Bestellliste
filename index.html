@@ -101,7 +101,7 @@
             <h2 id="products-heading">Verfügbare Artikel</h2>
           </div>
 
-          <!-- Mobile: Filter-Toggle-Button -->
+          <!-- Mobile: Filter-Toggle-Button (im Topbar, nur ganz oben sichtbar) -->
           <button
             id="filter-toggle-btn"
             class="filter-toggle-btn secondary"
@@ -154,6 +154,24 @@
       </section>
     </section>
 
+    <!-- Mobile Filter FAB — scroll-aware floating pill -->
+    <button
+      id="filter-fab"
+      class="filter-fab"
+      type="button"
+      aria-label="Filter öffnen"
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="15" height="15">
+        <line x1="4" y1="6" x2="20" y2="6"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+        <line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+      Filter
+      <span id="filter-fab-count" class="filter-fab-count hidden">0</span>
+    </button>
+
     <!-- Mobile Cart Drawer — Bottom Sheet -->
     <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
 
@@ -202,26 +220,3 @@
           </svg>
         </button>
       </div>
-
-      <div class="filter-drawer-body">
-        <div class="filter-drawer-section">
-          <p class="sidebar-label">Kategorie</p>
-          <div class="filter-chip-list" id="filter-chips-category-mobile"></div>
-        </div>
-        <div class="filter-drawer-section">
-          <p class="sidebar-label">Lieferant</p>
-          <div class="filter-chip-list" id="filter-chips-supplier-mobile"></div>
-        </div>
-      </div>
-
-      <div class="filter-drawer-footer">
-        <button id="filter-reset-btn-mobile" class="secondary filter-reset-btn" type="button">
-          Filter zurücksetzen
-        </button>
-        <button id="filter-apply-btn" type="button">Anwenden</button>
-      </div>
-    </div>
-
-  </main>
-</body>
-</html>
