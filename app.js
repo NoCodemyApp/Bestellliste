@@ -105,7 +105,7 @@ filterToggleBtn.addEventListener("click", openFilterDrawer);
 filterDrawerClose.addEventListener("click", closeFilterDrawer);
 filterApplyBtn.addEventListener("click", closeFilterDrawer);
 
-// FAB öffnet ebenfalls den Filter-Drawer
+// FAB oeffnet ebenfalls den Filter-Drawer
 if (filterFab) {
   filterFab.addEventListener("click", openFilterDrawer);
 }
@@ -127,25 +127,23 @@ document.addEventListener("keydown", e => {
 cartDrawerSubmit.addEventListener("click", async () => { await submitOrder(); });
 
 // ============================================================
-// FILTER FAB — Scroll-aware visibility
+// FILTER FAB - Scroll-aware visibility
 // ============================================================
 
 (function initFilterFabScroll() {
   if (!filterFab) return;
 
   let lastScrollY = window.scrollY;
-  const THRESHOLD = 80; // Mindest-Scrolltiefe, ab der der FAB erscheinen kann
+  const THRESHOLD = 80;
 
   function updateFabVisibility() {
     const currentScrollY = window.scrollY;
     const scrollingUp    = currentScrollY < lastScrollY;
 
     if (scrollingUp && currentScrollY > THRESHOLD) {
-      // Hochscrollen und nicht ganz oben → FAB anzeigen
       filterFab.classList.add("filter-fab--visible");
       filterFab.setAttribute("aria-hidden", "false");
     } else {
-      // Runterscrollen oder ganz oben → FAB verstecken
       filterFab.classList.remove("filter-fab--visible");
       filterFab.setAttribute("aria-hidden", "true");
     }
@@ -167,7 +165,7 @@ function buildFilterChips(products) {
   renderChips("filter-chips-category",        categories, "category", false);
   renderChips("filter-chips-supplier",         suppliers,  "supplier",  false);
   renderChips("filter-chips-category-mobile",  categories, "category", true);
-  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier\",  true);
+  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier",  true);
 }
 
 function renderChips(containerId, values, filterKey, isMobileDrawer) {
@@ -282,18 +280,14 @@ function updateCartBadge(itemCount) {
 // ============================================================
 
 function syncDrawer(totalText, itemCount) {
-  // Inhalt spiegeln
   cartDrawerBody.innerHTML = cartList.innerHTML;
 
-  // Zähler-Badge im Drawer-Titel aktualisieren
   if (cartDrawerItemCount) {
     cartDrawerItemCount.textContent = itemCount > 99 ? "99+" : itemCount;
   }
 
-  // Gesamtbetrag
   cartDrawerTotal.textContent = totalText;
 
-  // Event-Listener im Drawer neu binden
   cartDrawerBody.querySelectorAll("[data-remove-cart]").forEach(btn => {
     btn.addEventListener("click", async () => { await removeFromCart(btn.getAttribute("data-remove-cart")); });
   });
@@ -583,7 +577,6 @@ async function loadCart(highlightProductId = null) {
   const totalText = formatPrice(total);
   cartTotal.textContent = `Gesamt: ${totalText}`;
 
-  // Drawer mit aktuellem Zähler synchronisieren
   syncDrawer(totalText, totalItems);
 
   document.querySelectorAll("#cart-section [data-remove-cart]").forEach(btn => {
