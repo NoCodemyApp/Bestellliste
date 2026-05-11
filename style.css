@@ -707,15 +707,20 @@ button.secondary {
   flex: 1;
 }
 
+/* Produktname: vollständiger Umbruch, kein Abschneiden */
 .product-title {
   font-size: var(--text-xs);
-  line-height: 1.35;
+  line-height: 1.4;
   font-weight: 500;
   color: var(--text);
+  /* Kein line-clamp — Name wird vollständig umgebrochen */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 @media (min-width: 640px) {
-  .product-title { font-size: var(--text-sm); min-height: 36px; }
+  .product-title { font-size: var(--text-sm); }
 }
 
 .product-price {
@@ -823,13 +828,11 @@ button.secondary {
 
 .cart-line-name {
   font-size: var(--text-xs);
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--text);
   min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .cart-line-total {
@@ -852,6 +855,7 @@ button.secondary {
 
 .cart-line .small-btn { padding: 5px 8px; font-size: 11px; min-height: 32px; }
 
+/* Produktname-Link im Warenkorb: vollständiger Umbruch, kein Abschneiden */
 .cart-line-link {
   appearance: none;
   border: 0;
@@ -859,14 +863,14 @@ button.secondary {
   padding: 0;
   color: var(--text);
   font-size: var(--text-xs);
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
   min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  /* Kein line-clamp — Name bricht vollständig um */
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
   min-height: 0;
   transition: color var(--duration-fast) ease;
 }
@@ -1119,7 +1123,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   gap: 0;
 }
 
-/* Altes ::before entfernen – wird durch .cart-drawer-handle ersetzt */
 .cart-drawer-header::before { display: none; }
 
 .cart-drawer-header-row {
@@ -1137,7 +1140,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   letter-spacing: -0.01em;
 }
 
-/* Artikel-Zähler neben Titel */
 .cart-drawer-count {
   display: inline-flex;
   align-items: center;
@@ -1200,7 +1202,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 .cart-drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .cart-drawer-body .cart-list { margin-top: 0; }
 
-/* Warenkorb-Zeilen im Drawer – kompakter & klarer */
 .cart-drawer-body .cart-line {
   border-bottom: 1px solid var(--border-subtle);
   padding: var(--sp-3) 0;
@@ -1211,10 +1212,14 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   padding-bottom: 0;
 }
 
+/* Produktname im Drawer: vollständig umbrechen */
 .cart-drawer-body .cart-line-link {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text);
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .cart-drawer-body .cart-line-total {
@@ -1227,7 +1232,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   color: var(--muted);
 }
 
-/* Leer-Zustand */
 .cart-drawer-empty {
   display: flex;
   flex-direction: column;
@@ -1263,7 +1267,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   background: var(--surface);
 }
 
-/* Gesamt-Zeile */
 .cart-drawer-footer-total {
   display: flex;
   align-items: center;
@@ -1284,7 +1287,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   line-height: 1;
 }
 
-/* Bestell-Button — volle Breite, prominent */
 .cart-drawer-submit-btn {
   width: 100%;
   padding: 16px 20px;
@@ -1365,7 +1367,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   .filter-drawer { display: none !important; }
 }
 
-/* Header */
 .filter-drawer-header {
   display: flex;
   align-items: center;
@@ -1383,7 +1384,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   letter-spacing: -0.01em;
 }
 
-/* Body */
 .filter-drawer-body {
   flex: 1;
   overflow-y: auto;
@@ -1404,7 +1404,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Footer */
 .filter-drawer-footer {
   padding: var(--sp-4) var(--sp-5);
   padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
@@ -1417,7 +1416,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 
 .filter-drawer-footer button { width: 100%; justify-content: center; }
 
-/* Anwenden-Button prominent */
 .filter-drawer-footer button:not(.secondary) {
   border-radius: 14px;
   min-height: 52px;
