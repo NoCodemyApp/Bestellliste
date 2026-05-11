@@ -154,23 +154,37 @@
       </section>
     </section>
 
-    <!-- Mobile Cart Drawer -->
+    <!-- Mobile Cart Drawer — Bottom Sheet -->
     <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
+
+      <!-- Drag Handle -->
+      <div class="cart-drawer-handle" aria-hidden="true"></div>
+
       <div class="cart-drawer-header">
-        <h2 class="cart-drawer-title">Warenkorb</h2>
-        <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="cart-drawer-header-row">
+          <div class="cart-drawer-title-row">
+            <h2 class="cart-drawer-title">Warenkorb</h2>
+            <span id="cart-drawer-item-count" class="cart-drawer-count">0</span>
+          </div>
+          <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
+
       <div class="cart-drawer-body">
         <!-- Inhalt wird per JS gespiegelt -->
       </div>
+
       <div class="cart-drawer-footer">
-        <p id="cart-drawer-total" class="price cart-drawer-total-text"></p>
+        <div class="cart-drawer-footer-total">
+          <span class="cart-drawer-total-label">Gesamt</span>
+          <p id="cart-drawer-total" class="cart-drawer-total-text"></p>
+        </div>
         <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Bestellung absenden</button>
         <p id="cart-drawer-message" class="message"></p>
       </div>
