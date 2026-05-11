@@ -1,0 +1,78 @@
+/* ============================================================
+   FILTER FAB — Scroll-aware floating pill (Mobile only)
+   Erscheint beim Hochscrollen, versteckt sich beim Runterscrollen
+   ============================================================ */
+
+.filter-fab {
+  /* Positioning */
+  position: fixed;
+  top: calc(var(--header-h) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(-1 * (var(--header-h) + 60px)));
+  z-index: 90;
+
+  /* Pill shape */
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  min-height: 42px;
+  white-space: nowrap;
+
+  /* Visual */
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2);
+
+  /* Animation */
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity   220ms ease;
+  will-change: transform, opacity;
+}
+
+/* Sichtbar-Zustand: beim Hochscrollen --*/
+.filter-fab.filter-fab--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Aktiv-Zustand wenn Filter gesetzt */
+.filter-fab.filter-fab--active {
+  background: var(--accent-dim);
+  border-color: rgba(244,177,88,0.4);
+  color: var(--accent);
+}
+
+.filter-fab:active {
+  transform: translateX(-50%) translateY(0) scale(0.96);
+  opacity: 1;
+}
+
+/* Zähler-Badge */
+.filter-fab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #161616;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Nur auf Mobile */
+@media (min-width: 768px) {
+  .filter-fab { display: none !important; }
+}

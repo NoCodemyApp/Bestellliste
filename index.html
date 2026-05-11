@@ -18,7 +18,6 @@
     <div class="header-right">
       <div id="user-box" class="user-box"></div>
 
-      <!-- Cart-Badge: nur auf Mobile sichtbar -->
       <button
         id="cart-badge-btn"
         class="cart-badge-btn hidden"
@@ -39,58 +38,39 @@
     </div>
   </header>
 
-  <!-- Shared Overlay für Cart-Drawer UND Filter-Drawer -->
   <div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
 
   <main class="page">
     <section class="card auth-card" id="auth-section">
-      <div class="section-head">
-        <h2>Login</h2>
-      </div>
-
+      <div class="section-head"><h2>Login</h2></div>
       <form id="auth-form" class="auth-form">
-        <label>
-          <span>E-Mail</span>
-          <input type="email" id="email" required autocomplete="email">
-        </label>
-
-        <label>
-          <span>Passwort</span>
-          <input type="password" id="password" required autocomplete="current-password">
-        </label>
-
+        <label><span>E-Mail</span><input type="email" id="email" required autocomplete="email"></label>
+        <label><span>Passwort</span><input type="password" id="password" required autocomplete="current-password"></label>
         <div class="actions">
           <button type="submit" id="login-btn">Einloggen</button>
           <button type="button" id="signup-btn" class="secondary">Registrieren</button>
         </div>
       </form>
-
       <p id="auth-message" class="message"></p>
     </section>
 
     <section id="products-section" class="shop hidden">
 
-      <!-- Desktop: Sidebar links (Filter) -->
       <aside class="shop-sidebar" id="shop-sidebar-desktop">
         <div class="sidebar-block">
           <p class="sidebar-label">Shop</p>
           <h2>Filter</h2>
         </div>
-
         <div class="sidebar-block" id="filter-block-category">
           <p class="sidebar-label">Kategorie</p>
           <div class="filter-chip-list" id="filter-chips-category"></div>
         </div>
-
         <div class="sidebar-block" id="filter-block-supplier">
           <p class="sidebar-label">Lieferant</p>
           <div class="filter-chip-list" id="filter-chips-supplier"></div>
         </div>
-
         <div class="sidebar-block">
-          <button id="filter-reset-btn-desktop" class="secondary small-btn filter-reset-btn" type="button">
-            Filter zurücksetzen
-          </button>
+          <button id="filter-reset-btn-desktop" class="secondary small-btn filter-reset-btn" type="button">Filter zurücksetzen</button>
         </div>
       </aside>
 
@@ -100,8 +80,7 @@
             <p class="sidebar-label">Sortiment</p>
             <h2 id="products-heading">Verfügbare Artikel</h2>
           </div>
-
-          <!-- Mobile: Filter-Toggle-Button (im Topbar, nur ganz oben sichtbar) -->
+          <!-- Topbar-Filter-Button: nur ganz oben sichtbar (vor erstem Scroll) -->
           <button
             id="filter-toggle-btn"
             class="filter-toggle-btn secondary"
@@ -120,33 +99,22 @@
           </button>
         </div>
 
-        <!-- Aktive Filter als Chips unter dem Topbar -->
         <div id="active-filter-bar" class="active-filter-bar hidden"></div>
 
         <div class="shop-main-layout">
           <div class="shop-main-products">
-            <div id="products-list" class="products-grid">
-              <!-- Produkte werden per app.js eingefügt -->
-            </div>
+            <div id="products-list" class="products-grid"></div>
             <p id="products-empty" class="products-empty hidden">Keine Produkte für diese Filter.</p>
           </div>
 
-          <!-- Desktop: Warenkorb als Sidebar -->
           <aside class="shop-cart-sidebar" id="cart-desktop-slot">
             <section class="card cart-card hidden" id="cart-section">
-              <div class="section-head">
-                <h2>Warenkorb</h2>
-              </div>
-
-              <div id="cart-list" class="cart-list">
-                <!-- Warenkorb-Elemente werden per app.js eingefügt -->
-              </div>
-
+              <div class="section-head"><h2>Warenkorb</h2></div>
+              <div id="cart-list" class="cart-list"></div>
               <div class="cart-footer">
                 <p id="cart-total" class="price"></p>
                 <button id="submit-order-btn" type="button">Bestellung absenden</button>
               </div>
-
               <p id="order-message" class="message"></p>
             </section>
           </aside>
@@ -154,7 +122,7 @@
       </section>
     </section>
 
-    <!-- Mobile Filter FAB — scroll-aware floating pill -->
+    <!-- Filter FAB: floating pill, erscheint beim Hochscrollen -->
     <button
       id="filter-fab"
       class="filter-fab"
@@ -172,12 +140,9 @@
       <span id="filter-fab-count" class="filter-fab-count hidden">0</span>
     </button>
 
-    <!-- Mobile Cart Drawer — Bottom Sheet -->
+    <!-- Mobile Cart Drawer -->
     <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
-
-      <!-- Drag Handle -->
       <div class="cart-drawer-handle" aria-hidden="true"></div>
-
       <div class="cart-drawer-header">
         <div class="cart-drawer-header-row">
           <div class="cart-drawer-title-row">
@@ -185,19 +150,14 @@
             <span id="cart-drawer-item-count" class="cart-drawer-count">0</span>
           </div>
           <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
       </div>
-
-      <div class="cart-drawer-body">
-        <!-- Inhalt wird per JS gespiegelt -->
-      </div>
-
+      <div class="cart-drawer-body"></div>
       <div class="cart-drawer-footer">
         <div class="cart-drawer-footer-total">
           <span class="cart-drawer-total-label">Gesamt</span>
@@ -208,15 +168,33 @@
       </div>
     </div>
 
-    <!-- Mobile Filter Drawer (Left Sheet) -->
+    <!-- Mobile Filter Drawer -->
     <div id="filter-drawer" class="filter-drawer" aria-hidden="true" role="dialog" aria-label="Filter">
       <div class="filter-drawer-header">
         <h2 class="filter-drawer-title">Filter</h2>
         <button id="filter-drawer-close" class="cart-drawer-close" type="button" aria-label="Filter schließen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-               stroke-linecap="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
+      <div class="filter-drawer-body">
+        <div class="filter-drawer-section">
+          <p class="sidebar-label">Kategorie</p>
+          <div class="filter-chip-list" id="filter-chips-category-mobile"></div>
+        </div>
+        <div class="filter-drawer-section">
+          <p class="sidebar-label">Lieferant</p>
+          <div class="filter-chip-list" id="filter-chips-supplier-mobile"></div>
+        </div>
+      </div>
+      <div class="filter-drawer-footer">
+        <button id="filter-reset-btn-mobile" class="secondary filter-reset-btn" type="button">Filter zurücksetzen</button>
+        <button id="filter-apply-btn" type="button">Anwenden</button>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>
