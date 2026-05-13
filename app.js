@@ -84,7 +84,7 @@ if (openCheckoutBtn) openCheckoutBtn.addEventListener("click", openCheckout);
 if (checkoutBackBtn) checkoutBackBtn.addEventListener("click", closeCheckout);
 
 // Mobile Drawer "Zur Bestellübersicht" öffnet jetzt den Checkout
-cartDrawerSubmit.addEventListener("click", () => { openCheckout(); });
+if (cartDrawerSubmit) cartDrawerSubmit.addEventListener("click", () => { openCheckout(); });
 
 // ============================================================
 // RENDER CHECKOUT
