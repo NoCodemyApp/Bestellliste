@@ -189,10 +189,9 @@
               <div id="cart-list" class="cart-list"></div>
               <div class="cart-footer">
                 <p id="cart-total" class="price"></p>
-                <!-- Checkout-Button ersetzt den alten Bestellung-absenden-Button -->
+                <!-- Bug 1 fix: order-message hier entfernt (war doppelte ID) -->
                 <button id="open-checkout-btn" type="button" class="btn-checkout-open">Zur Bestellübersicht →</button>
               </div>
-              <p id="order-message" class="message"></p>
             </section>
           </aside>
         </div>
@@ -240,6 +239,7 @@
                 <span id="checkout-total">0,00 €</span>
               </div>
               <button id="submit-order-btn" type="button" class="btn-primary btn-full checkout-submit-btn">Bestellung absenden</button>
+              <!-- Bug 1 fix: order-message nur noch hier (eindeutige ID) -->
               <p id="order-message" class="message"></p>
             </div>
           </aside>
