@@ -189,13 +189,62 @@
               <div id="cart-list" class="cart-list"></div>
               <div class="cart-footer">
                 <p id="cart-total" class="price"></p>
-                <button id="submit-order-btn" type="button">Bestellung absenden</button>
+                <!-- Checkout-Button ersetzt den alten Bestellung-absenden-Button -->
+                <button id="open-checkout-btn" type="button" class="btn-checkout-open">Zur Bestellübersicht →</button>
               </div>
               <p id="order-message" class="message"></p>
             </section>
           </aside>
         </div>
       </section>
+    </section>
+
+    <!-- ======================================================
+         CHECKOUT FULLSCREEN
+    ====================================================== -->
+    <section id="checkout-section" class="checkout-section hidden" aria-label="Bestellübersicht">
+      <div class="checkout-inner">
+
+        <!-- Checkout Header -->
+        <div class="checkout-header">
+          <button id="checkout-back-btn" type="button" class="checkout-back-btn" aria-label="Zurück zum Shop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+            Zurück
+          </button>
+          <div class="checkout-header-title">
+            <p class="sidebar-label">Schritt 2 von 2</p>
+            <h2>Bestellübersicht</h2>
+          </div>
+        </div>
+
+        <!-- Checkout Body -->
+        <div class="checkout-body">
+          <div class="checkout-items-wrap">
+            <div id="checkout-list" class="checkout-list"></div>
+            <p id="checkout-empty" class="products-empty hidden">Dein Warenkorb ist leer.</p>
+          </div>
+
+          <!-- Checkout Zusammenfassung -->
+          <aside class="checkout-summary">
+            <div class="checkout-summary-card">
+              <h3 class="checkout-summary-title">Zusammenfassung</h3>
+              <div class="checkout-summary-row">
+                <span>Artikel</span>
+                <span id="checkout-item-count">0</span>
+              </div>
+              <div class="checkout-summary-row checkout-summary-total">
+                <span>Gesamt</span>
+                <span id="checkout-total">0,00 €</span>
+              </div>
+              <button id="submit-order-btn" type="button" class="btn-primary btn-full checkout-submit-btn">Bestellung absenden</button>
+              <p id="order-message" class="message"></p>
+            </div>
+          </aside>
+        </div>
+      </div>
     </section>
 
     <!-- ======================================================
@@ -242,7 +291,8 @@
           <span class="cart-drawer-total-label">Gesamt</span>
           <p id="cart-drawer-total" class="cart-drawer-total-text"></p>
         </div>
-        <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Bestellung absenden</button>
+        <!-- Mobile: Zur Bestellübersicht statt direkt absenden -->
+        <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Zur Bestellübersicht →</button>
         <p id="cart-drawer-message" class="message"></p>
       </div>
     </div>
