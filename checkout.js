@@ -220,6 +220,8 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
   const accessToken = sessionData?.session?.access_token;
   if (!accessToken) throw new Error("Kein Access Token gefunden.");
 
+  // recipientEmail wird NICHT mehr im Frontend übergeben.
+  // Die Edge Function liest ADMIN_EMAIL aus dem Supabase Secret.
   const response = await fetch("https://fniweelbmnsrdmotkmzu.supabase.co/functions/v1/resend-email", {
     method: "POST",
     headers: {
@@ -227,7 +229,7 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
       "Authorization": `Bearer ${accessToken}`,
       "apikey": SUPABASE_ANON_KEY
     },
-    body: JSON.stringify({ orderId, recipientEmail: "bastian-jonas@gmx.net" })
+    body: JSON.stringify({ orderId })
   });
 
   const rawText = await response.text();
