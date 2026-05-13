@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./tokens.css">
+  <link rel="stylesheet" href="./auth.css">
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./checkout.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -32,7 +34,6 @@
         </div>
         <div class="header-brand-text">
           <span class="header-title">Vereinsbestellung</span>
-          <!-- User-Menu-Button — nur sichtbar wenn eingeloggt -->
           <button
             id="user-menu-btn"
             class="user-menu-btn hidden"
@@ -46,7 +47,6 @@
               <path d="M4 6l4 4 4-4"/>
             </svg>
           </button>
-          <!-- User-Dropdown — direkt unter dem Button im selben Kontext -->
           <div id="user-dropdown" class="user-dropdown" aria-hidden="true">
             <div class="user-dropdown-email" id="user-dropdown-email"></div>
             <div class="user-dropdown-divider"></div>

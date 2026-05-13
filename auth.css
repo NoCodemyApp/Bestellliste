@@ -1,0 +1,83 @@
+/* ============================================================
+   BESTELLLISTE — Auth Styles
+   Nur für Login / Registrierung relevant
+   ============================================================ */
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - var(--header-h));
+  padding: var(--sp-8) var(--sp-4);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-8);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-logo {
+  color: var(--accent);
+  margin-bottom: var(--sp-5);
+}
+
+.auth-headline {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: var(--sp-2);
+}
+
+.auth-sub {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: var(--sp-6);
+}
+
+.auth-form { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+.form-field { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-5) 0;
+  color: var(--faint);
+  font-size: var(--text-xs);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-message {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.auth-message:empty { display: none; }

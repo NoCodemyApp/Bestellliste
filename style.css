@@ -1,81 +1,8 @@
 /* ============================================================
    BESTELLLISTE — 2026 Design Standard
    Dark Mode · Mobile-First · Inter
+   Tokens → tokens.css | Auth → auth.css
    ============================================================ */
-
-:root {
-  /* Surfaces */
-  --bg:              #0c0d0f;
-  --surface:         #141618;
-  --surface-2:       #1a1d21;
-  --surface-3:       #20242a;
-  --surface-4:       #272c34;
-  --surface-glass:   rgba(20, 22, 24, 0.85);
-
-  /* Text */
-  --text:            #f0f2f5;
-  --muted:           #8b939f;
-  --faint:           #454d57;
-  --text-inverse:    #0c0d0f;
-
-  /* Borders */
-  --border:          rgba(255,255,255,0.08);
-  --border-strong:   rgba(255,255,255,0.14);
-
-  /* Accent — warm amber */
-  --accent:          #f4b158;
-  --accent-hover:    #ffbf69;
-  --accent-dim:      rgba(244,177,88,0.12);
-  --accent-dim-2:    rgba(244,177,88,0.22);
-
-  /* Semantic */
-  --danger:          #e05569;
-  --danger-hover:    #f0687a;
-  --success:         #6fcf8b;
-
-  /* Radius */
-  --radius-xs:       6px;
-  --radius-sm:       10px;
-  --radius:          14px;
-  --radius-lg:       18px;
-  --radius-xl:       24px;
-  --radius-full:     9999px;
-
-  /* Shadows */
-  --shadow-sm:       0 1px 3px rgba(0,0,0,0.4);
-  --shadow:          0 8px 24px rgba(0,0,0,0.5);
-  --shadow-lg:       0 20px 48px rgba(0,0,0,0.6);
-  --shadow-drawer:   0 -6px 40px rgba(0,0,0,0.55), 0 -1px 6px rgba(0,0,0,0.3);
-  --shadow-drawer-left: 6px 0 40px rgba(0,0,0,0.55), 1px 0 6px rgba(0,0,0,0.3);
-  --shadow-fab:      0 6px 24px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
-
-  /* Fluid type */
-  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
-  --text-sm:   clamp(0.8125rem, 0.78rem + 0.2vw,  0.9375rem);
-  --text-base: clamp(0.9375rem, 0.9rem  + 0.2vw,  1rem);
-  --text-lg:   clamp(1rem,      0.95rem + 0.35vw,  1.25rem);
-  --text-xl:   clamp(1.25rem,   1.1rem  + 0.7vw,   1.75rem);
-  --text-2xl:  clamp(1.5rem,    1.2rem  + 1vw,     2.25rem);
-
-  /* 4px spacing */
-  --sp-1: 0.25rem;  --sp-2: 0.5rem;  --sp-3: 0.75rem;  --sp-4: 1rem;
-  --sp-5: 1.25rem;  --sp-6: 1.5rem;  --sp-8: 2rem;
-  --sp-10: 2.5rem;  --sp-12: 3rem;
-
-  /* Layout */
-  --header-h:        64px;
-  --drawer-radius:   22px;
-  --drawer-max-h:    92dvh;
-  --filter-drawer-w: min(320px, 82vw);
-
-  /* Motion */
-  --ease-spring:   cubic-bezier(0.32, 0.72, 0, 1);
-  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
-  --dur-fast:      160ms;
-  --dur-mid:       260ms;
-  --dur-slow:      360ms;
-}
 
 /* ============================================================
    RESET
@@ -134,7 +61,6 @@ ul[role="list"] { list-style: none; }
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
-  /* Höhe wird durch Inhalt bestimmt — kein min-height, kein festes px */
 }
 
 .header-inner {
@@ -144,11 +70,9 @@ ul[role="list"] { list-style: none; }
   gap: var(--sp-3);
   max-width: 1500px;
   margin: 0 auto;
-  /* Padding oben/unten explizit, damit Mobile stabil bleibt */
   padding: var(--sp-3) var(--sp-4);
 }
 
-/* Brand: Logo + Text-Block nebeneinander */
 .header-brand {
   display: flex;
   align-items: center;
@@ -164,13 +88,12 @@ ul[role="list"] { list-style: none; }
   flex-shrink: 0;
 }
 
-/* Text-Block: Titel oben, User-Button darunter */
 .header-brand-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  position: relative; /* Anker für .user-dropdown */
+  position: relative;
 }
 
 .header-title {
@@ -182,7 +105,6 @@ ul[role="list"] { list-style: none; }
   line-height: 1.2;
 }
 
-/* User-Menu-Button — kleiner Sub-Button unter dem Titel */
 .user-menu-btn {
   display: inline-flex;
   align-items: center;
@@ -203,7 +125,6 @@ ul[role="list"] { list-style: none; }
     background var(--dur-fast) ease,
     border-color var(--dur-fast) ease,
     color var(--dur-fast) ease;
-  /* Überschreibt globales button-Styling */
   height: auto;
   width: fit-content;
   letter-spacing: 0;
@@ -243,7 +164,6 @@ ul[role="list"] { list-style: none; }
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* Actions: Cart-Button fest rechts */
 .header-actions {
   display: flex;
   align-items: center;
@@ -251,7 +171,6 @@ ul[role="list"] { list-style: none; }
   flex-shrink: 0;
 }
 
-/* Cart-Button */
 .cart-btn {
   position: relative;
   display: inline-flex;
@@ -270,7 +189,6 @@ ul[role="list"] { list-style: none; }
     background var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) ease,
     transform var(--dur-fast) var(--ease-out);
-  /* Globales min-height überschreiben */
   min-height: 0;
   box-shadow: none;
 }
@@ -299,12 +217,10 @@ ul[role="list"] { list-style: none; }
   border: 2px solid var(--bg);
 }
 
-/* Cart-Button auf Desktop ausblenden — Warenkorb ist dort Sidebar */
 @media (min-width: 1024px) {
   .cart-btn { display: none !important; }
 }
 
-/* Badge-Animation */
 @keyframes badgePop {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.45); }
@@ -398,56 +314,56 @@ ul[role="list"] { list-style: none; }
 .user-dropdown-logout:active { transform: scale(0.97) !important; opacity: 1; }
 
 /* ============================================================
-   AUTH SECTION — 2026
+   MAIN LAYOUT
    ============================================================ */
 
-.auth-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100dvh - var(--header-h));
-  padding: var(--sp-8) var(--sp-4);
+.page {
+  width: min(1500px, 100% - 2 * var(--sp-4));
+  margin: var(--sp-5) auto var(--sp-12);
 }
 
-.auth-card {
-  width: 100%;
-  max-width: 420px;
+@media (min-width: 768px) {
+  .page { margin-top: var(--sp-6); }
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: var(--sp-8);
-  box-shadow: var(--shadow-lg);
-}
-
-.auth-logo {
-  color: var(--accent);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  box-shadow: var(--shadow);
   margin-bottom: var(--sp-5);
 }
 
-.auth-headline {
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  margin-bottom: var(--sp-2);
+@media (min-width: 640px) {
+  .card { padding: var(--sp-5) var(--sp-6); }
 }
 
-.auth-sub {
-  font-size: var(--text-sm);
+.section-head {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+
+.section-head h2 { margin: 0; }
+
+.message {
+  margin-top: var(--sp-3);
   color: var(--muted);
-  line-height: 1.55;
-  margin-bottom: var(--sp-6);
-}
-
-.auth-form { display: flex; flex-direction: column; gap: var(--sp-4); }
-
-.form-field { display: flex; flex-direction: column; gap: var(--sp-2); }
-
-.form-label {
+  min-height: 20px;
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text);
 }
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
 
 input {
   display: block;
@@ -471,6 +387,48 @@ input:focus {
   border-color: var(--accent);
   background: var(--surface-3);
   box-shadow: 0 0 0 3px rgba(244,177,88,0.12);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  background: var(--accent);
+  color: #111;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  min-height: 44px;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+}
+
+button:active { transform: translateY(0) scale(0.98); opacity: 1; }
+
+button.secondary {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+@media (hover: hover) {
+  button.secondary:hover { background: var(--surface-4); }
 }
 
 .btn-primary {
@@ -536,127 +494,6 @@ input:focus {
 .btn-outline:active { transform: scale(0.97); opacity: 1; }
 
 .btn-full { width: 100%; }
-
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin: var(--sp-5) 0;
-  color: var(--faint);
-  font-size: var(--text-xs);
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.auth-message {
-  margin-top: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: var(--text-sm);
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-}
-
-.auth-message:empty { display: none; }
-
-/* ============================================================
-   MAIN LAYOUT
-   ============================================================ */
-
-.page {
-  width: min(1500px, 100% - 2 * var(--sp-4));
-  margin: var(--sp-5) auto var(--sp-12);
-}
-
-@media (min-width: 768px) {
-  .page { margin-top: var(--sp-6); }
-}
-
-/* ============================================================
-   CARDS (Warenkorb etc.)
-   ============================================================ */
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--sp-4);
-  box-shadow: var(--shadow);
-  margin-bottom: var(--sp-5);
-}
-
-@media (min-width: 640px) {
-  .card { padding: var(--sp-5) var(--sp-6); }
-}
-
-.section-head {
-  display: flex;
-  gap: var(--sp-3);
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-bottom: var(--sp-4);
-}
-
-.section-head h2 { margin: 0; }
-
-.message {
-  margin-top: var(--sp-3);
-  color: var(--muted);
-  min-height: 20px;
-  font-size: var(--text-sm);
-}
-
-/* ============================================================
-   BUTTONS (shop/cart context)
-   ============================================================ */
-
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 12px 16px;
-  background: var(--accent);
-  color: #111;
-  cursor: pointer;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-height: 44px;
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
-  white-space: nowrap;
-}
-
-@media (hover: hover) {
-  button:hover { background: var(--accent-hover); transform: translateY(-1px); }
-}
-
-button:active { transform: translateY(0) scale(0.98); opacity: 1; }
-
-button.secondary {
-  background: var(--surface-3);
-  color: var(--text);
-  border-color: var(--border-strong);
-}
-
-@media (hover: hover) {
-  button.secondary:hover { background: var(--surface-4); }
-}
 
 .small-btn {
   padding: 8px 12px;
@@ -1540,10 +1377,8 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   min-height: 44px;
   border-radius: var(--radius-full);
 
-  /* Accent-Rahmen wie "In den Warenkorb" Buttons */
   border: 1.5px solid var(--accent);
 
-  /* Glassmorphism */
   background: rgba(26, 29, 33, 0.92);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -1583,7 +1418,6 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   transform: translateX(-50%) translateY(16px) scale(0.95);
 }
 
-/* Aktiv: Filter gesetzt */
 .filter-fab.filter-fab--active {
   background: rgba(244,177,88,0.15);
   border-color: var(--accent);
