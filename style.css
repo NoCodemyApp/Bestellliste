@@ -170,6 +170,7 @@ ul[role="list"] { list-style: none; }
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  position: relative; /* Anker für .user-dropdown */
 }
 
 .header-title {
@@ -318,9 +319,8 @@ ul[role="list"] { list-style: none; }
 
 .user-dropdown {
   position: absolute;
-  /* Direkt unter dem Header — wird per JS gesetzt oder via top: 100% */
-  top: 100%;
-  left: var(--sp-4);
+  top: calc(100% + var(--sp-2));
+  left: 0;
   z-index: 200;
   min-width: 220px;
   max-width: 280px;
@@ -349,9 +349,6 @@ ul[role="list"] { list-style: none; }
     transform   var(--dur-fast) var(--ease-out),
     visibility  0s linear 0s;
 }
-
-/* Muss position: relative haben damit absolute funktioniert */
-.header { position: sticky; }
 
 .user-dropdown-email {
   padding: var(--sp-2) var(--sp-3);
