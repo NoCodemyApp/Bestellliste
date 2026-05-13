@@ -138,6 +138,7 @@ document.addEventListener("keydown", e => {
     closeCartDrawer();
     closeFilterDrawer();
     closeGroupOrderModal();
+    closeEditModal();
     if (!checkoutSection.classList.contains("hidden")) closeCheckout();
   }
 });
@@ -352,203 +353,6 @@ async function getCurrentUser() {
   const { data: { user }, error } = await db.auth.getUser();
   if (error) return null;
   return user;
-}
-
-// ============================================================
-// SAMMELBESTELLUNG MODAL
-// ============================================================
-
-const goModalOverlay = document.getElementById("group-order-modal-overlay");
-const goModalClose   = document.getElementById("go-modal-close");
-const goModalCancel  = document.getElementById("go-modal-cancel");
-const goModalConfirm = document.getElementById("go-modal-confirm");
-const goDeadlineInput = document.getElementById("go-deadline-input");
-const goModalMessage  = document.getElementById("go-modal-message");
-
-function openGroupOrderModal() {
-  // Setze Mindest-Datetime auf jetzt (lokale Zeit)
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  goDeadlineInput.min = now.toISOString().slice(0, 16);
-  goDeadlineInput.value = "";
-  goModalMessage.textContent = "";
-  goModalOverlay.classList.remove("hidden");
-  goDeadlineInput.focus();
-}
-
-function closeGroupOrderModal() {
-  goModalOverlay.classList.add("hidden");
-}
-
-goModalClose?.addEventListener("click", closeGroupOrderModal);
-goModalCancel?.addEventListener("click", closeGroupOrderModal);
-goModalOverlay?.addEventListener("click", (e) => {
-  if (e.target === goModalOverlay) closeGroupOrderModal();
-});
-
-goModalConfirm?.addEventListener("click", async () => {
-  const val = goDeadlineInput.value;
-  if (!val) {
-    goModalMessage.textContent = "Bitte eine Deadline wählen.";
-    goModalMessage.style.color = "#a12c45";
-    return;
-  }
-
-  const deadline = new Date(val);
-  if (isNaN(deadline.getTime()) || deadline <= new Date()) {
-    goModalMessage.textContent = "Deadline muss in der Zukunft liegen.";
-    goModalMessage.style.color = "#a12c45";
-    return;
-  }
-
-  const user = await getCurrentUser();
-  if (!user) {
-    goModalMessage.textContent = "Du musst eingeloggt sein.";
-    goModalMessage.style.color = "#a12c45";
-    return;
-  }
-
-  goModalConfirm.disabled = true;
-  goModalConfirm.textContent = "Wird erstellt...";
-
-  const { error } = await db.from("group_orders").insert({
-    created_by: user.id,
-    deadline: deadline.toISOString(),
-    status: "open",
-  });
-
-  goModalConfirm.disabled = false;
-  goModalConfirm.textContent = "Eröffnen";
-
-  if (error) {
-    goModalMessage.textContent = "Fehler: " + error.message;
-    goModalMessage.style.color = "#a12c45";
-    return;
-  }
-
-  closeGroupOrderModal();
-  await loadActiveGroupOrder();
-});
-
-// ============================================================
-// SAMMELBESTELLUNG BANNER
-// ============================================================
-
-let activeGroupOrder = null;
-let groupOrderChannel = null;
-
-async function loadActiveGroupOrder() {
-  const { data, error } = await db
-    .from("group_orders")
-    .select("id, deadline, status, created_by, created_at")
-    .eq("status", "open")
-    .gt("deadline", new Date().toISOString())
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) { console.error("Fehler beim Laden der Sammelbestellung:", error.message); return; }
-  activeGroupOrder = data || null;
-  renderGroupOrderBanner();
-}
-
-function renderGroupOrderBanner() {
-  let banner = document.getElementById("group-order-banner");
-
-  if (!activeGroupOrder) {
-    // Kein aktiver Group Order: Banner entfernen, "Eröffnen"-Button zeigen
-    if (banner) banner.remove();
-    renderCreateGroupOrderButton();
-    return;
-  }
-
-  // Banner entfernen falls vorhanden (wird neu gebaut)
-  if (banner) banner.remove();
-
-  // "Eröffnen"-Button entfernen wenn Banner aktiv
-  const createBtn = document.getElementById("group-order-create-btn");
-  if (createBtn) createBtn.remove();
-
-  const deadline = new Date(activeGroupOrder.deadline);
-  const now = new Date();
-  const diffMs = deadline - now;
-  const diffH  = Math.floor(diffMs / 1000 / 60 / 60);
-  const diffM  = Math.floor((diffMs / 1000 / 60) % 60);
-  const deadlineStr = deadline.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
-
-  const countdownText = diffMs > 0
-    ? (diffH > 0 ? `Noch ${diffH} Std. ${diffM} Min.` : `Noch ${diffM} Min.`)
-    : "Läuft gleich ab";
-
-  banner = document.createElement("div");
-  banner.id = "group-order-banner";
-  banner.className = "group-order-banner";
-  banner.innerHTML = `
-    <span class="go-banner-text">
-      🛒 <strong>Sammelbestellung läuft!</strong>
-      Deadline: ${deadlineStr} — ${countdownText}
-    </span>
-    <button id="group-order-join-btn" class="go-banner-btn">Mitmachen</button>
-  `;
-
-  const ref = productsSection || document.body;
-  ref.parentNode.insertBefore(banner, ref);
-
-  document.getElementById("group-order-join-btn")?.addEventListener("click", joinGroupOrder);
-}
-
-function renderCreateGroupOrderButton() {
-  if (document.getElementById("group-order-create-btn")) return;
-
-  const btn = document.createElement("div");
-  btn.id = "group-order-create-btn";
-  btn.className = "group-order-create-bar";
-  btn.innerHTML = `
-    <button type="button" class="go-create-btn">
-      + Sammelbestellung eröffnen
-    </button>
-  `;
-
-  const ref = productsSection || document.body;
-  ref.parentNode.insertBefore(btn, ref);
-
-  btn.querySelector(".go-create-btn").addEventListener("click", openGroupOrderModal);
-}
-
-async function joinGroupOrder() {
-  if (!activeGroupOrder) return;
-  const user = await getCurrentUser();
-  if (!user) { alert("Du musst eingeloggt sein, um mitzumachen."); return; }
-
-  const { data: userOrders, error: fetchError } = await db
-    .from("orders")
-    .select("id")
-    .eq("user_id", user.id)
-    .is("group_order_id", null);
-
-  if (fetchError) { alert("Fehler: " + fetchError.message); return; }
-
-  if (!userOrders || userOrders.length === 0) {
-    alert("Du hast noch keine offene Bestellung, die zur Sammelbestellung hinzugefügt werden kann.");
-    return;
-  }
-
-  const orderIds = userOrders.map(o => o.id);
-  const { error: updateError } = await db
-    .from("orders")
-    .update({ group_order_id: activeGroupOrder.id })
-    .in("id", orderIds);
-
-  if (updateError) { alert("Fehler beim Beitreten: " + updateError.message); return; }
-  alert(`Du nimmst jetzt an der Sammelbestellung teil! (${orderIds.length} Bestellung(en) zugewiesen)`);
-}
-
-function subscribeGroupOrders() {
-  if (groupOrderChannel) db.removeChannel(groupOrderChannel);
-  groupOrderChannel = db
-    .channel("group_orders_realtime")
-    .on("postgres_changes", { event: "*", schema: "public", table: "group_orders" }, () => loadActiveGroupOrder())
-    .subscribe();
 }
 
 // ============================================================
@@ -855,8 +659,7 @@ async function updateUI() {
     document.getElementById("user-dropdown-email").textContent = session.user.email || "";
     await loadProducts();
     await loadCart();
-    await loadActiveGroupOrder();
-    subscribeGroupOrders();
+    await initGroupOrders();
   } else {
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
@@ -871,12 +674,7 @@ async function updateUI() {
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: null, supplier: null };
-    activeGroupOrder = null;
-    const banner = document.getElementById("group-order-banner");
-    if (banner) banner.remove();
-    const createBar = document.getElementById("group-order-create-btn");
-    if (createBar) createBar.remove();
-    if (groupOrderChannel) { db.removeChannel(groupOrderChannel); groupOrderChannel = null; }
+    teardownGroupOrders();
   }
 }
 
