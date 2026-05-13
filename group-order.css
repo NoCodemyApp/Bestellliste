@@ -1,0 +1,140 @@
+/* ============================================================
+   SAMMELBESTELLUNG — Banner, Create-Bar, Modal
+============================================================ */
+
+/* Banner (aktive Sammelbestellung) */
+.group-order-banner {
+  background: #01696f;
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: inherit;
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.go-banner-text { flex: 1; min-width: 0; }
+
+.go-banner-btn {
+  background: #fff;
+  color: #01696f;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms, color 150ms;
+}
+.go-banner-btn:hover {
+  background: #e6f2f2;
+}
+
+/* Create-Bar (wenn keine Sammelbestellung aktiv) */
+.group-order-create-bar {
+  background: var(--color-surface, #f9f8f5);
+  border-bottom: 1px solid var(--color-border, #d4d1ca);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.go-create-btn {
+  background: none;
+  border: 1.5px solid #01696f;
+  color: #01696f;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+  font-family: inherit;
+}
+.go-create-btn:hover {
+  background: #01696f;
+  color: #fff;
+}
+
+/* Modal Overlay */
+.go-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.go-modal-overlay.hidden {
+  display: none;
+}
+
+/* Modal Box */
+.go-modal {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  padding: 0;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.go-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.go-modal-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text, #28251d);
+}
+
+.go-modal-body {
+  padding: 16px 24px;
+}
+
+.go-modal-desc {
+  font-size: 14px;
+  color: var(--color-text-muted, #7a7974);
+  margin-bottom: 16px;
+}
+
+.go-deadline-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--color-border, #d4d1ca);
+  border-radius: 7px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--color-bg, #f7f6f2);
+  color: var(--color-text, #28251d);
+  transition: border-color 150ms;
+}
+.go-deadline-input:focus {
+  outline: none;
+  border-color: #01696f;
+}
+
+.go-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 24px 20px;
+  border-top: 1px solid var(--color-divider, #dcd9d5);
+}

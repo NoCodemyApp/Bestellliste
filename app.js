@@ -137,6 +137,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     closeCartDrawer();
     closeFilterDrawer();
+    closeGroupOrderModal();
     if (!checkoutSection.classList.contains("hidden")) closeCheckout();
   }
 });
@@ -354,11 +355,87 @@ async function getCurrentUser() {
 }
 
 // ============================================================
+// SAMMELBESTELLUNG MODAL
+// ============================================================
+
+const goModalOverlay = document.getElementById("group-order-modal-overlay");
+const goModalClose   = document.getElementById("go-modal-close");
+const goModalCancel  = document.getElementById("go-modal-cancel");
+const goModalConfirm = document.getElementById("go-modal-confirm");
+const goDeadlineInput = document.getElementById("go-deadline-input");
+const goModalMessage  = document.getElementById("go-modal-message");
+
+function openGroupOrderModal() {
+  // Setze Mindest-Datetime auf jetzt (lokale Zeit)
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  goDeadlineInput.min = now.toISOString().slice(0, 16);
+  goDeadlineInput.value = "";
+  goModalMessage.textContent = "";
+  goModalOverlay.classList.remove("hidden");
+  goDeadlineInput.focus();
+}
+
+function closeGroupOrderModal() {
+  goModalOverlay.classList.add("hidden");
+}
+
+goModalClose?.addEventListener("click", closeGroupOrderModal);
+goModalCancel?.addEventListener("click", closeGroupOrderModal);
+goModalOverlay?.addEventListener("click", (e) => {
+  if (e.target === goModalOverlay) closeGroupOrderModal();
+});
+
+goModalConfirm?.addEventListener("click", async () => {
+  const val = goDeadlineInput.value;
+  if (!val) {
+    goModalMessage.textContent = "Bitte eine Deadline wählen.";
+    goModalMessage.style.color = "#a12c45";
+    return;
+  }
+
+  const deadline = new Date(val);
+  if (isNaN(deadline.getTime()) || deadline <= new Date()) {
+    goModalMessage.textContent = "Deadline muss in der Zukunft liegen.";
+    goModalMessage.style.color = "#a12c45";
+    return;
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    goModalMessage.textContent = "Du musst eingeloggt sein.";
+    goModalMessage.style.color = "#a12c45";
+    return;
+  }
+
+  goModalConfirm.disabled = true;
+  goModalConfirm.textContent = "Wird erstellt...";
+
+  const { error } = await db.from("group_orders").insert({
+    created_by: user.id,
+    deadline: deadline.toISOString(),
+    status: "open",
+  });
+
+  goModalConfirm.disabled = false;
+  goModalConfirm.textContent = "Eröffnen";
+
+  if (error) {
+    goModalMessage.textContent = "Fehler: " + error.message;
+    goModalMessage.style.color = "#a12c45";
+    return;
+  }
+
+  closeGroupOrderModal();
+  await loadActiveGroupOrder();
+});
+
+// ============================================================
 // SAMMELBESTELLUNG BANNER
 // ============================================================
 
-let activeGroupOrder = null; // Hält die aktive Sammelbestellung im State
-let groupOrderChannel = null; // Supabase Realtime Channel
+let activeGroupOrder = null;
+let groupOrderChannel = null;
 
 async function loadActiveGroupOrder() {
   const { data, error } = await db
@@ -370,11 +447,7 @@ async function loadActiveGroupOrder() {
     .limit(1)
     .maybeSingle();
 
-  if (error) {
-    console.error("Fehler beim Laden der Sammelbestellung:", error.message);
-    return;
-  }
-
+  if (error) { console.error("Fehler beim Laden der Sammelbestellung:", error.message); return; }
   activeGroupOrder = data || null;
   renderGroupOrderBanner();
 }
@@ -383,9 +456,18 @@ function renderGroupOrderBanner() {
   let banner = document.getElementById("group-order-banner");
 
   if (!activeGroupOrder) {
+    // Kein aktiver Group Order: Banner entfernen, "Eröffnen"-Button zeigen
     if (banner) banner.remove();
+    renderCreateGroupOrderButton();
     return;
   }
+
+  // Banner entfernen falls vorhanden (wird neu gebaut)
+  if (banner) banner.remove();
+
+  // "Eröffnen"-Button entfernen wenn Banner aktiv
+  const createBtn = document.getElementById("group-order-create-btn");
+  if (createBtn) createBtn.remove();
 
   const deadline = new Date(activeGroupOrder.deadline);
   const now = new Date();
@@ -394,51 +476,43 @@ function renderGroupOrderBanner() {
   const diffM  = Math.floor((diffMs / 1000 / 60) % 60);
   const deadlineStr = deadline.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
 
-  let countdownText = "";
-  if (diffMs > 0) {
-    countdownText = diffH > 0
-      ? `Noch ${diffH} Std. ${diffM} Min.`
-      : `Noch ${diffM} Min.`;
-  } else {
-    countdownText = "Läuft gleich ab";
-  }
+  const countdownText = diffMs > 0
+    ? (diffH > 0 ? `Noch ${diffH} Std. ${diffM} Min.` : `Noch ${diffM} Min.`)
+    : "Läuft gleich ab";
 
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "group-order-banner";
-    banner.style.cssText = [
-      "background:#01696f",
-      "color:#fff",
-      "padding:12px 20px",
-      "display:flex",
-      "align-items:center",
-      "justify-content:space-between",
-      "gap:12px",
-      "flex-wrap:wrap",
-      "font-family:inherit",
-      "font-size:14px",
-      "position:sticky",
-      "top:0",
-      "z-index:100",
-    ].join(";");
-
-    // Banner vor dem products-section einfügen
-    const ref = productsSection || document.body;
-    ref.parentNode.insertBefore(banner, ref);
-  }
-
+  banner = document.createElement("div");
+  banner.id = "group-order-banner";
+  banner.className = "group-order-banner";
   banner.innerHTML = `
-    <span>
+    <span class="go-banner-text">
       🛒 <strong>Sammelbestellung läuft!</strong>
       Deadline: ${deadlineStr} — ${countdownText}
     </span>
-    <button
-      id="group-order-join-btn"
-      style="background:#fff;color:#01696f;border:none;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:13px;"
-    >Mitmachen</button>
+    <button id="group-order-join-btn" class="go-banner-btn">Mitmachen</button>
   `;
 
+  const ref = productsSection || document.body;
+  ref.parentNode.insertBefore(banner, ref);
+
   document.getElementById("group-order-join-btn")?.addEventListener("click", joinGroupOrder);
+}
+
+function renderCreateGroupOrderButton() {
+  if (document.getElementById("group-order-create-btn")) return;
+
+  const btn = document.createElement("div");
+  btn.id = "group-order-create-btn";
+  btn.className = "group-order-create-bar";
+  btn.innerHTML = `
+    <button type="button" class="go-create-btn">
+      + Sammelbestellung eröffnen
+    </button>
+  `;
+
+  const ref = productsSection || document.body;
+  ref.parentNode.insertBefore(btn, ref);
+
+  btn.querySelector(".go-create-btn").addEventListener("click", openGroupOrderModal);
 }
 
 async function joinGroupOrder() {
@@ -446,7 +520,6 @@ async function joinGroupOrder() {
   const user = await getCurrentUser();
   if (!user) { alert("Du musst eingeloggt sein, um mitzumachen."); return; }
 
-  // Alle offenen Orders des Users in die aktive Sammelbestellung einbuchen
   const { data: userOrders, error: fetchError } = await db
     .from("orders")
     .select("id")
@@ -461,51 +534,20 @@ async function joinGroupOrder() {
   }
 
   const orderIds = userOrders.map(o => o.id);
-
   const { error: updateError } = await db
     .from("orders")
     .update({ group_order_id: activeGroupOrder.id })
     .in("id", orderIds);
 
   if (updateError) { alert("Fehler beim Beitreten: " + updateError.message); return; }
-
   alert(`Du nimmst jetzt an der Sammelbestellung teil! (${orderIds.length} Bestellung(en) zugewiesen)`);
 }
 
-async function createGroupOrder() {
-  const user = await getCurrentUser();
-  if (!user) { alert("Du musst eingeloggt sein."); return; }
-
-  // Einfaches Prompt – kann später durch ein Modal ersetzt werden
-  const input = prompt("Deadline für die Sammelbestellung (z. B. 2026-06-01T18:00):  ");
-  if (!input) return;
-
-  const deadline = new Date(input);
-  if (isNaN(deadline.getTime())) { alert("Ungültiges Datum."); return; }
-
-  const { error } = await db.from("group_orders").insert({
-    created_by: user.id,
-    deadline: deadline.toISOString(),
-    status: "open",
-  });
-
-  if (error) { alert("Fehler: " + error.message); return; }
-
-  await loadActiveGroupOrder();
-  alert("Sammelbestellung erstellt!");
-}
-
 function subscribeGroupOrders() {
-  if (groupOrderChannel) {
-    db.removeChannel(groupOrderChannel);
-  }
+  if (groupOrderChannel) db.removeChannel(groupOrderChannel);
   groupOrderChannel = db
     .channel("group_orders_realtime")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "group_orders" },
-      () => { loadActiveGroupOrder(); }
-    )
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_orders" }, () => loadActiveGroupOrder())
     .subscribe();
 }
 
@@ -832,6 +874,8 @@ async function updateUI() {
     activeGroupOrder = null;
     const banner = document.getElementById("group-order-banner");
     if (banner) banner.remove();
+    const createBar = document.getElementById("group-order-create-btn");
+    if (createBar) createBar.remove();
     if (groupOrderChannel) { db.removeChannel(groupOrderChannel); groupOrderChannel = null; }
   }
 }
