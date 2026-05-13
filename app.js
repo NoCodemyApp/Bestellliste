@@ -9,6 +9,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 const authSection     = document.getElementById("auth-section");
 const productsSection = document.getElementById("products-section");
 const cartSection     = document.getElementById("cart-section");
+const checkoutSection = document.getElementById("checkout-section");
 const authForm        = document.getElementById("auth-form");
 const signupBtn       = document.getElementById("signup-btn");
 const logoutBtn       = document.getElementById("logout-btn");
@@ -20,6 +21,14 @@ const submitOrderBtn  = document.getElementById("submit-order-btn");
 const cartTotal       = document.getElementById("cart-total");
 const orderMessage    = document.getElementById("order-message");
 const productsEmpty   = document.getElementById("products-empty");
+
+// Checkout-Elemente
+const openCheckoutBtn  = document.getElementById("open-checkout-btn");
+const checkoutBackBtn  = document.getElementById("checkout-back-btn");
+const checkoutList     = document.getElementById("checkout-list");
+const checkoutEmpty    = document.getElementById("checkout-empty");
+const checkoutTotal    = document.getElementById("checkout-total");
+const checkoutItemCount = document.getElementById("checkout-item-count");
 
 // --- Mobile Cart Drawer ---
 const cartBadgeBtn        = document.getElementById("cart-badge-btn");
@@ -50,6 +59,182 @@ const filterFabCount = document.getElementById("filter-fab-count");
 // Filter State
 let allProducts = [];
 let activeFilters = { category: null, supplier: null };
+
+// ============================================================
+// CHECKOUT VIEW
+// ============================================================
+
+function openCheckout() {
+  productsSection.classList.add("hidden");
+  checkoutSection.classList.remove("hidden");
+  checkoutSection.classList.add("checkout-enter");
+  closeCartDrawer();
+  renderCheckout();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeCheckout() {
+  checkoutSection.classList.add("hidden");
+  checkoutSection.classList.remove("checkout-enter");
+  productsSection.classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+if (openCheckoutBtn) openCheckoutBtn.addEventListener("click", openCheckout);
+if (checkoutBackBtn) checkoutBackBtn.addEventListener("click", closeCheckout);
+
+// Mobile Drawer "Zur Bestellübersicht" öffnet jetzt den Checkout
+if (cartDrawerSubmit) cartDrawerSubmit.addEventListener("click", () => { openCheckout(); });
+
+// ============================================================
+// RENDER CHECKOUT
+// ============================================================
+
+async function renderCheckout() {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const { data, error } = await db
+    .from("cart_items")
+    .select(`id, quantity, product_id, clothing_size_id, weight_size_id,
+             products(id,name,sku,price_brutto,price_netto),
+             sizes_clothing(id,code), sizes_weight(id,code)`)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    checkoutList.innerHTML = "";
+    checkoutEmpty.classList.remove("hidden");
+    checkoutTotal.textContent = "0,00 €";
+    checkoutItemCount.textContent = "0";
+    return;
+  }
+
+  checkoutEmpty.classList.add("hidden");
+
+  let total = 0;
+  let totalItems = 0;
+
+  // Gruppiere nach Produkt
+  const groupedItems = {};
+  data.forEach(item => {
+    const product = item.products || {};
+    const productId = item.product_id;
+    if (!groupedItems[productId]) {
+      groupedItems[productId] = {
+        productId,
+        productName: product.name || "Produkt",
+        productSku: product.sku || null,
+        productPrice: Number(product.price_brutto || 0),
+        items: []
+      };
+    }
+    groupedItems[productId].items.push(item);
+  });
+
+  checkoutList.innerHTML = Object.values(groupedItems).map(group => {
+    const productTotal = group.items.reduce((sum, item) => sum + (group.productPrice * Number(item.quantity || 0)), 0);
+    total += productTotal;
+    totalItems += group.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+    const rowsHtml = group.items.map(item => {
+      const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
+      const lineTotal = group.productPrice * Number(item.quantity || 0);
+      return `<div class="checkout-item-row">
+        <div class="checkout-item-size">${sizeLabel ? `<span class="checkout-size-badge">${sizeLabel}</span>` : "<span class=\"checkout-size-badge checkout-size-badge--none\">Keine Größe</span>"}</div>
+        <div class="checkout-item-qty">
+          <button type="button" class="qty-stepper-btn" data-qty-dec="${item.id}" aria-label="Menge verringern">−</button>
+          <span class="qty-stepper-value" id="qty-val-${item.id}">${item.quantity}</span>
+          <button type="button" class="qty-stepper-btn" data-qty-inc="${item.id}" aria-label="Menge erhöhen">+</button>
+        </div>
+        <div class="checkout-item-price">${formatPrice(lineTotal)}</div>
+        <button type="button" class="remove-btn icon-btn checkout-remove-btn" data-checkout-remove="${item.id}" aria-label="Position entfernen">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+          </svg>
+        </button>
+      </div>`;
+    }).join("");
+
+    return `<article class="checkout-product-group">
+      <div class="checkout-product-header">
+        <div class="checkout-product-name-wrap">
+          <span class="checkout-product-name">${group.productName}</span>
+          ${group.productSku ? `<span class="checkout-product-sku">${group.productSku}</span>` : ""}
+        </div>
+        <span class="checkout-product-total">${formatPrice(productTotal)}</span>
+      </div>
+      <div class="checkout-item-rows">
+        <div class="checkout-item-row checkout-item-row--header">
+          <div class="checkout-item-size">Größe</div>
+          <div class="checkout-item-qty">Menge</div>
+          <div class="checkout-item-price">Preis</div>
+          <div></div>
+        </div>
+        ${rowsHtml}
+      </div>
+    </article>`;
+  }).join("");
+
+  checkoutTotal.textContent = formatPrice(total);
+  checkoutItemCount.textContent = totalItems;
+
+  // Event-Listener für +/− und Löschen
+  checkoutList.querySelectorAll("[data-qty-inc]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-qty-inc");
+      await updateCheckoutItemQty(id, 1);
+    });
+  });
+  checkoutList.querySelectorAll("[data-qty-dec]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-qty-dec");
+      await updateCheckoutItemQty(id, -1);
+    });
+  });
+  checkoutList.querySelectorAll("[data-checkout-remove]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-checkout-remove");
+      await removeCheckoutItem(id);
+    });
+  });
+}
+
+async function updateCheckoutItemQty(cartItemId, delta) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  // Aktuelle Menge aus dem DOM lesen
+  const valEl = document.getElementById(`qty-val-${cartItemId}`);
+  const currentQty = valEl ? Number(valEl.textContent) : 1;
+  const newQty = Math.max(1, currentQty + delta);
+
+  const { error } = await db
+    .from("cart_items")
+    .update({ quantity: newQty })
+    .eq("id", cartItemId)
+    .eq("user_id", user.id);
+
+  if (error) { setOrderMessage(`Fehler beim Aktualisieren: ${error.message}`, true); return; }
+
+  // Parallel Checkout + Cart-Sidebar aktualisieren
+  await Promise.all([renderCheckout(), loadCart()]);
+}
+
+async function removeCheckoutItem(cartItemId) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const { error } = await db
+    .from("cart_items")
+    .delete()
+    .eq("id", cartItemId)
+    .eq("user_id", user.id);
+
+  if (error) { setOrderMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
+
+  await Promise.all([renderCheckout(), loadCart()]);
+}
 
 // ============================================================
 // DRAWER HELPERS
@@ -99,7 +284,14 @@ cartOverlay.addEventListener("click", () => {
   if (filterDrawer.classList.contains("filter-drawer--open")) closeFilterDrawer();
 });
 
-cartBadgeBtn.addEventListener("click", openCartDrawer);
+cartBadgeBtn.addEventListener("click", () => {
+  // Im Checkout-Modus: direkt zum Checkout scrollen statt Drawer öffnen
+  if (!checkoutSection.classList.contains("hidden")) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  openCartDrawer();
+});
 cartDrawerClose.addEventListener("click", closeCartDrawer);
 filterToggleBtn.addEventListener("click", openFilterDrawer);
 filterDrawerClose.addEventListener("click", closeFilterDrawer);
@@ -121,10 +313,12 @@ filterDrawer.addEventListener("touchstart", e => { touchStartX = e.touches[0].cl
 filterDrawer.addEventListener("touchend",   e => { if (touchStartX - e.changedTouches[0].clientX > 60) closeFilterDrawer(); }, { passive: true });
 
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeCartDrawer(); closeFilterDrawer(); }
+  if (e.key === "Escape") {
+    closeCartDrawer();
+    closeFilterDrawer();
+    if (!checkoutSection.classList.contains("hidden")) closeCheckout();
+  }
 });
-
-cartDrawerSubmit.addEventListener("click", async () => { await submitOrder(); });
 
 // ============================================================
 // FILTER FAB - Scroll-aware visibility
@@ -137,6 +331,14 @@ cartDrawerSubmit.addEventListener("click", async () => { await submitOrder(); })
   const THRESHOLD = 80;
 
   function updateFabVisibility() {
+    // FAB nur im Shop anzeigen, nicht im Checkout
+    if (!checkoutSection.classList.contains("hidden")) {
+      filterFab.classList.remove("filter-fab--visible");
+      filterFab.setAttribute("aria-hidden", "true");
+      lastScrollY = window.scrollY;
+      return;
+    }
+
     const currentScrollY = window.scrollY;
     const scrollingUp    = currentScrollY < lastScrollY;
 
@@ -642,6 +844,7 @@ async function updateUI() {
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     cartSection.classList.add("hidden");
+    checkoutSection.classList.add("hidden");
     logoutBtn.classList.add("hidden");
     userBox.textContent = "";
     document.getElementById("user-menu-btn").classList.add("hidden");
@@ -718,6 +921,8 @@ async function submitOrder() {
   if (clearCartError) { setOrderMessage(`Bestellung gespeichert, aber Warenkorb nicht geleert: ${clearCartError.message}`, true); return; }
 
   setOrderMessage(`Bestellung erfolgreich abgesendet. Bestell-ID: ${orderData.id}`);
+  // Nach erfolgreicher Bestellung zurück zum Shop
+  closeCheckout();
   closeCartDrawer();
   await loadCart();
 }
