@@ -15,6 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./app.js"></script>
   <script defer src="./checkout.js"></script>
+  <script defer src="./group-order.js"></script>
 </head>
 <body>
 
@@ -327,34 +328,6 @@
     </div>
 
   </main>
-
-  <!-- ======================================================
-       MODAL: SAMMELBESTELLUNG ERÖFFNEN
-  ====================================================== -->
-  <div id="group-order-modal-overlay" class="go-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="go-modal-title">
-    <div class="go-modal">
-      <div class="go-modal-header">
-        <h2 id="go-modal-title">Sammelbestellung eröffnen</h2>
-        <button type="button" id="go-modal-close" class="cart-drawer-close" aria-label="Modal schließen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" width="20" height="20">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="go-modal-body">
-        <p class="go-modal-desc">Wähle eine Deadline. Bis zu diesem Zeitpunkt können Mitglieder mitmachen.</p>
-        <div class="form-field">
-          <label for="go-deadline-input" class="form-label">Deadline</label>
-          <input type="datetime-local" id="go-deadline-input" class="go-deadline-input">
-        </div>
-        <p id="go-modal-message" class="auth-message"></p>
-      </div>
-      <div class="go-modal-footer">
-        <button type="button" id="go-modal-cancel" class="btn-outline">Abbrechen</button>
-        <button type="button" id="go-modal-confirm" class="btn-primary">Eröffnen</button>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
