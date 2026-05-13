@@ -189,9 +189,8 @@
               <div id="cart-list" class="cart-list"></div>
               <div class="cart-footer">
                 <p id="cart-total" class="price"></p>
-                <button id="open-checkout-btn" type="button">Zur Bestellübersicht →</button>
+                <button id="open-checkout-btn" class="btn-checkout-open" type="button">Zur Bestellübersicht →</button>
               </div>
-              <p id="order-message" class="message"></p>
             </section>
           </aside>
         </div>
@@ -201,19 +200,19 @@
     <!-- ======================================================
          CHECKOUT FULLSCREEN
     ====================================================== -->
-    <section id="checkout-section" class="hidden" aria-label="Bestellübersicht">
+    <section id="checkout-section" class="checkout-section hidden" aria-label="Bestellübersicht">
       <div class="checkout-inner">
 
         <!-- Checkout Header -->
         <div class="checkout-header">
-          <button id="checkout-back-btn" type="button" class="btn-outline" aria-label="Zurück zum Shop">
+          <button id="checkout-back-btn" type="button" class="checkout-back-btn" aria-label="Zurück zum Shop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
               <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
             </svg>
             Zurück zum Shop
           </button>
-          <div>
+          <div class="checkout-header-title">
             <p class="sidebar-label">Schritt 2 von 2</p>
             <h2>Bestellübersicht</h2>
           </div>
@@ -228,18 +227,18 @@
 
           <!-- Checkout Zusammenfassung -->
           <aside class="checkout-summary">
-            <div class="card">
-              <div class="section-head"><h3>Zusammenfassung</h3></div>
+            <div class="checkout-summary-card">
+              <h3 class="checkout-summary-title">Zusammenfassung</h3>
               <div class="checkout-summary-row">
                 <span>Artikel</span>
                 <span id="checkout-item-count">0</span>
               </div>
-              <div class="checkout-summary-row checkout-summary-total">
+              <div class="checkout-summary-total">
                 <span>Gesamt</span>
-                <span id="checkout-total" class="price">0,00 €</span>
+                <span id="checkout-total">0,00 €</span>
               </div>
-              <button id="submit-order-btn" type="button">Bestellung absenden</button>
-              <p id="order-message" class="message"></p>
+              <button id="submit-order-btn" type="button" class="submit-btn checkout-submit-btn">Bestellung absenden</button>
+              <p id="order-message" class="order-message"></p>
             </div>
           </aside>
         </div>
@@ -270,7 +269,9 @@
          MOBILE CART DRAWER
     ====================================================== -->
     <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
-      <div class="cart-drawer-handle" aria-hidden="true"></div>
+      <div class="cart-drawer-handle-wrap" aria-hidden="true">
+        <div class="cart-drawer-handle"></div>
+      </div>
       <div class="cart-drawer-header">
         <div class="cart-drawer-header-row">
           <div class="cart-drawer-title-row">
@@ -291,7 +292,7 @@
           <p id="cart-drawer-total" class="cart-drawer-total-text"></p>
         </div>
         <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Zur Bestellübersicht →</button>
-        <p id="cart-drawer-message" class="message"></p>
+        <p id="cart-drawer-message" class="cart-drawer-message"></p>
       </div>
     </div>
 
@@ -318,8 +319,8 @@
         </div>
       </div>
       <div class="filter-drawer-footer">
-        <button id="filter-reset-btn-mobile" class="secondary filter-reset-btn" type="button">Filter zurücksetzen</button>
-        <button id="filter-apply-btn" type="button">Anwenden</button>
+        <button id="filter-reset-btn-mobile" class="filter-reset-btn btn-outline" type="button">Filter zurücksetzen</button>
+        <button id="filter-apply-btn" class="filter-apply-btn" type="button">Anwenden</button>
       </div>
     </div>
 
