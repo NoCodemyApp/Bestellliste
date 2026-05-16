@@ -216,7 +216,6 @@ async function renderGoSubmittedItems(user) {
   const sess = window.goSession;
   if (!sess) return;
 
-  // Alten Wrap immer erst entfernen, um doppeltes Rendering zu verhindern
   const existingWrap = document.getElementById('go-submitted-wrap');
   if (existingWrap) existingWrap.remove();
 
@@ -243,7 +242,7 @@ async function renderGoSubmittedItems(user) {
     const lineTotal = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
     const sizeText  = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
     const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
-    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}">
+    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}" data-unit-price="${Number(item.unit_price_netto || 0)}">
       <span class="go-submitted-name">
         ${escapeHtml(item.product_name || '')}
         ${item.product_sku ? `<span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}
@@ -266,16 +265,13 @@ async function renderGoSubmittedItems(user) {
     </div>
     <div class="go-submitted-list" id="go-submitted-list">${rowsHtml}</div>`;
 
-  // In Checkout-Body einsetzen
   const checkoutBody = document.querySelector('.checkout-items-wrap') || checkoutList?.parentElement;
   if (checkoutBody) checkoutBody.appendChild(wrap);
 
-  // Event-Delegation für Stepper + Remove
   wrap.addEventListener('click', async (e) => {
     const incBtn    = e.target.closest('[data-go-inc]');
     const decBtn    = e.target.closest('[data-go-dec]');
     const removeBtn = e.target.closest('[data-go-remove]');
-
     if (incBtn)    { await updateGoSubmittedQty(incBtn.getAttribute('data-go-inc'),    1, existing.id); return; }
     if (decBtn)    { await updateGoSubmittedQty(decBtn.getAttribute('data-go-dec'),   -1, existing.id); return; }
     if (removeBtn) { await removeGoSubmittedItem(removeBtn.getAttribute('data-go-remove'), existing.id); }
@@ -290,24 +286,27 @@ async function updateGoSubmittedQty(orderItemId, delta, orderId) {
   try {
     const valEl   = document.getElementById(`go-qty-val-${orderItemId}`);
     const priceEl = document.getElementById(`go-price-val-${orderItemId}`);
-    const currentQty = valEl ? Number(valEl.textContent) : 1;
-    const newQty     = Math.max(1, currentQty + delta);
-    if (valEl) valEl.textContent = String(newQty);
+    const row     = document.querySelector(`[data-go-item-id="${orderItemId}"]`);
+    const currentQty  = valEl ? Number(valEl.textContent) : 1;
+    const unitPrice   = row   ? Number(row.dataset.unitPrice || 0) : 0;
+    const newQty      = Math.max(1, currentQty + delta);
 
-    const { data: itemData, error } = await db.from('order_items')
+    // Optimistisches UI-Update
+    if (valEl)   valEl.textContent   = String(newQty);
+    if (priceEl) priceEl.textContent = formatPrice(unitPrice * newQty);
+
+    // FIX: .maybeSingle() statt .single() — vermeidet "Cannot coerce" wenn RLS
+    // keinen Row zurückgibt (kein Select-Return benötigt, Update reicht)
+    const { error } = await db.from('order_items')
       .update({ quantity: newQty })
-      .eq('id', orderItemId)
-      .select('unit_price_netto')
-      .single();
+      .eq('id', orderItemId);
 
     if (error) {
-      if (valEl) valEl.textContent = String(currentQty);
+      // Rollback
+      if (valEl)   valEl.textContent   = String(currentQty);
+      if (priceEl) priceEl.textContent = formatPrice(unitPrice * currentQty);
       setOrderMessage('Fehler beim Aktualisieren: ' + error.message, true);
       return;
-    }
-    // Preis live aktualisieren
-    if (priceEl && itemData) {
-      priceEl.textContent = formatPrice(Number(itemData.unit_price_netto) * newQty);
     }
     markCheckoutDirty();
   } finally {
@@ -330,7 +329,6 @@ async function removeGoSubmittedItem(orderItemId, orderId) {
     return;
   }
 
-  // Wenn keine Items mehr → Order selbst löschen
   const { count } = await db.from('order_items')
     .select('id', { count: 'exact', head: true })
     .eq('order_id', orderId);
@@ -340,7 +338,6 @@ async function removeGoSubmittedItem(orderItemId, orderId) {
   }
 
   markCheckoutDirty();
-  // Wrap neu rendern
   const user = await getCurrentUser();
   if (user) await renderGoSubmittedItems(user);
   await updateSubmitButtonLabel();
