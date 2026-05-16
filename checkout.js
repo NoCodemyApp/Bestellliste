@@ -38,21 +38,18 @@ if (cartDrawerSubmit) cartDrawerSubmit.addEventListener('click', () => openCheck
 // ============================================================
 
 function updateCartLabelsForGo(supplierName) {
-  // Desktop: Warenkorb-Überschrift im Cart-Section Header
   const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
   if (cartHeadH2) {
     cartHeadH2.innerHTML = `
       <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>
       ${escapeHtml(supplierName)}`;
   }
-  // Mobile Drawer-Title
   const drawerTitle = document.querySelector('.cart-drawer-title');
   if (drawerTitle) {
     drawerTitle.innerHTML = `
       <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>
       ${escapeHtml(supplierName)}`;
   }
-  // Mobile Badge-Button Label (aria-label anpassen)
   const badgeBtn = document.getElementById('cart-badge-btn');
   if (badgeBtn) badgeBtn.setAttribute('aria-label', `Sammelbestellung ${supplierName}`);
 }
@@ -121,8 +118,8 @@ async function renderCheckout() {
     checkoutTotal.textContent = '0,00 €';
     checkoutItemCount.textContent = '0';
     _checkoutSnapshot = null;
-    // Leerer Cart: Button immer aktiv (nichts zu "aktualisieren")
     await updateSubmitButtonLabel();
+    if (window.goSession) await renderGoSubmittedItems(user);
     return;
   }
 
@@ -208,56 +205,145 @@ async function renderCheckout() {
 
   if (window.goSession) await renderGoSubmittedItems(user);
 
-  // Label NACH dem Laden der Daten setzen
   await updateSubmitButtonLabel();
 }
 
 // ============================================================
-// GO SUBMITTED ITEMS
+// GO SUBMITTED ITEMS — inline editable
 // ============================================================
 
 async function renderGoSubmittedItems(user) {
   const sess = window.goSession;
   if (!sess) return;
 
+  // Alten Wrap immer erst entfernen, um doppeltes Rendering zu verhindern
+  const existingWrap = document.getElementById('go-submitted-wrap');
+  if (existingWrap) existingWrap.remove();
+
   const { data: goOrders } = await db.from('orders')
-    .select('id, status').eq('user_id', user.id)
+    .select('id, status')
+    .eq('user_id', user.id)
     .eq('group_order_id', sess.groupOrderId)
-    .eq('status', 'submitted').limit(1);
+    .eq('status', 'submitted')
+    .limit(1);
 
-  let wrap = document.getElementById('go-submitted-wrap');
   const existing = goOrders && goOrders.length > 0 ? goOrders[0] : null;
-
-  if (!existing) { if (wrap) wrap.remove(); return; }
+  if (!existing) return;
 
   const { data: submittedItems } = await db.from('order_items')
     .select('id, quantity, product_name, product_sku, unit_price_netto, size_label')
     .eq('order_id', existing.id);
 
-  if (!submittedItems || submittedItems.length === 0) { if (wrap) wrap.remove(); return; }
+  if (!submittedItems || submittedItems.length === 0) return;
 
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = 'go-submitted-wrap';
-    const checkoutBody = document.querySelector('.checkout-items-wrap');
-    checkoutBody?.appendChild(wrap);
-  }
+  const wrap = document.createElement('div');
+  wrap.id = 'go-submitted-wrap';
 
   const rowsHtml = submittedItems.map(item => {
     const lineTotal = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
-    return `<div class="go-submitted-row">
-      <span class="go-submitted-name">${escapeHtml(item.product_name || '')}${item.product_sku ? ` <span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}</span>
-      <span class="go-submitted-meta">${item.size_label ? escapeHtml(item.size_label) + ' · ' : ''}${Number(item.quantity)}&times;</span>
-      <span class="go-submitted-price">${formatPrice(lineTotal)}</span>
+    const sizeText  = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
+    const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}">
+      <span class="go-submitted-name">
+        ${escapeHtml(item.product_name || '')}
+        ${item.product_sku ? `<span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}
+      </span>
+      <span class="go-submitted-meta">${sizeText}</span>
+      <div class="go-submitted-qty-stepper">
+        <button type="button" class="go-submitted-qty-btn" data-go-dec="${escapeHtml(String(item.id))}" aria-label="Weniger">−</button>
+        <span class="go-submitted-qty-val" id="go-qty-val-${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
+        <button type="button" class="go-submitted-qty-btn" data-go-inc="${escapeHtml(String(item.id))}" aria-label="Mehr">+</button>
+      </div>
+      <span class="go-submitted-price" id="go-price-val-${escapeHtml(String(item.id))}">${formatPrice(lineTotal)}</span>
+      <button type="button" class="go-submitted-remove" data-go-remove="${escapeHtml(String(item.id))}" aria-label="Entfernen">${trashIcon}</button>
     </div>`;
   }).join('');
 
   wrap.innerHTML = `
     <div class="go-submitted-header">
-      <span>Bereits in Sammelbestellung</span>
+      <span>In Sammelbestellung</span>
       <span class="go-submitted-badge">${escapeHtml(sess.supplierName)}</span>
     </div>
-    <div class="go-submitted-list">${rowsHtml}</div>`;
+    <div class="go-submitted-list" id="go-submitted-list">${rowsHtml}</div>`;
+
+  // In Checkout-Body einsetzen
+  const checkoutBody = document.querySelector('.checkout-items-wrap') || checkoutList?.parentElement;
+  if (checkoutBody) checkoutBody.appendChild(wrap);
+
+  // Event-Delegation für Stepper + Remove
+  wrap.addEventListener('click', async (e) => {
+    const incBtn    = e.target.closest('[data-go-inc]');
+    const decBtn    = e.target.closest('[data-go-dec]');
+    const removeBtn = e.target.closest('[data-go-remove]');
+
+    if (incBtn)    { await updateGoSubmittedQty(incBtn.getAttribute('data-go-inc'),    1, existing.id); return; }
+    if (decBtn)    { await updateGoSubmittedQty(decBtn.getAttribute('data-go-dec'),   -1, existing.id); return; }
+    if (removeBtn) { await removeGoSubmittedItem(removeBtn.getAttribute('data-go-remove'), existing.id); }
+  });
+}
+
+// Qty eines bereits gesendeten order_items ändern
+const _goQtyDebounce = {};
+async function updateGoSubmittedQty(orderItemId, delta, orderId) {
+  if (_goQtyDebounce[orderItemId]) return;
+  _goQtyDebounce[orderItemId] = true;
+  try {
+    const valEl   = document.getElementById(`go-qty-val-${orderItemId}`);
+    const priceEl = document.getElementById(`go-price-val-${orderItemId}`);
+    const currentQty = valEl ? Number(valEl.textContent) : 1;
+    const newQty     = Math.max(1, currentQty + delta);
+    if (valEl) valEl.textContent = String(newQty);
+
+    const { data: itemData, error } = await db.from('order_items')
+      .update({ quantity: newQty })
+      .eq('id', orderItemId)
+      .select('unit_price_netto')
+      .single();
+
+    if (error) {
+      if (valEl) valEl.textContent = String(currentQty);
+      setOrderMessage('Fehler beim Aktualisieren: ' + error.message, true);
+      return;
+    }
+    // Preis live aktualisieren
+    if (priceEl && itemData) {
+      priceEl.textContent = formatPrice(Number(itemData.unit_price_netto) * newQty);
+    }
+    markCheckoutDirty();
+  } finally {
+    delete _goQtyDebounce[orderItemId];
+  }
+}
+
+// Einzelne Position aus Sammelbestellung entfernen
+async function removeGoSubmittedItem(orderItemId, orderId) {
+  const row = document.querySelector(`[data-go-item-id="${orderItemId}"]`);
+  if (row) row.style.opacity = '0.4';
+
+  const { error } = await db.from('order_items')
+    .delete()
+    .eq('id', orderItemId);
+
+  if (error) {
+    if (row) row.style.opacity = '1';
+    setOrderMessage('Fehler beim Entfernen: ' + error.message, true);
+    return;
+  }
+
+  // Wenn keine Items mehr → Order selbst löschen
+  const { count } = await db.from('order_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('order_id', orderId);
+
+  if ((count || 0) === 0) {
+    await db.from('orders').delete().eq('id', orderId);
+  }
+
+  markCheckoutDirty();
+  // Wrap neu rendern
+  const user = await getCurrentUser();
+  if (user) await renderGoSubmittedItems(user);
+  await updateSubmitButtonLabel();
 }
 
 // ============================================================
@@ -285,7 +371,6 @@ async function updateSubmitButtonLabel() {
   const hasSubmitted = (count || 0) > 0;
 
   if (!hasSubmitted) {
-    // Noch nie abgesendet: Button immer aktiv
     submitOrderBtn.textContent   = 'Bestellung absenden';
     submitOrderBtn.disabled      = false;
     submitOrderBtn.style.opacity = '1';
@@ -293,18 +378,13 @@ async function updateSubmitButtonLabel() {
     return;
   }
 
-  // Bereits abgesendet: prüfen ob Warenkorb NEUE Items hat
-  // (d.h. Items die noch nicht in der submitted Order sind)
   submitOrderBtn.textContent = 'Bestellung aktualisieren';
 
-  // Wenn Cart-Snapshot vorhanden (renderCheckout hat Daten geladen) = neue Produkte im Warenkorb
-  // → Button freischalten. Wenn Cart leer = ausgegraut.
   if (_checkoutSnapshot !== null) {
     submitOrderBtn.disabled      = false;
     submitOrderBtn.style.opacity = '1';
     submitOrderBtn.style.cursor  = 'pointer';
   } else {
-    // Leerer Warenkorb nach Submit
     submitOrderBtn.disabled      = true;
     submitOrderBtn.style.opacity = '0.4';
     submitOrderBtn.style.cursor  = 'not-allowed';
@@ -320,7 +400,7 @@ function markCheckoutDirty() {
 }
 
 // ============================================================
-// QTY + REMOVE
+// QTY + REMOVE (Warenkorb)
 // ============================================================
 
 const qtyDebounceMap = {};
