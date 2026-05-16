@@ -6,6 +6,19 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
+// ============================================================
+// SHARED XSS HELPER (wird auch in group-order.js genutzt)
+// ============================================================
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const authSection     = document.getElementById("auth-section");
 const productsSection = document.getElementById("products-section");
 const cartSection     = document.getElementById("cart-section");
@@ -55,6 +68,11 @@ const activeFilterBar    = document.getElementById("active-filter-bar");
 // --- Filter FAB ---
 const filterFab      = document.getElementById("filter-fab");
 const filterFabCount = document.getElementById("filter-fab-count");
+
+// Null-Guard: kritische DOM-Elemente prüfen
+if (!cartBadgeBtn || !cartDrawer || !cartOverlay || !filterDrawer || !filterToggleBtn) {
+  console.error("Kritische DOM-Elemente nicht gefunden. App kann nicht starten.");
+}
 
 // Filter State
 let allProducts = [];
@@ -201,14 +219,15 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     return;
   }
 
+  // FIX: escapeHtml auf Filter-Werte anwenden (XSS)
   container.innerHTML = values.map(val => {
     const isActive = activeFilters[filterKey] === val;
     return `<button
       type="button"
       class="filter-chip${isActive ? ' filter-chip--active' : ''}"
-      data-filter-key="${filterKey}"
-      data-filter-val="${val}"
-    >${val}</button>`;
+      data-filter-key="${escapeHtml(filterKey)}"
+      data-filter-val="${escapeHtml(val)}"
+    >${escapeHtml(val)}</button>`;
   }).join("");
 
   container.querySelectorAll(".filter-chip").forEach(btn => {
@@ -259,7 +278,8 @@ function updateFilterUI() {
     const tag = document.createElement("button");
     tag.type = "button";
     tag.className = "active-filter-tag";
-    tag.innerHTML = `${label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    // FIX: escapeHtml für Label-Text (XSS)
+    tag.innerHTML = `${escapeHtml(label)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     tag.addEventListener("click", () => {
       activeFilters[key] = null;
       buildFilterChips(allProducts);
@@ -309,13 +329,14 @@ function syncDrawer(totalText, itemCount) {
 
   cartDrawerTotal.textContent = totalText;
 
-  cartDrawerBody.querySelectorAll("[data-remove-cart]").forEach(btn => {
-    btn.addEventListener("click", async () => { await removeFromCart(btn.getAttribute("data-remove-cart")); });
-  });
+  // FIX: Event Delegation statt forEach/addEventListener (verhindert doppelte Listener)
+  cartDrawerBody.addEventListener("click", async (e) => {
+    const removeBtn = e.target.closest("[data-remove-cart]");
+    if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
 
-  cartDrawerBody.querySelectorAll("[data-scroll-to-product]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const productId = btn.getAttribute("data-scroll-to-product");
+    const scrollBtn = e.target.closest("[data-scroll-to-product]");
+    if (scrollBtn) {
+      const productId = scrollBtn.getAttribute("data-scroll-to-product");
       closeCartDrawer();
       setTimeout(() => {
         const card = document.querySelector(`[data-product-card="${productId}"]`);
@@ -324,8 +345,8 @@ function syncDrawer(totalText, itemCount) {
         card.classList.add("product-card-highlight");
         setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
       }, 320);
-    });
-  });
+    }
+  }, { once: true });
 
   if (cartDrawerMsg) cartDrawerMsg.textContent = "";
 }
@@ -356,8 +377,29 @@ async function getCurrentUser() {
 }
 
 // ============================================================
+// FETCH CART DATA (pure – keine DOM-Seiteneffekte)
+// FIX: Trennung von Daten-Laden und Rendern für submitOrder()
+// ============================================================
+
+async function fetchCartItems(userId) {
+  const { data, error } = await db
+    .from("cart_items")
+    .select(`id, quantity, product_id, clothing_size_id, weight_size_id,
+             products(id,name,sku,price_brutto,price_netto),
+             sizes_clothing(id,code), sizes_weight(id,code)`)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) return { data: null, error };
+  return { data: data || [], error: null };
+}
+
+// ============================================================
 // RENDER PRODUCTS
 // ============================================================
+
+// FIX: Fallback-Bild als Data-URI – kein Abhängigkeit von externem Dienst
+const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='28' fill='%23999'%3EKein Bild%3C/text%3E%3C/svg%3E";
 
 function renderProducts(products) {
   if (!products || products.length === 0) {
@@ -375,7 +417,7 @@ function renderProducts(products) {
       return aPrimary ? -1 : 1;
     });
 
-    const firstImage  = images[0]?.image_url || "https://via.placeholder.com/600x600?text=Kein+Bild";
+    const firstImage  = images[0]?.image_url || FALLBACK_IMAGE;
     const secondImage = images[1]?.image_url || firstImage;
 
     const clothingSizes = (product.product_clothing_sizes || []).map(r => r.sizes_clothing).filter(Boolean).sort((a,b) => (a.sort_order??999)-(b.sort_order??999));
@@ -383,33 +425,37 @@ function renderProducts(products) {
     const sizeType = clothingSizes.length > 0 ? "clothing" : weightSizes.length > 0 ? "weight" : null;
     const sizes    = sizeType === "clothing" ? clothingSizes : weightSizes;
 
+    // FIX: escapeHtml auf alle DB-Werte in HTML-Templates (XSS)
+    const safeName = escapeHtml(product.name);
+    const safeId   = escapeHtml(String(product.id));
+
     const sizesHtml = sizes.map(size => `
       <button type="button" class="size-btn"
-        data-size-select="${product.id}"
-        data-size-id="${size.id}"
-        data-size-type="${sizeType}"
-        data-size-code="${size.code}">${size.code}</button>`).join("");
+        data-size-select="${safeId}"
+        data-size-id="${escapeHtml(String(size.id))}"
+        data-size-type="${escapeHtml(sizeType)}"
+        data-size-code="${escapeHtml(size.code)}">${escapeHtml(size.code)}</button>`).join("");
 
     const hasSizes = sizes.length > 0;
 
-    return `<article class="product-card" data-product-card="${product.id}">
+    return `<article class="product-card" data-product-card="${safeId}">
       <div class="product-image-wrap">
-        <img class="product-image product-image-primary" src="${firstImage}"  alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/600x600?text=Bild+fehlt';">
-        <img class="product-image product-image-hover"   src="${secondImage}" alt="${product.name}" loading="lazy" onerror="this.src='${firstImage}';">
+        <img class="product-image product-image-primary" src="${firstImage}"  alt="${safeName}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}';">
+        <img class="product-image product-image-hover"   src="${secondImage}" alt="${safeName}" loading="lazy" onerror="this.onerror=null;this.src='${firstImage}';">
       </div>
       <div class="product-info">
-        <h3 class="product-title">${product.name}</h3>
+        <h3 class="product-title">${safeName}</h3>
         <p class="product-price">${formatPrice(product.price_brutto)}</p>
       </div>
       <div class="product-actions ${hasSizes ? 'product-actions-vertical' : ''}">
         ${hasSizes ? `
           <div class="size-selector">${sizesHtml}</div>
-          <div class="purchase-panel hidden" data-purchase-panel="${product.id}">
-            <label class="qty-box">Menge<input type="number" min="1" value="1" data-qty-for="${product.id}"></label>
-            <button class="small-btn" data-add-to-cart="${product.id}">In den Warenkorb</button>
+          <div class="purchase-panel hidden" data-purchase-panel="${safeId}">
+            <label class="qty-box">Menge<input type="number" min="1" value="1" data-qty-for="${safeId}"></label>
+            <button class="small-btn" data-add-to-cart="${safeId}">In den Warenkorb</button>
           </div>` : `
-          <label class="qty-box">Menge<input type="number" min="1" value="1" data-qty-for="${product.id}"></label>
-          <button class="small-btn" data-add-to-cart="${product.id}">In den Warenkorb</button>`}
+          <label class="qty-box">Menge<input type="number" min="1" value="1" data-qty-for="${safeId}"></label>
+          <button class="small-btn" data-add-to-cart="${safeId}">In den Warenkorb</button>`}
       </div>
     </article>`;
   }).join("");
@@ -447,8 +493,10 @@ function renderProducts(products) {
         setMessage("Bitte eine gueltige Menge eingeben.", true); return;
       }
 
+      button.disabled = true;
       await addToCart(productId, quantity, selectedSizeId && selectedSizeType ? { sizeId: selectedSizeId, sizeType: selectedSizeType } : undefined);
-      qtyInput.value = 1;
+      button.disabled = false;
+      if (qtyInput) qtyInput.value = 1;
 
       if (hasSizeSelector) {
         card.removeAttribute("data-selected-size-id");
@@ -477,7 +525,7 @@ async function loadProducts() {
     .order("category", { ascending: true });
 
   if (error) {
-    productsList.innerHTML = `<p>Fehler beim Laden der Produkte: ${error.message}</p>`;
+    productsList.innerHTML = `<p>Fehler beim Laden der Produkte: ${escapeHtml(error.message)}</p>`;
     return;
   }
 
@@ -505,8 +553,13 @@ async function addToCart(productId, quantity, selectedSize) {
   const weightSizeId   = isWeight   ? selectedSize.sizeId : null;
 
   let existingQuery = db.from("cart_items").select("id, quantity").eq("user_id", user.id).eq("product_id", productId);
-  if (isClothing) existingQuery = existingQuery.eq("clothing_size_id", clothingSizeId);
-  else if (isWeight) existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
+
+  // FIX: Explizite Null-Size-Prüfung wenn kein selectedSize
+  if (isClothing)       existingQuery = existingQuery.eq("clothing_size_id", clothingSizeId);
+  else if (isWeight)    existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
+  else {
+    existingQuery = existingQuery.is("clothing_size_id", null).is("weight_size_id", null);
+  }
 
   const { data: existingItem, error: existingError } = await existingQuery.maybeSingle();
   if (existingError) { setMessage(`Fehler beim Pruefen des Warenkorbs: ${existingError.message}`, true); return; }
@@ -530,15 +583,10 @@ async function loadCart(highlightProductId = null) {
   const user = await getCurrentUser();
   if (!user) { cartList.innerHTML = ""; cartTotal.textContent = ""; updateCartBadge(0); return []; }
 
-  const { data, error } = await db
-    .from("cart_items")
-    .select(`id, quantity, product_id, clothing_size_id, weight_size_id,
-             products(id,name,sku,price_brutto,price_netto),
-             sizes_clothing(id,code), sizes_weight(id,code)`)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // FIX: fetchCartItems() für pure Daten-Abfrage nutzen
+  const { data, error } = await fetchCartItems(user.id);
 
-  if (error) { cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${error.message}</p>`; cartTotal.textContent = ""; updateCartBadge(0); return []; }
+  if (error) { cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${escapeHtml(error.message)}</p>`; cartTotal.textContent = ""; updateCartBadge(0); return []; }
 
   if (!data || data.length === 0) {
     cartList.innerHTML = "<p>Dein Warenkorb ist noch leer.</p>";
@@ -563,6 +611,7 @@ async function loadCart(highlightProductId = null) {
     groupedItems[productId].items.push(item);
   });
 
+  // FIX: escapeHtml auf Produktnamen (XSS)
   cartList.innerHTML = Object.values(groupedItems).map(group => {
     const productTotal = group.items.reduce((sum, item) => sum + (group.productPrice * Number(item.quantity || 0)), 0);
     total += productTotal;
@@ -572,12 +621,12 @@ async function loadCart(highlightProductId = null) {
       const lineTotal = group.productPrice * Number(item.quantity || 0);
       return `<div class="cart-size-row">
         <div class="cart-size-row-left"><div class="cart-line-meta">
-          ${sizeLabel ? `<span class="cart-line-qty">Groesse: ${sizeLabel}</span>` : ""}
-          <span class="cart-line-qty">Menge: ${item.quantity}</span>
+          ${sizeLabel ? `<span class="cart-line-qty">Groesse: ${escapeHtml(sizeLabel)}</span>` : ""}
+          <span class="cart-line-qty">Menge: ${Number(item.quantity)}</span>
         </div></div>
         <div class="cart-size-row-right">
           <span class="cart-line-total">${formatPrice(lineTotal)}</span>
-          <button class="remove-btn icon-btn" data-remove-cart="${item.id}" type="button" aria-label="Produkt aus dem Warenkorb entfernen" title="Entfernen">
+          <button class="remove-btn icon-btn" data-remove-cart="${escapeHtml(String(item.id))}" type="button" aria-label="Produkt aus dem Warenkorb entfernen" title="Entfernen">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
             </svg>
@@ -586,9 +635,9 @@ async function loadCart(highlightProductId = null) {
       </div>`;
     }).join("");
 
-    return `<article class="cart-line" data-cart-product-id="${group.productId}">
+    return `<article class="cart-line" data-cart-product-id="${escapeHtml(String(group.productId))}">
       <div class="cart-line-top">
-        <button class="cart-line-link" type="button" data-scroll-to-product="${group.productId}">${group.productName}</button>
+        <button class="cart-line-link" type="button" data-scroll-to-product="${escapeHtml(String(group.productId))}">${escapeHtml(group.productName)}</button>
         <p class="cart-line-total">${formatPrice(productTotal)}</p>
       </div>
       <div class="cart-group-rows">${rowsHtml}</div>
@@ -600,20 +649,21 @@ async function loadCart(highlightProductId = null) {
 
   syncDrawer(totalText, totalItems);
 
-  document.querySelectorAll("#cart-section [data-remove-cart]").forEach(btn => {
-    btn.addEventListener("click", async () => { await removeFromCart(btn.getAttribute("data-remove-cart")); });
-  });
+  // FIX: Event Delegation statt forEach/addEventListener (verhindert doppelte Listener)
+  cartList.addEventListener("click", async (e) => {
+    const removeBtn = e.target.closest("[data-remove-cart]");
+    if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
 
-  document.querySelectorAll("#cart-section [data-scroll-to-product]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const productId = btn.getAttribute("data-scroll-to-product");
+    const scrollBtn = e.target.closest("[data-scroll-to-product]");
+    if (scrollBtn) {
+      const productId = scrollBtn.getAttribute("data-scroll-to-product");
       const card = document.querySelector(`[data-product-card="${productId}"]`);
       if (!card) return;
       card.scrollIntoView({ behavior: "smooth", block: "center" });
       card.classList.add("product-card-highlight");
       setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
-    });
-  });
+    }
+  }, { once: true });
 
   if (highlightProductId && !isMobile()) {
     const newCartItem = cartList.querySelector(`[data-cart-product-id="${highlightProductId}"]`);
