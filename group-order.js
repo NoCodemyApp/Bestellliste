@@ -8,7 +8,7 @@ let activeGroupOrders = [];
 let groupOrderChannel = null;
 let blockedSuppliers  = new Set();
 
-// Aktive GO-Sitzung: wird gesetzt wenn User einer GO beitritt/erstellt
+// Aktive GO-Sitzung
 // { groupOrderId, supplierName, supplierLogo, isCreator, deadline }
 window.goSession = null;
 
@@ -40,9 +40,8 @@ function teardownGroupOrders() {
 
 async function autoCloseExpiredOrders() {
   const now = new Date().toISOString();
-  const { error } = await db
-    .from('group_orders').update({ status: 'closed' })
-    .eq('status', 'open').lt('deadline', now);
+  const { error } = await db.from('group_orders')
+    .update({ status: 'closed' }).eq('status', 'open').lt('deadline', now);
   if (error) console.warn('Auto-Close Fehler:', error.message);
 }
 
@@ -52,8 +51,7 @@ async function autoCloseExpiredOrders() {
 
 async function loadActiveGroupOrders() {
   const now = new Date().toISOString();
-  const { data, error } = await db
-    .from('group_orders')
+  const { data, error } = await db.from('group_orders')
     .select('id, title, deadline, status, created_by, created_at')
     .eq('status', 'open').gt('deadline', now)
     .order('deadline', { ascending: true });
@@ -65,11 +63,8 @@ async function loadActiveGroupOrders() {
     activeGroupOrders = data || [];
     blockedSuppliers  = new Set(activeGroupOrders.map(o => (o.title || '').trim().toLowerCase()));
   }
-
   updateTriggerBar();
-  if (document.getElementById('go-panel')?.classList.contains('go-panel--open')) {
-    renderPanelContent();
-  }
+  if (document.getElementById('go-panel')?.classList.contains('go-panel--open')) renderPanelContent();
 }
 
 function subscribeGroupOrders() {
@@ -89,8 +84,8 @@ function ensureTriggerBar() {
   if (document.getElementById('go-trigger-bar')) return;
   const bar = document.createElement('div');
   bar.id = 'go-trigger-bar'; bar.className = 'go-trigger-bar';
-  const productsSection = document.getElementById('products-section');
-  productsSection?.parentNode?.insertBefore(bar, productsSection);
+  const ps = document.getElementById('products-section');
+  ps?.parentNode?.insertBefore(bar, ps);
   updateTriggerBar();
 }
 
@@ -99,10 +94,7 @@ function updateTriggerBar() {
   if (!bar) return;
   const count = activeGroupOrders.length;
   if (count === 0) {
-    bar.innerHTML = `
-      <div class="go-trigger-bar-actions">
-        <button class="go-create-btn" id="go-trigger-create-btn" type="button">+ Sammelbestellung eröffnen</button>
-      </div>`;
+    bar.innerHTML = `<div class="go-trigger-bar-actions"><button class="go-create-btn" id="go-trigger-create-btn" type="button">+ Sammelbestellung eröffnen</button></div>`;
     document.getElementById('go-trigger-create-btn')?.addEventListener('click', openGroupPanel);
   } else {
     const titles = activeGroupOrders.map(o => escapeHtml(o.title || 'Sammelbestellung'));
@@ -110,7 +102,7 @@ function updateTriggerBar() {
     bar.innerHTML = `
       <div class="go-trigger-bar-text"><span class="go-trigger-dot"></span><span>${label}</span></div>
       <div class="go-trigger-bar-actions">
-        <button class="go-open-btn"   id="go-trigger-open-btn"   type="button">Anzeigen</button>
+        <button class="go-open-btn" id="go-trigger-open-btn" type="button">Anzeigen</button>
         <button class="go-create-btn" id="go-trigger-create-btn" type="button">+ Neu</button>
       </div>`;
     document.getElementById('go-trigger-open-btn')  ?.addEventListener('click', openGroupPanel);
@@ -119,11 +111,10 @@ function updateTriggerBar() {
 }
 
 // ============================================================
-// GO-MODE — Signal-Banner, gefilterte Produktseite
+// GO-MODE — Signal-Banner + gefilterte Produktseite
 // ============================================================
 
 async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
-  // Supplier-Logo aus DB laden (optional)
   let supplierLogo = null;
   const { data: logoData } = await db.from('products')
     .select('supplyer_logo').eq('supplyer', supplierName).eq('active', true)
@@ -131,13 +122,9 @@ async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
   supplierLogo = logoData?.supplyer_logo || null;
 
   window.goSession = { groupOrderId, supplierName, supplierLogo, isCreator, deadline };
-
-  // Panel schließen, GO-Banner zeigen, Produkte filtern
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierName);
-
-  // Warenkorb-Titel und Checkout-Labels aktualisieren
   updateCartLabelsForGo(supplierName);
 }
 
@@ -145,7 +132,9 @@ function deactivateGoMode() {
   window.goSession = null;
   removeGoSignalBanner();
   resetCartLabels();
-  // Filter zurücksetzen und alle Produkte wieder anzeigen
+  document.getElementById('shop-sidebar-desktop')?.classList.remove('hidden');
+  document.getElementById('filter-toggle-btn')?.classList.remove('hidden');
+  document.getElementById('filter-fab')?.classList.remove('hidden');
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
     activeFilters = { category: null, supplier: null };
     buildFilterChips(allProducts);
@@ -159,7 +148,6 @@ function filterProductsForGo(supplierName) {
   const filtered = allProducts.filter(p =>
     (p.supplier || p.supplyer || '').toLowerCase() === supplierName.toLowerCase()
   );
-  // Filter-Chips ausblenden im GO-Modus (nur ein Supplier sichtbar)
   document.getElementById('shop-sidebar-desktop')?.classList.add('hidden');
   document.getElementById('filter-toggle-btn')?.classList.add('hidden');
   document.getElementById('filter-fab')?.classList.add('hidden');
@@ -171,7 +159,6 @@ function renderGoSignalBanner() {
   removeGoSignalBanner();
   const sess = window.goSession;
   if (!sess) return;
-
   const banner = document.createElement('div');
   banner.id = 'go-signal-banner';
   banner.className = 'go-signal-banner';
@@ -182,16 +169,9 @@ function renderGoSignalBanner() {
       <span class="go-signal-supplier">${escapeHtml(sess.supplierName)}</span>
     </div>
     <button class="go-signal-leave-btn" id="go-signal-leave" type="button">Verlassen</button>`;
-
-  const productsSection = document.getElementById('products-section');
-  productsSection?.parentNode?.insertBefore(banner, productsSection);
-
-  document.getElementById('go-signal-leave')?.addEventListener('click', () => {
-    deactivateGoMode();
-    // Filter + Sidebar wieder einblenden
-    document.getElementById('shop-sidebar-desktop')?.classList.remove('hidden');
-    document.getElementById('filter-toggle-btn')?.classList.remove('hidden');
-  });
+  const ps = document.getElementById('products-section');
+  ps?.parentNode?.insertBefore(banner, ps);
+  document.getElementById('go-signal-leave')?.addEventListener('click', () => deactivateGoMode());
 }
 
 function removeGoSignalBanner() {
@@ -199,20 +179,10 @@ function removeGoSignalBanner() {
 }
 
 function updateCartLabelsForGo(supplierName) {
-  // Desktop Cart-Header
   const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
-  if (cartHeadH2) {
-    cartHeadH2.innerHTML = `
-      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>
-      ${escapeHtml(supplierName)}`;
-  }
-  // Mobile Drawer-Header
+  if (cartHeadH2) cartHeadH2.innerHTML = `<span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>${escapeHtml(supplierName)}`;
   const drawerTitle = document.querySelector('.cart-drawer-title');
-  if (drawerTitle) {
-    drawerTitle.innerHTML = `
-      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>
-      ${escapeHtml(supplierName)}`;
-  }
+  if (drawerTitle) drawerTitle.innerHTML = `<span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>${escapeHtml(supplierName)}`;
 }
 
 function resetCartLabels() {
@@ -307,7 +277,7 @@ function closeGroupPanel() {
 function closeGroupOrderModal() { closeGroupPanel(); }
 
 // ============================================================
-// PANEL CONTENT
+// PANEL CONTENT RENDERN
 // ============================================================
 
 function renderPanelContent() {
@@ -318,28 +288,26 @@ function renderPanelContent() {
 
   if (orders.length > 0) {
     html += `<p class="go-section-title">Aktive Bestellungen</p><div class="go-list">`;
-    html += orders.map(o => {
-      const dateStr = formatDeadline(o.deadline);
-      return `
-        <div class="go-item" data-go-item-id="${escapeHtml(String(o.id))}">
-          <div class="go-item-info">
-            <p class="go-item-title">${escapeHtml(o.title || 'Sammelbestellung')}</p>
-            <p class="go-item-deadline">Endet am ${escapeHtml(dateStr)}</p>
-          </div>
-          <div class="go-item-actions">
-            <button class="go-join-btn" data-join-id="${escapeHtml(String(o.id))}" type="button">Mitmachen</button>
-            <button class="go-undo-btn hidden" data-undo-id="${escapeHtml(String(o.id))}" type="button">Austreten</button>
-            <button class="go-edit-btn" data-edit-id="${escapeHtml(String(o.id))}"
-              data-edit-title="${escapeAttr(o.title || '')}"
-              data-edit-deadline="${escapeAttr(o.deadline)}"
-              data-edit-creator="${escapeAttr(o.created_by || '')}"
-              type="button" aria-label="Bearbeiten">✏️</button>
-          </div>
-        </div>`;
-    }).join('');
+    html += orders.map(o => `
+      <div class="go-item" data-go-item-id="${escapeHtml(String(o.id))}">
+        <div class="go-item-info">
+          <p class="go-item-title">${escapeHtml(o.title || 'Sammelbestellung')}</p>
+          <p class="go-item-deadline">Endet am ${escapeHtml(formatDeadline(o.deadline))}</p>
+        </div>
+        <div class="go-item-actions">
+          <button class="go-join-btn" data-join-id="${escapeHtml(String(o.id))}" type="button">Mitmachen</button>
+          <button class="go-undo-btn hidden" data-undo-id="${escapeHtml(String(o.id))}" type="button">Austreten</button>
+          <button class="go-edit-btn"
+            data-edit-id="${escapeHtml(String(o.id))}"
+            data-edit-title="${escapeAttr(o.title || '')}"
+            data-edit-deadline="${escapeAttr(o.deadline)}"
+            data-edit-creator="${escapeAttr(o.created_by || '')}"
+            type="button" aria-label="Bearbeiten">✏️</button>
+        </div>
+      </div>`).join('');
     html += '</div>';
   } else {
-    html += `<div style="padding:32px 0;text-align:center;color:var(--muted);font-size:0.875rem;">Keine aktiven Sammelbestellungen.</div>`;
+    html += `<div style="padding:32px 0;text-align:center;color:var(--muted);font-size:.875rem;">Keine aktiven Sammelbestellungen.</div>`;
   }
 
   html += `
@@ -355,7 +323,7 @@ function renderPanelContent() {
         <input type="datetime-local" id="go-deadline-input" class="go-input" required disabled>
       </div>
       <p id="go-create-error" class="go-error" role="alert" aria-live="polite"></p>
-      <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <div style="display:flex;justify-content:flex-end;">
         <button type="button" class="go-btn-primary" id="go-create-submit-btn" disabled style="opacity:.4;cursor:not-allowed;">Sammelbestellung erstellen</button>
       </div>
     </div>
@@ -367,10 +335,11 @@ function renderPanelContent() {
     btn.addEventListener('click', () => joinGroupOrder(btn.getAttribute('data-join-id'))));
   body.querySelectorAll('[data-undo-id]').forEach(btn =>
     btn.addEventListener('click', () => leaveGroupOrder(btn.getAttribute('data-undo-id'))));
+
+  // Edit-Button nur für Ersteller aktiv
   body.querySelectorAll('[data-edit-id]').forEach(async btn => {
     const creatorId = btn.getAttribute('data-edit-creator');
     const user = await getCurrentUser();
-    // Nur Ersteller sieht Edit-Button aktiv
     if (user && user.id === creatorId) {
       btn.addEventListener('click', () => openEditModal(
         btn.getAttribute('data-edit-id'),
@@ -390,7 +359,7 @@ function renderPanelContent() {
 }
 
 // ============================================================
-// JOIN STATE
+// JOIN STATE SYNC
 // ============================================================
 
 async function syncJoinState(groupOrderId) {
@@ -405,13 +374,12 @@ async function syncJoinState(groupOrderId) {
   const { count } = await db.from('orders')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id).eq('group_order_id', groupOrderId);
-
   const hasJoined = (count || 0) > 0;
+
   joinBtn.classList.toggle('go-join-btn--active', hasJoined);
   joinBtn.textContent = hasJoined ? 'Beigetreten ✓' : 'Mitmachen';
   undoBtn.classList.toggle('hidden', !hasJoined);
 
-  // Wenn bereits beigetreten: "Zur GO-Ansicht" Button anzeigen
   if (hasJoined) {
     let goBtn = body.querySelector(`[data-goto-go="${groupOrderId}"]`);
     if (!goBtn) {
@@ -446,18 +414,16 @@ async function joinGroupOrder(groupOrderId) {
   const user = await getCurrentUser();
   if (!user) return;
 
-  // Doppelt-Beitreten für diese spezifische GO verhindern
   const { count: alreadyJoined } = await db.from('orders')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id).eq('group_order_id', groupOrderId);
+
   if ((alreadyJoined || 0) > 0) {
-    // Schon beigetreten → direkt in GO-Modus wechseln
     const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
     if (order) await activateGoMode(String(order.id), order.title || '', user.id === order.created_by, order.deadline);
     return;
   }
 
-  // Prüfen ob pending Order ohne GO vorhanden
   const { data: pendingOrders } = await db.from('orders')
     .select('id').eq('user_id', user.id)
     .is('group_order_id', null).eq('status', 'pending').limit(1);
@@ -468,11 +434,9 @@ async function joinGroupOrder(groupOrderId) {
   }
 
   const { error } = await db.from('orders')
-    .update({ group_order_id: groupOrderId })
-    .eq('id', pendingOrders[0].id);
+    .update({ group_order_id: groupOrderId }).eq('id', pendingOrders[0].id);
   if (error) { showBannerError('Fehler beim Beitreten: ' + error.message); return; }
 
-  // GO-Modus aktivieren und Produktseite öffnen
   const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
   if (order) await activateGoMode(String(order.id), order.title || '', user.id === order.created_by, order.deadline);
 }
@@ -480,18 +444,15 @@ async function joinGroupOrder(groupOrderId) {
 async function leaveGroupOrder(groupOrderId) {
   const user = await getCurrentUser();
   if (!user) return;
-
   const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
   if (order && new Date(order.deadline) <= new Date()) {
-    showBannerError('Die Deadline ist abgelaufen. Austreten nicht mehr möglich.');
+    showBannerError('Deadline abgelaufen. Austreten nicht mehr möglich.');
     return;
   }
-
   const { error } = await db.from('orders')
     .update({ group_order_id: null })
     .eq('user_id', user.id).eq('group_order_id', groupOrderId);
   if (error) { showBannerError('Fehler beim Austreten: ' + error.message); return; }
-
   await syncJoinState(groupOrderId);
   if (window.goSession?.groupOrderId === String(groupOrderId)) deactivateGoMode();
 }
@@ -505,20 +466,16 @@ async function loadSupplierDropdown() {
   const errorEl = document.getElementById('go-supplier-error');
   if (!select) return;
   select.innerHTML = `<option value="">— wird geladen …</option>`;
-
   const { data, error } = await db.from('products')
     .select('supplyer').eq('active', true).not('supplyer', 'is', null);
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
-
   const suppliers = [...new Set(data.map(p => p.supplyer).filter(Boolean))].sort();
   if (suppliers.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
-
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     suppliers.map(s => {
       const isBlocked = blockedSuppliers.has(s.trim().toLowerCase());
       return `<option value="${escapeAttr(s)}"${isBlocked ? ' disabled' : ''}>${escapeHtml(s)}${isBlocked ? ' (bereits aktiv)' : ''}</option>`;
     }).join('');
-
   select.addEventListener('change', () => onSupplierChange(select, errorEl));
 }
 
@@ -528,4 +485,167 @@ function onSupplierChange(select, errorEl) {
   const isBlocked = blockedSuppliers.has(val.toLowerCase());
   if (isBlocked) {
     setCreateFieldsEnabled(false);
-    if (errorEl) errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(val)}
+    if (errorEl) errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(val)}“.`;
+    return;
+  }
+  setCreateFieldsEnabled(true);
+  if (errorEl) errorEl.textContent = '';
+  const createError = document.getElementById('go-create-error');
+  if (createError) createError.textContent = '';
+}
+
+function setCreateFieldsEnabled(enabled) {
+  const deadlineWrap  = document.getElementById('go-deadline-wrap');
+  const deadlineInput = document.getElementById('go-deadline-input');
+  const submitBtn     = document.getElementById('go-create-submit-btn');
+  if (deadlineWrap)  { deadlineWrap.style.opacity = enabled ? '1' : '0.4'; deadlineWrap.style.pointerEvents = enabled ? 'auto' : 'none'; }
+  if (deadlineInput)   deadlineInput.disabled = !enabled;
+  if (submitBtn)     { submitBtn.disabled = !enabled; submitBtn.style.opacity = enabled ? '1' : '0.4'; submitBtn.style.cursor = enabled ? 'pointer' : 'not-allowed'; }
+}
+
+// ============================================================
+// CREATE SUBMIT
+// ============================================================
+
+async function submitGroupOrder() {
+  const supplierSelect = document.getElementById('go-supplier-select');
+  const deadlineInput  = document.getElementById('go-deadline-input');
+  const errorEl        = document.getElementById('go-create-error');
+  if (!errorEl) return;
+
+  const supplier = supplierSelect?.value?.trim() || '';
+  const deadline = deadlineInput?.value || '';
+  errorEl.textContent = '';
+
+  if (!supplier) { errorEl.textContent = 'Bitte einen Lieferanten wählen.'; return; }
+  if (blockedSuppliers.has(supplier.toLowerCase())) {
+    errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplier)}“.`; return;
+  }
+  if (!deadline) { errorEl.textContent = 'Bitte eine Deadline angeben.'; return; }
+  const deadlineDate = new Date(deadline);
+  if (deadlineDate <= new Date()) { errorEl.textContent = 'Die Deadline muss in der Zukunft liegen.'; return; }
+
+  // DB-Fallback-Check
+  const { data: existing, error: checkError } = await db.from('group_orders')
+    .select('id').eq('status', 'open').eq('title', supplier)
+    .gt('deadline', new Date().toISOString()).maybeSingle();
+  if (checkError) { errorEl.textContent = 'Prüfungsfehler: ' + checkError.message; return; }
+  if (existing)   { errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplier)}“.`; return; }
+
+  const user = await getCurrentUser();
+  if (!user) { errorEl.textContent = 'Nicht eingeloggt.'; return; }
+
+  const submitBtn = document.getElementById('go-create-submit-btn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const { data: newOrder, error: insertError } = await db.from('group_orders').insert({
+    title:      supplier,
+    deadline:   deadlineDate.toISOString(),
+    status:     'open',
+    created_by: user.id,
+  }).select().single();
+
+  if (submitBtn) submitBtn.disabled = false;
+  if (insertError) { errorEl.textContent = 'Fehler beim Erstellen: ' + insertError.message; return; }
+
+  // Ersteller direkt in GO-Modus bringen
+  await loadActiveGroupOrders();
+  if (newOrder) await activateGoMode(String(newOrder.id), supplier, true, newOrder.deadline);
+}
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+
+function openEditModal(groupOrderId, currentTitle, currentDeadline) {
+  let modal = document.getElementById('go-edit-modal');
+  if (!modal) { modal = buildEditModal(); document.body.appendChild(modal); }
+  document.getElementById('go-edit-id').value = groupOrderId;
+  document.getElementById('go-edit-title-display').textContent = currentTitle || '';
+  document.getElementById('go-edit-error').textContent = '';
+  if (currentDeadline) {
+    const d = new Date(currentDeadline);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('go-edit-deadline-input').value = local;
+  } else {
+    document.getElementById('go-edit-deadline-input').value = '';
+  }
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  document.getElementById('go-edit-deadline-input')?.focus();
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('go-edit-modal');
+  if (modal) { modal.classList.add('hidden'); modal.setAttribute('aria-hidden', 'true'); }
+}
+
+function buildEditModal() {
+  const modal = document.createElement('div');
+  modal.id = 'go-edit-modal'; modal.className = 'go-modal hidden';
+  modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'go-edit-modal-title');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <div class="go-modal-backdrop" id="go-edit-backdrop"></div>
+    <div class="go-modal-box">
+      <button class="go-modal-close" type="button" aria-label="Schließen" id="go-edit-close">✕</button>
+      <h2 class="go-modal-title" id="go-edit-modal-title">Sammelbestellung bearbeiten</h2>
+      <input type="hidden" id="go-edit-id">
+      <div>
+        <p class="go-label">Lieferant</p>
+        <p id="go-edit-title-display" class="go-value-readonly"></p>
+      </div>
+      <div>
+        <label class="go-label" for="go-edit-deadline-input">Deadline <span class="go-required">*</span></label>
+        <input type="datetime-local" id="go-edit-deadline-input" class="go-input" required>
+      </div>
+      <p id="go-edit-error" class="go-error" role="alert" aria-live="polite"></p>
+      <div class="go-modal-footer">
+        <button type="button" class="go-btn-secondary" id="go-edit-cancel">Abbrechen</button>
+        <button type="button" class="go-btn-primary"   id="go-edit-submit">Speichern</button>
+      </div>
+    </div>`;
+  modal.querySelector('#go-edit-backdrop').addEventListener('click', closeEditModal);
+  modal.querySelector('#go-edit-close')   .addEventListener('click', closeEditModal);
+  modal.querySelector('#go-edit-cancel')  .addEventListener('click', closeEditModal);
+  modal.querySelector('#go-edit-submit')  .addEventListener('click', submitEditGroupOrder);
+  return modal;
+}
+
+async function submitEditGroupOrder() {
+  const groupOrderId = document.getElementById('go-edit-id').value;
+  const deadline     = document.getElementById('go-edit-deadline-input').value;
+  const errorEl      = document.getElementById('go-edit-error');
+  errorEl.textContent = '';
+  if (!deadline) { errorEl.textContent = 'Bitte eine Deadline angeben.'; return; }
+  const deadlineDate = new Date(deadline);
+  if (deadlineDate <= new Date()) { errorEl.textContent = 'Die Deadline muss in der Zukunft liegen.'; return; }
+  const { error } = await db.from('group_orders')
+    .update({ deadline: deadlineDate.toISOString() })
+    .eq('id', groupOrderId).eq('status', 'open');
+  if (error) { errorEl.textContent = 'Fehler: ' + error.message; return; }
+  closeEditModal();
+  await loadActiveGroupOrders();
+  renderPanelContent();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function formatDeadline(isoString) {
+  return new Date(isoString).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+if (typeof escapeHtml === 'undefined') {
+  window.escapeHtml = function(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+}
+
+function escapeAttr(str) {
+  return String(str ?? '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
