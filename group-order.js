@@ -1,12 +1,26 @@
 // ============================================================
 // GROUP ORDERS — group-order.js
-// Abhängigkeiten: db, getCurrentUser (aus app.js)
+// Abhängigkeiten: db, getCurrentUser, escapeHtml (aus app.js)
 // Tabelle: group_orders (id, created_by, deadline, status, title, created_at)
 //          title = Lieferantenname (kein separates supplier-Feld nötig)
 // ============================================================
 
 let activeGroupOrders = [];
 let groupOrderChannel  = null;
+
+// Banner-interne Fehlermeldung (ersetzt alert())
+function showBannerError(message) {
+  let el = document.getElementById("go-banner-error");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "go-banner-error";
+    el.style.cssText = "color:#a12c45;font-size:0.85rem;margin:4px 0 0;";
+    const banner = document.getElementById("group-order-banner");
+    if (banner) banner.appendChild(el);
+  }
+  el.textContent = message;
+  setTimeout(() => { if (el) el.textContent = ""; }, 4000);
+}
 
 // ============================================================
 // INIT / TEARDOWN
@@ -31,6 +45,7 @@ function teardownGroupOrders() {
 
 // ============================================================
 // AUTO-CLOSE (clientseitig beim Laden)
+// HINWEIS: Idealerweise durch DB-Trigger / pg_cron ersetzen.
 // ============================================================
 
 async function autoCloseExpiredOrders() {
@@ -116,40 +131,41 @@ function renderGroupOrderBanner(orders) {
     banner.innerHTML = `
       <div class="go-banner-single">
         <span class="go-banner-text">
-          <strong>${escapeHtml(o.title || "Sammelbestellung")}</strong> — Endet ${dateStr}
+          <strong>${escapeHtml(o.title || "Sammelbestellung")}</strong> — Endet ${escapeHtml(dateStr)}
         </span>
         <div class="go-banner-actions">
-          <button class="go-join-btn" data-join-id="${o.id}" type="button">Mitmachen</button>
-          <button class="go-undo-btn hidden" data-undo-id="${o.id}" type="button">Rückgängig</button>
-          <button class="go-edit-btn" data-edit-id="${o.id}"
+          <button class="go-join-btn" data-join-id="${escapeHtml(String(o.id))}" type="button">Mitmachen</button>
+          <button class="go-undo-btn hidden" data-undo-id="${escapeHtml(String(o.id))}" type="button">Rükgängig</button>
+          <button class="go-edit-btn" data-edit-id="${escapeHtml(String(o.id))}"
             data-edit-title="${escapeAttr(o.title || '')}"
-            data-edit-deadline="${o.deadline}"
+            data-edit-deadline="${escapeAttr(o.deadline)}"
             type="button" aria-label="Sammelbestellung bearbeiten">✏️</button>
         </div>
-      </div>`;
+      </div>
+      <p id="go-banner-error" style="color:#a12c45;font-size:0.85rem;margin:4px 0 0;"></p>`;
   } else {
     const rows = orders.map(o => {
       const dateStr = formatDeadline(o.deadline);
       return `
         <li class="go-banner-row">
           <div class="go-banner-row-info">
-            <button class="go-join-btn" data-join-id="${o.id}" type="button">${escapeHtml(o.title || "Sammelbestellung")}</button>
-            <button class="go-undo-btn hidden" data-undo-id="${o.id}" type="button">Rückgängig</button>
-            <span class="go-banner-date">Endet ${dateStr}</span>
+            <button class="go-join-btn" data-join-id="${escapeHtml(String(o.id))}" type="button">${escapeHtml(o.title || "Sammelbestellung")}</button>
+            <button class="go-undo-btn hidden" data-undo-id="${escapeHtml(String(o.id))}" type="button">Rükgängig</button>
+            <span class="go-banner-date">Endet ${escapeHtml(dateStr)}</span>
           </div>
-          <button class="go-edit-btn" data-edit-id="${o.id}"
+          <button class="go-edit-btn" data-edit-id="${escapeHtml(String(o.id))}"
             data-edit-title="${escapeAttr(o.title || '')}"
-            data-edit-deadline="${o.deadline}"
+            data-edit-deadline="${escapeAttr(o.deadline)}"
             type="button" aria-label="${escapeAttr(o.title || 'Sammelbestellung')} bearbeiten">✏️</button>
         </li>`;
     }).join("");
 
     banner.innerHTML = `
       <p class="go-banner-multi-title">Aktive Sammelbestellungen:</p>
-      <ul class="go-banner-list">${rows}</ul>`;
+      <ul class="go-banner-list">${rows}</ul>
+      <p id="go-banner-error" style="color:#a12c45;font-size:0.85rem;margin:4px 0 0;"></p>`;
   }
 
-  // Join-Zustand je Order aktualisieren
   orders.forEach(o => syncJoinState(o.id));
 
   banner.querySelectorAll("[data-join-id]").forEach(btn => {
@@ -193,7 +209,7 @@ async function syncJoinState(groupOrderId) {
 
   joinBtn.classList.toggle("go-join-btn--active", hasJoined);
   if (hasJoined) {
-    joinBtn.textContent = "Beigetreten ✓";
+    joinBtn.textContent = "Beigetreten \u2713";
   } else {
     joinBtn.textContent = activeGroupOrders.length === 1
       ? "Mitmachen"
@@ -206,15 +222,28 @@ async function joinGroupOrder(groupOrderId) {
   const user = await getCurrentUser();
   if (!user) return;
 
-  // Duplikat-Check: bereits beigetreten?
-  const { count } = await db
+  const { count: alreadyJoined } = await db
     .from("orders")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .eq("group_order_id", groupOrderId);
 
-  if ((count || 0) > 0) {
-    alert("Du nimmst bereits an dieser Sammelbestellung teil.");
+  if ((alreadyJoined || 0) > 0) {
+    // FIX: alert() ersetzt durch Banner-Fehlermeldung
+    showBannerError("Du nimmst bereits an dieser Sammelbestellung teil.");
+    return;
+  }
+
+  // FIX: Prüfen ob überhaupt eine pending Order existiert, bevor Update
+  const { count: pendingCount } = await db
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("group_order_id", null)
+    .eq("status", "pending");
+
+  if ((pendingCount || 0) === 0) {
+    showBannerError("Es wurde keine offene Bestellung gefunden, die der Sammelbestellung zugeordnet werden kann. Bitte lege zuerst eine Bestellung an.");
     return;
   }
 
@@ -226,7 +255,8 @@ async function joinGroupOrder(groupOrderId) {
     .eq("status", "pending");
 
   if (error) {
-    alert("Fehler beim Beitreten: " + error.message);
+    // FIX: alert() ersetzt durch Banner-Fehlermeldung
+    showBannerError("Fehler beim Beitreten: " + error.message);
     return;
   }
 
@@ -244,7 +274,8 @@ async function leaveGroupOrder(groupOrderId) {
     .eq("group_order_id", groupOrderId);
 
   if (error) {
-    alert("Fehler beim Rückgängig machen: " + error.message);
+    // FIX: alert() ersetzt durch Banner-Fehlermeldung
+    showBannerError("Fehler beim Rükgängig machen: " + error.message);
     return;
   }
 
@@ -283,7 +314,6 @@ function openGroupOrderModal() {
     modal = buildCreateModal();
     document.body.appendChild(modal);
   }
-  // Felder zurücksetzen
   const supplierSelect = document.getElementById("go-supplier-select");
   const deadlineInput  = document.getElementById("go-deadline-input");
   const startdateInput = document.getElementById("go-startdate-input");
@@ -320,8 +350,8 @@ function buildCreateModal() {
   modal.innerHTML = `
     <div class="go-modal-backdrop" id="go-create-backdrop"></div>
     <div class="go-modal-box">
-      <button class="go-modal-close" type="button" aria-label="Schließen" id="go-create-close">✕</button>
-      <h2 class="go-modal-title" id="go-create-modal-title">Sammelbestellung eröffnen</h2>
+      <button class="go-modal-close" type="button" aria-label="Schlie\u00dfen" id="go-create-close">\u2715</button>
+      <h2 class="go-modal-title" id="go-create-modal-title">Sammelbestellung er\u00f6ffnen</h2>
 
       <label class="go-label" for="go-supplier-select">
         Lieferant <span class="go-required" aria-hidden="true">*</span>
@@ -402,7 +432,6 @@ async function submitGroupOrder() {
     return;
   }
 
-  // Duplikat-Check: offene Bestellung mit diesem Lieferanten?
   const { data: existing, error: checkError } = await db
     .from("group_orders")
     .select("id")
@@ -412,8 +441,8 @@ async function submitGroupOrder() {
     .maybeSingle();
 
   if (checkError) { errorEl.textContent = "Prüfungsfehler: " + checkError.message; return; }
-  if (existing)   {
-    errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplier)}".`;
+  if (existing) {
+    errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für \u201e${escapeHtml(supplier)}\u201c.`;
     return;
   }
 
@@ -482,7 +511,7 @@ function buildEditModal() {
   modal.innerHTML = `
     <div class="go-modal-backdrop" id="go-edit-backdrop"></div>
     <div class="go-modal-box">
-      <button class="go-modal-close" type="button" aria-label="Schließen" id="go-edit-close">✕</button>
+      <button class="go-modal-close" type="button" aria-label="Schlie\u00dfen" id="go-edit-close">\u2715</button>
       <h2 class="go-modal-title" id="go-edit-modal-title">Sammelbestellung bearbeiten</h2>
       <input type="hidden" id="go-edit-id">
 
@@ -549,16 +578,18 @@ function formatDeadline(isoString) {
   });
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+// escapeHtml ist global in app.js definiert und muss hier nicht dupliziert werden.
+// Für den Fall dass group-order.js standalone geladen wird, Fallback:
+if (typeof escapeHtml === "undefined") {
+  window.escapeHtml = function(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  };
 }
 
 function escapeAttr(str) {
-  return String(str)
+  return String(str ?? "")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
