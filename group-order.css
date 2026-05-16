@@ -1,11 +1,11 @@
 /* ============================================================
    SAMMELBESTELLUNG — group-order.css
-   Desktop: Fullscreen-Takeover (identisch zu checkout-section)
-   Mobile:  Bottom-Sheet (identisch zu cart-drawer)
+   Desktop: Fullscreen-Takeover
+   Mobile:  Bottom-Sheet
 ============================================================ */
 
 /* ============================================================
-   TRIGGER-BUTTON (kleines Indikator-Banner oben)
+   TRIGGER-BUTTON
 ============================================================ */
 
 .go-trigger-bar {
@@ -36,13 +36,13 @@
   border-radius: 50%;
   background: #01b0b8;
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(1,176,184,0.6);
+  box-shadow: 0 0 6px rgba(1,176,184,.6);
   animation: go-pulse 2s ease-in-out infinite;
 }
 
 @keyframes go-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.55; transform: scale(0.85); }
+  50%       { opacity: .55; transform: scale(.85); }
 }
 
 .go-trigger-bar-actions {
@@ -63,16 +63,15 @@
   cursor: pointer;
   white-space: nowrap;
   min-height: 32px;
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background 140ms ease;
   font-family: inherit;
 }
-
-.go-open-btn:hover { background: #018a92; transform: none; }
-.go-open-btn:active { transform: scale(0.96); opacity: 1; }
+.go-open-btn:hover  { background: #018a92; transform: none; }
+.go-open-btn:active { transform: scale(.96); opacity: 1; }
 
 .go-create-btn {
   background: none;
-  border: 1.5px solid rgba(1, 105, 111, 0.5);
+  border: 1.5px solid rgba(1,105,111,.5);
   color: #01b0b8;
   border-radius: 6px;
   padding: 6px 14px;
@@ -84,13 +83,80 @@
   min-height: 32px;
   white-space: nowrap;
 }
-
-.go-create-btn:hover { background: rgba(1, 105, 111, 0.15); border-color: #01696f; color: #fff; transform: none; }
-.go-create-btn:active { transform: scale(0.96); opacity: 1; }
+.go-create-btn:hover  { background: rgba(1,105,111,.15); border-color: #01696f; color: #fff; transform: none; }
+.go-create-btn:active { transform: scale(.96); opacity: 1; }
 
 /* ============================================================
-   FULLSCREEN PANEL (Desktop ≥ 1024px)
-   Identisch zu .checkout-section
+   SIGNAL BANNER (aktive GO-Sitzung — Signalfarbe)
+============================================================ */
+
+.go-signal-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, rgba(1,176,184,.18) 0%, rgba(1,105,111,.12) 100%);
+  border-bottom: 2px solid #01b0b8;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.go-signal-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.go-signal-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #01b0b8;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(1,176,184,.25);
+  animation: go-pulse 1.5s ease-in-out infinite;
+}
+
+.go-signal-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #01b0b8;
+}
+
+.go-signal-supplier {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.go-signal-leave-btn {
+  background: rgba(224,85,105,.12);
+  border: 1px solid rgba(224,85,105,.35);
+  color: #ffaab4;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 32px;
+  font-family: inherit;
+  transition: background 140ms ease;
+  flex-shrink: 0;
+}
+.go-signal-leave-btn:hover  { background: rgba(224,85,105,.22); transform: none; }
+.go-signal-leave-btn:active { transform: scale(.96); opacity: 1; }
+
+/* ============================================================
+   PANEL (Fullscreen Desktop)
 ============================================================ */
 
 .go-panel {
@@ -99,13 +165,12 @@
   z-index: 210;
   background: var(--bg);
   overflow-y: auto;
-  /* Standard: versteckt */
   display: none;
 }
 
 .go-panel.go-panel--open {
   display: block;
-  animation: go-panel-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: go-panel-slide-in 240ms cubic-bezier(.16,1,.3,1) both;
 }
 
 @keyframes go-panel-slide-in {
@@ -113,50 +178,39 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Mobile: Bottom-Sheet statt Fullscreen */
 @media (max-width: 1023px) {
   .go-panel {
-    /* Reset Fullscreen */
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: auto; left: 0; right: 0; bottom: 0;
     overflow-y: visible;
-    display: flex !important; /* immer im DOM, Sichtbarkeit über transform */
+    display: flex !important;
     flex-direction: column;
     max-height: 92dvh;
     border-radius: 20px 20px 0 0;
     border: 1px solid var(--border);
     border-bottom: none;
-    box-shadow: 0 -8px 40px rgba(0,0,0,0.45);
+    box-shadow: 0 -8px 40px rgba(0,0,0,.45);
     background: var(--surface);
-    /* Animationsstart: unten versteckt */
     transform: translateY(100%);
     opacity: 0;
     visibility: hidden;
     transition:
-      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(.34,1.56,.64,1)),
       opacity   var(--dur-mid, 220ms)  ease,
       visibility 0s linear var(--dur-slow, 400ms);
     will-change: transform;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    animation: none !important; /* kein slide-in auf Mobile */
+    animation: none !important;
   }
-
   .go-panel.go-panel--open {
     transform: translateY(0);
     opacity: 1;
     visibility: visible;
     transition:
-      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(.34,1.56,.64,1)),
       opacity   var(--dur-fast, 150ms) ease,
       visibility 0s linear 0s;
   }
 }
-
-/* ============================================================
-   PANEL INNEN — Header
-============================================================ */
 
 .go-panel-inner {
   max-width: 1100px;
@@ -174,10 +228,7 @@
   }
 }
 
-/* Handle (nur Mobile) */
-.go-panel-handle {
-  display: none;
-}
+.go-panel-handle { display: none; }
 
 @media (max-width: 1023px) {
   .go-panel-handle {
@@ -201,33 +252,27 @@
 }
 
 @media (max-width: 1023px) {
-  .go-panel-header {
-    padding: 12px 20px 14px;
-    margin-bottom: 0;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  .go-panel-header { padding: 12px 20px 14px; margin-bottom: 0; flex-shrink: 0; }
 }
 
 .go-panel-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.875rem;
+  gap: .4rem;
+  font-size: .875rem;
   font-weight: 500;
   color: var(--muted);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.5rem 0.75rem;
+  padding: .5rem .75rem;
   border-radius: 6px;
   transition: background 180ms ease, color 180ms ease;
   min-height: 44px;
   flex-shrink: 0;
 }
-
-.go-panel-back-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); transform: none; }
-.go-panel-back-btn:active { transform: scale(0.96); opacity: 1; }
+.go-panel-back-btn:hover  { background: rgba(255,255,255,.06); color: var(--text); transform: none; }
+.go-panel-back-btn:active { transform: scale(.96); opacity: 1; }
 
 .go-panel-header-title {
   flex: 1;
@@ -237,42 +282,28 @@
   line-height: 1.2;
 }
 
-/* Mobile: Close-Button statt Back-Button */
-.go-panel-close-btn {
-  display: none;
-}
+.go-panel-close-btn { display: none; }
 
 @media (max-width: 1023px) {
   .go-panel-back-btn  { display: none; }
   .go-panel-close-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
-    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; min-height: 36px; padding: 0;
     border-radius: 50%;
     background: var(--surface-3);
     border: 1px solid var(--border);
     color: var(--muted);
     flex-shrink: 0;
     cursor: pointer;
-    transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
     margin-left: auto;
+    transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
   }
-  .go-panel-close-btn:hover { background: var(--surface-4); color: var(--text); transform: none; }
-  .go-panel-close-btn:active { transform: scale(0.88); opacity: 1; }
+  .go-panel-close-btn:hover  { background: var(--surface-4); color: var(--text); transform: none; }
+  .go-panel-close-btn:active { transform: scale(.88); opacity: 1; }
   .go-panel-close-btn svg { width: 16px; height: 16px; pointer-events: none; }
 }
 
-/* ============================================================
-   PANEL BODY (scrollbar auf Mobile)
-============================================================ */
-
-.go-panel-body {
-  padding: 0;
-}
+.go-panel-body { padding: 0; }
 
 @media (max-width: 1023px) {
   .go-panel-body {
@@ -290,7 +321,7 @@
 }
 
 /* ============================================================
-   SAMMELBESTELLUNG LISTE (im Panel)
+   GO LISTE
 ============================================================ */
 
 .go-list {
@@ -312,35 +343,13 @@
   flex-wrap: wrap;
 }
 
-.go-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.go-item-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.go-item-deadline {
-  font-size: 0.8125rem;
-  color: var(--muted);
-}
-
-.go-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
+.go-item-info { flex: 1; min-width: 0; }
+.go-item-title { font-size: .9375rem; font-weight: 600; color: var(--text); margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.go-item-deadline { font-size: .8125rem; color: var(--muted); }
+.go-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* ============================================================
-   JOIN / UNDO / EDIT BUTTONS
+   BUTTONS
 ============================================================ */
 
 .go-join-btn {
@@ -357,15 +366,19 @@
   transition: background 140ms ease;
   font-family: inherit;
 }
-
-.go-join-btn:hover { background: #018a92; transform: none; }
-.go-join-btn:active { transform: scale(0.96); opacity: 1; }
-
+.go-join-btn:hover  { background: #018a92; transform: none; }
+.go-join-btn:active { transform: scale(.96); opacity: 1; }
 .go-join-btn.go-join-btn--active {
-  background: rgba(1, 176, 184, 0.15);
+  background: rgba(1,176,184,.15);
   color: #01b0b8;
-  border: 1px solid rgba(1, 176, 184, 0.35);
+  border: 1px solid rgba(1,176,184,.35);
 }
+.go-join-btn.go-join-btn--goto {
+  background: rgba(1,176,184,.1);
+  color: #01b0b8;
+  border: 1px solid rgba(1,176,184,.3);
+}
+.go-join-btn.go-join-btn--goto:hover { background: rgba(1,176,184,.2); }
 
 .go-undo-btn {
   background: none;
@@ -381,9 +394,8 @@
   font-family: inherit;
   transition: background 140ms ease, color 140ms ease;
 }
-
-.go-undo-btn:hover { background: rgba(224,85,105,0.1); color: #ffaab4; border-color: rgba(224,85,105,0.3); transform: none; }
-.go-undo-btn:active { transform: scale(0.96); opacity: 1; }
+.go-undo-btn:hover  { background: rgba(224,85,105,.1); color: #ffaab4; border-color: rgba(224,85,105,.3); transform: none; }
+.go-undo-btn:active { transform: scale(.96); opacity: 1; }
 
 .go-edit-btn {
   background: none;
@@ -399,22 +411,21 @@
   justify-content: center;
   cursor: pointer;
   font-size: 14px;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition: background 140ms ease;
 }
-
-.go-edit-btn:hover { background: var(--surface-3); border-color: var(--border-strong); transform: none; }
-.go-edit-btn:active { transform: scale(0.9); opacity: 1; }
+.go-edit-btn:hover  { background: var(--surface-3); border-color: var(--border-strong); transform: none; }
+.go-edit-btn:active { transform: scale(.9); opacity: 1; }
 
 /* ============================================================
-   NEUE SAMMELBESTELLUNG ERSTELLEN (innerhalb Panel)
+   ERSTELL-FORM
 ============================================================ */
 
 .go-section-title {
-  font-size: 0.8125rem;
+  font-size: .8125rem;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: .07em;
   margin: 0 0 12px;
 }
 
@@ -428,24 +439,8 @@
   gap: 12px;
 }
 
-/* ============================================================
-   FORM ELEMENTE (wiederverwendet für Erstellen + Bearbeiten)
-============================================================ */
-
-.go-label {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--muted);
-  margin-bottom: 5px;
-}
-
+.go-label { display: block; font-size: .8125rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
 .go-required { color: var(--accent); }
-
-.go-hint-inline {
-  font-weight: 400;
-  color: var(--faint);
-}
 
 .go-input {
   display: block;
@@ -453,7 +448,7 @@
   padding: 9px 12px;
   border: 1.5px solid var(--border-strong);
   border-radius: 7px;
-  font-size: 0.875rem;
+  font-size: .875rem;
   font-family: inherit;
   background: var(--surface-2);
   color: var(--text);
@@ -461,29 +456,13 @@
   outline: none;
   min-height: 0;
 }
+.go-input:focus { border-color: #01696f; box-shadow: 0 0 0 3px rgba(1,105,111,.15); }
 
-.go-input:focus {
-  border-color: #01696f;
-  box-shadow: 0 0 0 3px rgba(1, 105, 111, 0.15);
-}
-
-.go-error {
-  font-size: 0.8125rem;
-  color: #ffaab4;
-  min-height: 16px;
-  margin: 0;
-}
-
-.go-value-readonly {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--text);
-  padding: 8px 0;
-  margin: 0;
-}
+.go-error { font-size: .8125rem; color: #ffaab4; min-height: 16px; margin: 0; }
+.go-value-readonly { font-size: .9375rem; font-weight: 600; color: var(--text); padding: 8px 0; margin: 0; }
 
 /* ============================================================
-   MODAL FÜR BEARBEITEN (bleibt als echtes Modal, erscheint über Panel)
+   MODAL
 ============================================================ */
 
 .go-modal {
@@ -494,18 +473,13 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0,0,0,.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
-
 .go-modal.hidden { display: none !important; }
 
-.go-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  cursor: default;
-}
+.go-modal-backdrop { position: absolute; inset: 0; cursor: default; }
 
 .go-modal-box {
   position: relative;
@@ -515,47 +489,34 @@
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
   display: flex;
   flex-direction: column;
   gap: 14px;
-  animation: go-modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: go-modal-in 200ms cubic-bezier(.16,1,.3,1) both;
 }
 
 @keyframes go-modal-in {
-  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  from { opacity: 0; transform: scale(.94) translateY(8px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .go-modal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0;
+  top: 12px; right: 12px;
+  width: 32px; height: 32px; min-height: 32px; padding: 0;
   border-radius: 50%;
   background: var(--surface-3);
   border: 1px solid var(--border);
   color: var(--muted);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   transition: background 140ms ease, color 140ms ease;
 }
+.go-modal-close:hover  { background: var(--surface-4); color: var(--text); transform: none; }
+.go-modal-close:active { transform: scale(.88); opacity: 1; }
 
-.go-modal-close:hover { background: var(--surface-4); color: var(--text); transform: none; }
-.go-modal-close:active { transform: scale(0.88); opacity: 1; }
-
-.go-modal-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0;
-  padding-right: 32px;
-  color: var(--text);
-}
+.go-modal-title { font-size: 1rem; font-weight: 700; margin: 0; padding-right: 32px; color: var(--text); }
 
 .go-modal-footer {
   display: flex;
@@ -565,6 +526,144 @@
   border-top: 1px solid var(--border);
 }
 
+.go-modal-footer--col {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ============================================================
+   POST-SUBMIT DIALOG
+============================================================ */
+
+.go-post-submit-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(1,176,184,.15);
+  border: 2px solid rgba(1,176,184,.4);
+  color: #01b0b8;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.go-post-submit-text {
+  font-size: .9rem;
+  color: var(--text);
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   CHECKOUT — GO Supplier Badge im Header
+============================================================ */
+
+.checkout-header-go-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.checkout-supplier-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(1,176,184,.1);
+  border: 1px solid rgba(1,176,184,.3);
+  border-radius: 20px;
+  padding: 4px 12px 4px 10px;
+}
+
+.checkout-supplier-logo {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+  max-width: 80px;
+}
+
+.checkout-supplier-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #01b0b8;
+}
+
+/* ============================================================
+   CHECKOUT — Bereits übermittelte GO-Artikel
+============================================================ */
+
+#go-submitted-wrap {
+  margin-top: 24px;
+  border: 1px solid rgba(1,176,184,.25);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.go-submitted-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(1,176,184,.08);
+  border-bottom: 1px solid rgba(1,176,184,.2);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.go-submitted-badge {
+  background: rgba(1,176,184,.15);
+  border: 1px solid rgba(1,176,184,.3);
+  color: #01b0b8;
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.go-submitted-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.go-submitted-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: .875rem;
+}
+.go-submitted-row:last-child { border-bottom: none; }
+
+.go-submitted-name { flex: 1; color: var(--text); font-weight: 500; }
+.go-submitted-sku  { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.go-submitted-meta { font-size: .8125rem; color: var(--muted); white-space: nowrap; }
+.go-submitted-price { font-size: .875rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+/* ============================================================
+   BANNER ERROR
+============================================================ */
+
+#go-banner-error {
+  font-size: .8125rem;
+  color: #ffaab4;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  transition: opacity 200ms ease;
+}
+
+/* ============================================================
+   BUTTONS (Haupt)
+============================================================ */
+
 .go-btn-primary {
   background: var(--accent);
   color: #111;
@@ -572,15 +671,14 @@
   border-radius: 7px;
   padding: 9px 20px;
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: .875rem;
   cursor: pointer;
   min-height: 38px;
   font-family: inherit;
   transition: background 140ms ease;
 }
-
-.go-btn-primary:hover { background: var(--accent-hover); transform: none; }
-.go-btn-primary:active { transform: scale(0.97); opacity: 1; }
+.go-btn-primary:hover  { background: var(--accent-hover); transform: none; }
+.go-btn-primary:active { transform: scale(.97); opacity: 1; }
 
 .go-btn-secondary {
   background: var(--surface-3);
@@ -589,26 +687,11 @@
   border-radius: 7px;
   padding: 9px 16px;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: .875rem;
   cursor: pointer;
   min-height: 38px;
   font-family: inherit;
   transition: background 140ms ease;
 }
-
-.go-btn-secondary:hover { background: var(--surface-4); transform: none; }
-.go-btn-secondary:active { transform: scale(0.97); opacity: 1; }
-
-/* ============================================================
-   ERROR BANNER (in-panel)
-============================================================ */
-
-#go-banner-error {
-  font-size: 0.8125rem;
-  color: #ffaab4;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  line-height: 1.4;
-  transition: opacity 200ms ease;
-}
+.go-btn-secondary:hover  { background: var(--surface-4); transform: none; }
+.go-btn-secondary:active { transform: scale(.97); opacity: 1; }
