@@ -1,140 +1,614 @@
 /* ============================================================
-   SAMMELBESTELLUNG — Banner, Create-Bar, Modal
+   SAMMELBESTELLUNG — group-order.css
+   Desktop: Fullscreen-Takeover (identisch zu checkout-section)
+   Mobile:  Bottom-Sheet (identisch zu cart-drawer)
 ============================================================ */
 
-/* Banner (aktive Sammelbestellung) */
-.group-order-banner {
+/* ============================================================
+   TRIGGER-BUTTON (kleines Indikator-Banner oben)
+============================================================ */
+
+.go-trigger-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  background: rgba(1, 105, 111, 0.12);
+  border-bottom: 1px solid rgba(1, 105, 111, 0.25);
+  font-size: 13px;
+  color: var(--text);
+  flex-wrap: wrap;
+}
+
+.go-trigger-bar-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.go-trigger-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #01b0b8;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(1,176,184,0.6);
+  animation: go-pulse 2s ease-in-out infinite;
+}
+
+@keyframes go-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(0.85); }
+}
+
+.go-trigger-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.go-open-btn {
   background: #01696f;
   color: #fff;
-  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 32px;
+  transition: background 140ms ease, transform 140ms ease;
+  font-family: inherit;
+}
+
+.go-open-btn:hover { background: #018a92; transform: none; }
+.go-open-btn:active { transform: scale(0.96); opacity: 1; }
+
+.go-create-btn {
+  background: none;
+  border: 1.5px solid rgba(1, 105, 111, 0.5);
+  color: #01b0b8;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  font-family: inherit;
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.go-create-btn:hover { background: rgba(1, 105, 111, 0.15); border-color: #01696f; color: #fff; transform: none; }
+.go-create-btn:active { transform: scale(0.96); opacity: 1; }
+
+/* ============================================================
+   FULLSCREEN PANEL (Desktop ≥ 1024px)
+   Identisch zu .checkout-section
+============================================================ */
+
+.go-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  background: var(--bg);
+  overflow-y: auto;
+  /* Standard: versteckt */
+  display: none;
+}
+
+.go-panel.go-panel--open {
+  display: block;
+  animation: go-panel-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes go-panel-slide-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile: Bottom-Sheet statt Fullscreen */
+@media (max-width: 1023px) {
+  .go-panel {
+    /* Reset Fullscreen */
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: visible;
+    display: flex !important; /* immer im DOM, Sichtbarkeit über transform */
+    flex-direction: column;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.45);
+    background: var(--surface);
+    /* Animationsstart: unten versteckt */
+    transform: translateY(100%);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+      opacity   var(--dur-mid, 220ms)  ease,
+      visibility 0s linear var(--dur-slow, 400ms);
+    will-change: transform;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: none !important; /* kein slide-in auf Mobile */
+  }
+
+  .go-panel.go-panel--open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+    transition:
+      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+      opacity   var(--dur-fast, 150ms) ease,
+      visibility 0s linear 0s;
+  }
+}
+
+/* ============================================================
+   PANEL INNEN — Header
+============================================================ */
+
+.go-panel-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+@media (max-width: 1023px) {
+  .go-panel-inner {
+    display: flex;
+    flex-direction: column;
+    max-height: 92dvh;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* Handle (nur Mobile) */
+.go-panel-handle {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .go-panel-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--border-strong);
+    margin: 12px auto 0;
+    flex-shrink: 0;
+  }
+}
+
+.go-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1023px) {
+  .go-panel-header {
+    padding: 12px 20px 14px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+}
+
+.go-panel-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background 180ms ease, color 180ms ease;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.go-panel-back-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); transform: none; }
+.go-panel-back-btn:active { transform: scale(0.96); opacity: 1; }
+
+.go-panel-header-title {
+  flex: 1;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Mobile: Close-Button statt Back-Button */
+.go-panel-close-btn {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .go-panel-back-btn  { display: none; }
+  .go-panel-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+    margin-left: auto;
+  }
+  .go-panel-close-btn:hover { background: var(--surface-4); color: var(--text); transform: none; }
+  .go-panel-close-btn:active { transform: scale(0.88); opacity: 1; }
+  .go-panel-close-btn svg { width: 16px; height: 16px; pointer-events: none; }
+}
+
+/* ============================================================
+   PANEL BODY (scrollbar auf Mobile)
+============================================================ */
+
+.go-panel-body {
+  padding: 0;
+}
+
+@media (max-width: 1023px) {
+  .go-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 20px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .go-panel-body::-webkit-scrollbar { width: 3px; }
+  .go-panel-body::-webkit-scrollbar-track { background: transparent; }
+  .go-panel-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+}
+
+/* ============================================================
+   SAMMELBESTELLUNG LISTE (im Panel)
+============================================================ */
+
+.go-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.go-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  font-family: inherit;
-  font-size: 14px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
-.go-banner-text { flex: 1; min-width: 0; }
+.go-item-info {
+  flex: 1;
+  min-width: 0;
+}
 
-.go-banner-btn {
-  background: #fff;
-  color: #01696f;
+.go-item-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.go-item-deadline {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.go-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   JOIN / UNDO / EDIT BUTTONS
+============================================================ */
+
+.go-join-btn {
+  background: #01696f;
+  color: #fff;
   border: none;
   border-radius: 6px;
-  padding: 6px 16px;
+  padding: 7px 16px;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 150ms, color 150ms;
-}
-.go-banner-btn:hover {
-  background: #e6f2f2;
-}
-
-/* Create-Bar (wenn keine Sammelbestellung aktiv) */
-.group-order-create-bar {
-  background: var(--color-surface, #f9f8f5);
-  border-bottom: 1px solid var(--color-border, #d4d1ca);
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.go-create-btn {
-  background: none;
-  border: 1.5px solid #01696f;
-  color: #01696f;
-  border-radius: 6px;
-  padding: 6px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 150ms, color 150ms;
+  min-height: 34px;
+  transition: background 140ms ease;
   font-family: inherit;
 }
-.go-create-btn:hover {
-  background: #01696f;
-  color: #fff;
+
+.go-join-btn:hover { background: #018a92; transform: none; }
+.go-join-btn:active { transform: scale(0.96); opacity: 1; }
+
+.go-join-btn.go-join-btn--active {
+  background: rgba(1, 176, 184, 0.15);
+  color: #01b0b8;
+  border: 1px solid rgba(1, 176, 184, 0.35);
 }
 
-/* Modal Overlay */
-.go-modal-overlay {
+.go-undo-btn {
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 34px;
+  font-family: inherit;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.go-undo-btn:hover { background: rgba(224,85,105,0.1); color: #ffaab4; border-color: rgba(224,85,105,0.3); transform: none; }
+.go-undo-btn:active { transform: scale(0.96); opacity: 1; }
+
+.go-edit-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 0;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.go-edit-btn:hover { background: var(--surface-3); border-color: var(--border-strong); transform: none; }
+.go-edit-btn:active { transform: scale(0.9); opacity: 1; }
+
+/* ============================================================
+   NEUE SAMMELBESTELLUNG ERSTELLEN (innerhalb Panel)
+============================================================ */
+
+.go-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 12px;
+}
+
+.go-create-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================
+   FORM ELEMENTE (wiederverwendet für Erstellen + Bearbeiten)
+============================================================ */
+
+.go-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.go-required { color: var(--accent); }
+
+.go-hint-inline {
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.go-input {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 7px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--surface-2);
+  color: var(--text);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+  min-height: 0;
+}
+
+.go-input:focus {
+  border-color: #01696f;
+  box-shadow: 0 0 0 3px rgba(1, 105, 111, 0.15);
+}
+
+.go-error {
+  font-size: 0.8125rem;
+  color: #ffaab4;
+  min-height: 16px;
+  margin: 0;
+}
+
+.go-value-readonly {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 8px 0;
+  margin: 0;
+}
+
+/* ============================================================
+   MODAL FÜR BEARBEITEN (bleibt als echtes Modal, erscheint über Panel)
+============================================================ */
+
+.go-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 1000;
+  z-index: 300;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
-}
-.go-modal-overlay.hidden {
-  display: none;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-/* Modal Box */
-.go-modal {
-  background: var(--color-surface, #fff);
-  border-radius: 12px;
-  padding: 0;
+.go-modal.hidden { display: none !important; }
+
+.go-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+}
+
+.go-modal-box {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.18);
-  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: go-modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.go-modal-header {
+@keyframes go-modal-in {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.go-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 0;
+  justify-content: center;
+  transition: background 140ms ease, color 140ms ease;
 }
 
-.go-modal-header h2 {
-  font-size: 17px;
+.go-modal-close:hover { background: var(--surface-4); color: var(--text); transform: none; }
+.go-modal-close:active { transform: scale(0.88); opacity: 1; }
+
+.go-modal-title {
+  font-size: 1rem;
   font-weight: 700;
   margin: 0;
-  color: var(--color-text, #28251d);
-}
-
-.go-modal-body {
-  padding: 16px 24px;
-}
-
-.go-modal-desc {
-  font-size: 14px;
-  color: var(--color-text-muted, #7a7974);
-  margin-bottom: 16px;
-}
-
-.go-deadline-input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1.5px solid var(--color-border, #d4d1ca);
-  border-radius: 7px;
-  font-size: 14px;
-  font-family: inherit;
-  background: var(--color-bg, #f7f6f2);
-  color: var(--color-text, #28251d);
-  transition: border-color 150ms;
-}
-.go-deadline-input:focus {
-  outline: none;
-  border-color: #01696f;
+  padding-right: 32px;
+  color: var(--text);
 }
 
 .go-modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 24px 20px;
-  border-top: 1px solid var(--color-divider, #dcd9d5);
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.go-btn-primary {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 7px;
+  padding: 9px 20px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-height: 38px;
+  font-family: inherit;
+  transition: background 140ms ease;
+}
+
+.go-btn-primary:hover { background: var(--accent-hover); transform: none; }
+.go-btn-primary:active { transform: scale(0.97); opacity: 1; }
+
+.go-btn-secondary {
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-height: 38px;
+  font-family: inherit;
+  transition: background 140ms ease;
+}
+
+.go-btn-secondary:hover { background: var(--surface-4); transform: none; }
+.go-btn-secondary:active { transform: scale(0.97); opacity: 1; }
+
+/* ============================================================
+   ERROR BANNER (in-panel)
+============================================================ */
+
+#go-banner-error {
+  font-size: 0.8125rem;
+  color: #ffaab4;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  transition: opacity 200ms ease;
 }
