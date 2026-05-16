@@ -8,7 +8,6 @@ let activeGroupOrders = [];
 let groupOrderChannel = null;
 let blockedSuppliers  = new Set();
 
-// Aktive GO-Sitzung
 // { groupOrderId, supplierName, supplierLogo, isCreator, deadline }
 window.goSession = null;
 
@@ -116,25 +115,36 @@ function updateTriggerBar() {
 
 async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
   let supplierLogo = null;
+  // supplyer = Tippfehler im DB-Schema, beide Varianten abfragen
   const { data: logoData } = await db.from('products')
-    .select('supplier_logo').eq('supplier', supplierName).eq('active', true)
-    .not('supplier_logo', 'is', null).limit(1).maybeSingle();
-  supplierLogo = logoData?.supplier_logo || null;
+    .select('supplyer_logo').eq('supplyer', supplierName).eq('active', true)
+    .not('supplyer_logo', 'is', null).limit(1).maybeSingle();
+  supplierLogo = logoData?.supplyer_logo || null;
 
   window.goSession = { groupOrderId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierName);
-  updateCartLabelsForGo(supplierName);
+  // updateCartLabelsForGo ist in checkout.js definiert
+  if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
 }
 
 function deactivateGoMode() {
   window.goSession = null;
   removeGoSignalBanner();
-  resetCartLabels();
-  document.getElementById('shop-sidebar-desktop')?.classList.remove('hidden');
-  document.getElementById('filter-toggle-btn')?.classList.remove('hidden');
-  document.getElementById('filter-fab')?.classList.remove('hidden');
+  // resetCartLabels ist in checkout.js definiert
+  if (typeof resetCartLabels === 'function') resetCartLabels();
+
+  // FIX: go-sidebar-hidden statt hidden — erhält das Grid-Layout
+  const sidebar = document.getElementById('shop-sidebar-desktop');
+  if (sidebar) sidebar.classList.remove('go-sidebar-hidden');
+  const filterBtn = document.getElementById('filter-toggle-btn');
+  if (filterBtn) filterBtn.classList.remove('go-sidebar-hidden');
+  const filterFabEl = document.getElementById('filter-fab');
+  if (filterFabEl) filterFabEl.classList.remove('go-sidebar-hidden');
+  const activeFilterBarEl = document.getElementById('active-filter-bar');
+  if (activeFilterBarEl) activeFilterBarEl.classList.remove('go-sidebar-hidden');
+
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
     activeFilters = { category: null, supplier: null };
     buildFilterChips(allProducts);
@@ -145,13 +155,23 @@ function deactivateGoMode() {
 
 function filterProductsForGo(supplierName) {
   if (typeof allProducts === 'undefined') return;
+
+  // Produkte filtern — beide Feldnamen berücksichtigen (supplyer = DB-Tippfehler)
   const filtered = allProducts.filter(p =>
-    (p.supplier || p.supplier || '').toLowerCase() === supplierName.toLowerCase()
+    (p.supplier || p.supplyer || '').toLowerCase() === supplierName.toLowerCase()
   );
-  document.getElementById('shop-sidebar-desktop')?.classList.add('hidden');
-  document.getElementById('filter-toggle-btn')?.classList.add('hidden');
-  document.getElementById('filter-fab')?.classList.add('hidden');
-  document.getElementById('active-filter-bar')?.classList.add('hidden');
+
+  // FIX: go-sidebar-hidden statt hidden — Sidebar wird unsichtbar aber nimmt keinen Platz mehr weg
+  // Das Produkt-Grid behält sein normales Layout
+  const sidebar = document.getElementById('shop-sidebar-desktop');
+  if (sidebar) sidebar.classList.add('go-sidebar-hidden');
+  const filterBtn = document.getElementById('filter-toggle-btn');
+  if (filterBtn) filterBtn.classList.add('go-sidebar-hidden');
+  const filterFabEl = document.getElementById('filter-fab');
+  if (filterFabEl) filterFabEl.classList.add('go-sidebar-hidden');
+  const activeFilterBarEl = document.getElementById('active-filter-bar');
+  if (activeFilterBarEl) activeFilterBarEl.classList.add('go-sidebar-hidden');
+
   renderProducts(filtered);
 }
 
@@ -176,20 +196,6 @@ function renderGoSignalBanner() {
 
 function removeGoSignalBanner() {
   document.getElementById('go-signal-banner')?.remove();
-}
-
-function updateCartLabelsForGo(supplierName) {
-  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
-  if (cartHeadH2) cartHeadH2.innerHTML = `<span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>${escapeHtml(supplierName)}`;
-  const drawerTitle = document.querySelector('.cart-drawer-title');
-  if (drawerTitle) drawerTitle.innerHTML = `<span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>${escapeHtml(supplierName)}`;
-}
-
-function resetCartLabels() {
-  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
-  if (cartHeadH2) cartHeadH2.innerHTML = 'Warenkorb';
-  const drawerTitle = document.querySelector('.cart-drawer-title');
-  if (drawerTitle) drawerTitle.innerHTML = 'Warenkorb';
 }
 
 // ============================================================
@@ -277,7 +283,7 @@ function closeGroupPanel() {
 function closeGroupOrderModal() { closeGroupPanel(); }
 
 // ============================================================
-// PANEL CONTENT RENDERN
+// PANEL CONTENT
 // ============================================================
 
 function renderPanelContent() {
@@ -336,7 +342,6 @@ function renderPanelContent() {
   body.querySelectorAll('[data-undo-id]').forEach(btn =>
     btn.addEventListener('click', () => leaveGroupOrder(btn.getAttribute('data-undo-id'))));
 
-  // Edit-Button nur für Ersteller aktiv
   body.querySelectorAll('[data-edit-id]').forEach(async btn => {
     const creatorId = btn.getAttribute('data-edit-creator');
     const user = await getCurrentUser();
@@ -359,7 +364,7 @@ function renderPanelContent() {
 }
 
 // ============================================================
-// JOIN STATE SYNC
+// JOIN STATE
 // ============================================================
 
 async function syncJoinState(groupOrderId) {
@@ -466,10 +471,11 @@ async function loadSupplierDropdown() {
   const errorEl = document.getElementById('go-supplier-error');
   if (!select) return;
   select.innerHTML = `<option value="">— wird geladen …</option>`;
+  // supplyer = DB-Tippfehler, deshalb supplyer-Feld abfragen
   const { data, error } = await db.from('products')
-    .select('supplier').eq('active', true).not('supplier', 'is', null);
+    .select('supplyer').eq('active', true).not('supplyer', 'is', null);
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
-  const suppliers = [...new Set(data.map(p => p.supplier).filter(Boolean))].sort();
+  const suppliers = [...new Set(data.map(p => p.supplyer).filter(Boolean))].sort();
   if (suppliers.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     suppliers.map(s => {
@@ -525,7 +531,6 @@ async function submitGroupOrder() {
   const deadlineDate = new Date(deadline);
   if (deadlineDate <= new Date()) { errorEl.textContent = 'Die Deadline muss in der Zukunft liegen.'; return; }
 
-  // DB-Fallback-Check
   const { data: existing, error: checkError } = await db.from('group_orders')
     .select('id').eq('status', 'open').eq('title', supplier)
     .gt('deadline', new Date().toISOString()).maybeSingle();
@@ -548,7 +553,6 @@ async function submitGroupOrder() {
   if (submitBtn) submitBtn.disabled = false;
   if (insertError) { errorEl.textContent = 'Fehler beim Erstellen: ' + insertError.message; return; }
 
-  // Ersteller direkt in GO-Modus bringen
   await loadActiveGroupOrders();
   if (newOrder) await activateGoMode(String(newOrder.id), supplier, true, newOrder.deadline);
 }
