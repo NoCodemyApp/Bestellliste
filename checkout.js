@@ -3,7 +3,6 @@
 // GO-Modus: window.goSession steuert erweitertes Verhalten
 // ============================================================
 
-// Snapshot der Cart-Items bei renderCheckout() — zum Dirty-Check
 let _checkoutSnapshot = null;
 
 function openCheckout() {
@@ -20,7 +19,6 @@ function closeCheckout() {
   checkoutSection.classList.add('hidden');
   checkoutSection.classList.remove('checkout-enter');
   _checkoutSnapshot = null;
-  // GO-Modus: zurück zur gefilterten Produktseite
   if (window.goSession) {
     productsSection.classList.remove('hidden');
     filterProductsForGo(window.goSession.supplierName);
@@ -34,6 +32,39 @@ function closeCheckout() {
 if (openCheckoutBtn) openCheckoutBtn.addEventListener('click', openCheckout);
 if (checkoutBackBtn) checkoutBackBtn.addEventListener('click', closeCheckout);
 if (cartDrawerSubmit) cartDrawerSubmit.addEventListener('click', () => openCheckout());
+
+// ============================================================
+// CART LABELS — GO-Modus
+// ============================================================
+
+function updateCartLabelsForGo(supplierName) {
+  // Desktop: Warenkorb-Überschrift im Cart-Section Header
+  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
+  if (cartHeadH2) {
+    cartHeadH2.innerHTML = `
+      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>
+      ${escapeHtml(supplierName)}`;
+  }
+  // Mobile Drawer-Title
+  const drawerTitle = document.querySelector('.cart-drawer-title');
+  if (drawerTitle) {
+    drawerTitle.innerHTML = `
+      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>
+      ${escapeHtml(supplierName)}`;
+  }
+  // Mobile Badge-Button Label (aria-label anpassen)
+  const badgeBtn = document.getElementById('cart-badge-btn');
+  if (badgeBtn) badgeBtn.setAttribute('aria-label', `Sammelbestellung ${supplierName}`);
+}
+
+function resetCartLabels() {
+  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
+  if (cartHeadH2) cartHeadH2.innerHTML = 'Warenkorb';
+  const drawerTitle = document.querySelector('.cart-drawer-title');
+  if (drawerTitle) drawerTitle.innerHTML = 'Warenkorb';
+  const badgeBtn = document.getElementById('cart-badge-btn');
+  if (badgeBtn) badgeBtn.setAttribute('aria-label', 'Warenkorb');
+}
 
 // ============================================================
 // CHECKOUT HEADER — GO-Modus: Supplier-Label + Logo
@@ -76,7 +107,6 @@ async function renderCheckout() {
   if (!user) return;
 
   renderCheckoutHeader();
-  updateSubmitButtonLabel();
 
   const { data, error } = await fetchCartItems(user.id);
 
@@ -91,13 +121,12 @@ async function renderCheckout() {
     checkoutTotal.textContent = '0,00 €';
     checkoutItemCount.textContent = '0';
     _checkoutSnapshot = null;
-    updateSubmitButtonDirtyState();
+    // Leerer Cart: Button immer aktiv (nichts zu "aktualisieren")
+    await updateSubmitButtonLabel();
     return;
   }
 
   checkoutEmpty.classList.add('hidden');
-
-  // Snapshot für Dirty-Check speichern
   _checkoutSnapshot = JSON.stringify(data.map(i => ({ id: i.id, qty: i.quantity })));
 
   let total = 0;
@@ -168,7 +197,6 @@ async function renderCheckout() {
   checkoutTotal.textContent = formatPrice(total);
   checkoutItemCount.textContent = totalItems;
 
-  // Event Delegation
   checkoutList.addEventListener('click', async (e) => {
     const incBtn = e.target.closest('[data-qty-inc]');
     if (incBtn) { await updateCheckoutItemQty(incBtn.getAttribute('data-qty-inc'),  1); return; }
@@ -178,21 +206,20 @@ async function renderCheckout() {
     if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute('data-checkout-remove')); }
   }, { once: true });
 
-  // GO-Modus: bereits übermittelte Artikel der Sammelbestellung anzeigen
   if (window.goSession) await renderGoSubmittedItems(user);
 
-  updateSubmitButtonDirtyState();
+  // Label NACH dem Laden der Daten setzen
+  await updateSubmitButtonLabel();
 }
 
 // ============================================================
-// GO SUBMITTED ITEMS — bereits zur GO hinzugefügte Artikel
+// GO SUBMITTED ITEMS
 // ============================================================
 
 async function renderGoSubmittedItems(user) {
   const sess = window.goSession;
   if (!sess) return;
 
-  // Bereits submitted Order dieser GO laden
   const { data: goOrders } = await db.from('orders')
     .select('id, status').eq('user_id', user.id)
     .eq('group_order_id', sess.groupOrderId)
@@ -201,19 +228,13 @@ async function renderGoSubmittedItems(user) {
   let wrap = document.getElementById('go-submitted-wrap');
   const existing = goOrders && goOrders.length > 0 ? goOrders[0] : null;
 
-  if (!existing) {
-    if (wrap) wrap.remove();
-    return;
-  }
+  if (!existing) { if (wrap) wrap.remove(); return; }
 
   const { data: submittedItems } = await db.from('order_items')
-    .select(`id, quantity, product_name, product_sku, unit_price_netto, size_label`)
+    .select('id, quantity, product_name, product_sku, unit_price_netto, size_label')
     .eq('order_id', existing.id);
 
-  if (!submittedItems || submittedItems.length === 0) {
-    if (wrap) wrap.remove();
-    return;
-  }
+  if (!submittedItems || submittedItems.length === 0) { if (wrap) wrap.remove(); return; }
 
   if (!wrap) {
     wrap = document.createElement('div');
@@ -222,7 +243,7 @@ async function renderGoSubmittedItems(user) {
     checkoutBody?.appendChild(wrap);
   }
 
-  let rowsHtml = submittedItems.map(item => {
+  const rowsHtml = submittedItems.map(item => {
     const lineTotal = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
     return `<div class="go-submitted-row">
       <span class="go-submitted-name">${escapeHtml(item.product_name || '')}${item.product_sku ? ` <span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}</span>
@@ -245,16 +266,16 @@ async function renderGoSubmittedItems(user) {
 
 async function updateSubmitButtonLabel() {
   if (!window.goSession) {
-    submitOrderBtn.textContent = 'Bestellung absenden';
-    submitOrderBtn.disabled    = false;
-    submitOrderBtn.style.opacity = '1';
+    submitOrderBtn.textContent    = 'Bestellung absenden';
+    submitOrderBtn.disabled       = false;
+    submitOrderBtn.style.opacity  = '1';
+    submitOrderBtn.style.cursor   = 'pointer';
     return;
   }
 
   const user = await getCurrentUser();
   if (!user) return;
 
-  // Prüfen ob bereits eine submitted Order für diese GO vorhanden
   const { count } = await db.from('orders')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
@@ -262,25 +283,32 @@ async function updateSubmitButtonLabel() {
     .eq('status', 'submitted');
 
   const hasSubmitted = (count || 0) > 0;
-  submitOrderBtn.textContent = hasSubmitted ? 'Bestellung aktualisieren' : 'Bestellung absenden';
-  // Im GO-Modus ausgegraut bis Dirty-State (Funktion unten setzt es frei)
-  if (hasSubmitted) {
-    submitOrderBtn.disabled      = true;
-    submitOrderBtn.style.opacity = '0.4';
-    submitOrderBtn.style.cursor  = 'not-allowed';
-  } else {
+
+  if (!hasSubmitted) {
+    // Noch nie abgesendet: Button immer aktiv
+    submitOrderBtn.textContent   = 'Bestellung absenden';
     submitOrderBtn.disabled      = false;
     submitOrderBtn.style.opacity = '1';
     submitOrderBtn.style.cursor  = 'pointer';
+    return;
   }
-}
 
-function updateSubmitButtonDirtyState() {
-  // Nur relevant wenn bereits submitted
-  if (!submitOrderBtn.textContent.includes('aktualisieren')) return;
-  // Dirty = Cart hat sich geändert seit renderCheckout() Snapshot
-  // Wir lassen den Button freigeben wenn User etwas ändert (qty/remove)
-  // Wird von updateCheckoutItemQty + removeCheckoutItem aufgerufen
+  // Bereits abgesendet: prüfen ob Warenkorb NEUE Items hat
+  // (d.h. Items die noch nicht in der submitted Order sind)
+  submitOrderBtn.textContent = 'Bestellung aktualisieren';
+
+  // Wenn Cart-Snapshot vorhanden (renderCheckout hat Daten geladen) = neue Produkte im Warenkorb
+  // → Button freischalten. Wenn Cart leer = ausgegraut.
+  if (_checkoutSnapshot !== null) {
+    submitOrderBtn.disabled      = false;
+    submitOrderBtn.style.opacity = '1';
+    submitOrderBtn.style.cursor  = 'pointer';
+  } else {
+    // Leerer Warenkorb nach Submit
+    submitOrderBtn.disabled      = true;
+    submitOrderBtn.style.opacity = '0.4';
+    submitOrderBtn.style.cursor  = 'not-allowed';
+  }
 }
 
 function markCheckoutDirty() {
@@ -332,7 +360,7 @@ async function removeCheckoutItem(cartItemId) {
 }
 
 // ============================================================
-// ORDER SUBMIT (Standard + GO-Modus)
+// ORDER SUBMIT
 // ============================================================
 
 async function submitOrder() {
@@ -343,13 +371,11 @@ async function submitOrder() {
   if (cartError) { setOrderMessage(`Fehler beim Laden: ${cartError.message}`, true); return; }
   if (!cartItems || cartItems.length === 0) { setOrderMessage('Dein Warenkorb ist leer.', true); return; }
 
-  // GO-Modus: Update bestehender Order oder neue anlegen
   if (window.goSession) {
     await submitGoOrder(user, cartItems);
     return;
   }
 
-  // Standard-Flow
   const { data: orderData, error: orderError } = await db.from('orders')
     .insert({ user_id: user.id, status: 'submitted', note: null })
     .select().single();
@@ -392,13 +418,12 @@ async function submitOrder() {
 }
 
 // ============================================================
-// GO ORDER SUBMIT — Cart mit group_order_id verankern + Dialog
+// GO ORDER SUBMIT
 // ============================================================
 
 async function submitGoOrder(user, cartItems) {
   const sess = window.goSession;
 
-  // Bestehende GO-Order dieses Users laden
   const { data: existingOrders } = await db.from('orders')
     .select('id').eq('user_id', user.id)
     .eq('group_order_id', sess.groupOrderId)
@@ -407,19 +432,13 @@ async function submitGoOrder(user, cartItems) {
   let orderId;
 
   if (existingOrders && existingOrders.length > 0) {
-    // Update: alte order_items löschen und neu schreiben
     orderId = existingOrders[0].id;
     const { error: delError } = await db.from('order_items').delete().eq('order_id', orderId);
     if (delError) { setOrderMessage('Fehler beim Aktualisieren: ' + delError.message, true); return; }
   } else {
-    // Neue Order mit group_order_id anlegen
     const { data: newOrder, error: newErr } = await db.from('orders')
-      .insert({
-        user_id:         user.id,
-        status:         'submitted',
-        group_order_id: sess.groupOrderId,
-        note:           null
-      }).select().single();
+      .insert({ user_id: user.id, status: 'submitted', group_order_id: sess.groupOrderId, note: null })
+      .select().single();
     if (newErr || !newOrder) { setOrderMessage('Fehler beim Anlegen: ' + (newErr?.message || 'Unbekannt'), true); return; }
     orderId = newOrder.id;
   }
@@ -437,16 +456,10 @@ async function submitGoOrder(user, cartItems) {
   }));
 
   const { error: itemsError } = await db.from('order_items').insert(itemRows);
-  if (itemsError) {
-    setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true);
-    return;
-  }
+  if (itemsError) { setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true); return; }
 
-  // Warenkorb leeren
   await db.from('cart_items').delete().eq('user_id', user.id);
   await loadCart();
-
-  // Post-Submit Dialog anzeigen
   showGoPostSubmitDialog(sess);
 }
 
