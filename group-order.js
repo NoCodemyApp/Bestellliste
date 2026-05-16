@@ -115,7 +115,6 @@ function updateTriggerBar() {
 
 async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
   let supplierLogo = null;
-  // supplier = Tippfehler im DB-Schema, beide Varianten abfragen
   const { data: logoData } = await db.from('products')
     .select('supplier_logo').eq('supplier', supplierName).eq('active', true)
     .not('supplier_logo', 'is', null).limit(1).maybeSingle();
@@ -125,17 +124,15 @@ async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierName);
-  // updateCartLabelsForGo ist in checkout.js definiert
   if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
 }
 
 function deactivateGoMode() {
   window.goSession = null;
   removeGoSignalBanner();
-  // resetCartLabels ist in checkout.js definiert
   if (typeof resetCartLabels === 'function') resetCartLabels();
 
-  // FIX: go-sidebar-hidden statt hidden — erhält das Grid-Layout
+  // Sidebar + alle GO-versteckten Elemente wiederherstellen
   const sidebar = document.getElementById('shop-sidebar-desktop');
   if (sidebar) sidebar.classList.remove('go-sidebar-hidden');
   const filterBtn = document.getElementById('filter-toggle-btn');
@@ -144,6 +141,10 @@ function deactivateGoMode() {
   if (filterFabEl) filterFabEl.classList.remove('go-sidebar-hidden');
   const activeFilterBarEl = document.getElementById('active-filter-bar');
   if (activeFilterBarEl) activeFilterBarEl.classList.remove('go-sidebar-hidden');
+
+  // Trigger-Bar wieder einblenden
+  const triggerBar = document.getElementById('go-trigger-bar');
+  if (triggerBar) triggerBar.style.display = '';
 
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
     activeFilters = { category: null, supplier: null };
@@ -156,21 +157,24 @@ function deactivateGoMode() {
 function filterProductsForGo(supplierName) {
   if (typeof allProducts === 'undefined') return;
 
-  // Produkte filtern — beide Feldnamen berücksichtigen (supplier = DB-Tippfehler)
   const filtered = allProducts.filter(p =>
-    (p.supplier || p.supplier || '').toLowerCase() === supplierName.toLowerCase()
+    (p.supplier || '').toLowerCase() === supplierName.toLowerCase()
   );
 
-  // FIX: go-sidebar-hidden statt hidden — Sidebar wird unsichtbar aber nimmt keinen Platz mehr weg
-  // Das Produkt-Grid behält sein normales Layout
+  // Desktop-Sidebar ausblenden (kein Platz mehr im Grid)
   const sidebar = document.getElementById('shop-sidebar-desktop');
   if (sidebar) sidebar.classList.add('go-sidebar-hidden');
-  const filterBtn = document.getElementById('filter-toggle-btn');
-  if (filterBtn) filterBtn.classList.add('go-sidebar-hidden');
-  const filterFabEl = document.getElementById('filter-fab');
-  if (filterFabEl) filterFabEl.classList.add('go-sidebar-hidden');
+
+  // FIX: Filter-FAB und Filter-Toggle-Btn im GO-Mode SICHTBAR lassen —
+  // User soll innerhalb der GO-Produkte noch filtern können.
+  // Nur die active-filter-bar ausblenden (kein manueller Filter aktiv beim Einstieg)
   const activeFilterBarEl = document.getElementById('active-filter-bar');
   if (activeFilterBarEl) activeFilterBarEl.classList.add('go-sidebar-hidden');
+
+  // FIX: Trigger-Bar während GO-Mode ausblenden — verhindert die Abstandslücke
+  // zwischen Signal-Banner und Produkt-Grid
+  const triggerBar = document.getElementById('go-trigger-bar');
+  if (triggerBar) triggerBar.style.display = 'none';
 
   renderProducts(filtered);
 }
@@ -471,7 +475,6 @@ async function loadSupplierDropdown() {
   const errorEl = document.getElementById('go-supplier-error');
   if (!select) return;
   select.innerHTML = `<option value="">— wird geladen …</option>`;
-  // supplier = DB-Tippfehler, deshalb supplier-Feld abfragen
   const { data, error } = await db.from('products')
     .select('supplier').eq('active', true).not('supplier', 'is', null);
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
