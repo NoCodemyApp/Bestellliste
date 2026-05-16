@@ -457,13 +457,13 @@ async function loadSupplierDropdown() {
 
   const { data, error } = await db
     .from("products")
-    .select("supplyer")
+    .select("supplier")
     .eq("active", true)
-    .not("supplyer", "is", null);
+    .not("supplier", "is", null);
 
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
 
-  const suppliers = [...new Set(data.map(p => p.supplyer).filter(Boolean))].sort();
+  const suppliers = [...new Set(data.map(p => p.supplier).filter(Boolean))].sort();
 
   if (suppliers.length === 0) {
     select.innerHTML = `<option value="">Keine aktiven Lieferanten gefunden</option>`;
