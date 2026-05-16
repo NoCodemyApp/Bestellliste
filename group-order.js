@@ -117,9 +117,9 @@ function updateTriggerBar() {
 async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
   let supplierLogo = null;
   const { data: logoData } = await db.from('products')
-    .select('supplyer_logo').eq('supplyer', supplierName).eq('active', true)
-    .not('supplyer_logo', 'is', null).limit(1).maybeSingle();
-  supplierLogo = logoData?.supplyer_logo || null;
+    .select('supplier_logo').eq('supplier', supplierName).eq('active', true)
+    .not('supplier_logo', 'is', null).limit(1).maybeSingle();
+  supplierLogo = logoData?.supplier_logo || null;
 
   window.goSession = { groupOrderId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
@@ -146,7 +146,7 @@ function deactivateGoMode() {
 function filterProductsForGo(supplierName) {
   if (typeof allProducts === 'undefined') return;
   const filtered = allProducts.filter(p =>
-    (p.supplier || p.supplyer || '').toLowerCase() === supplierName.toLowerCase()
+    (p.supplier || p.supplier || '').toLowerCase() === supplierName.toLowerCase()
   );
   document.getElementById('shop-sidebar-desktop')?.classList.add('hidden');
   document.getElementById('filter-toggle-btn')?.classList.add('hidden');
@@ -467,9 +467,9 @@ async function loadSupplierDropdown() {
   if (!select) return;
   select.innerHTML = `<option value="">— wird geladen …</option>`;
   const { data, error } = await db.from('products')
-    .select('supplyer').eq('active', true).not('supplyer', 'is', null);
+    .select('supplier').eq('active', true).not('supplier', 'is', null);
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
-  const suppliers = [...new Set(data.map(p => p.supplyer).filter(Boolean))].sort();
+  const suppliers = [...new Set(data.map(p => p.supplier).filter(Boolean))].sort();
   if (suppliers.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     suppliers.map(s => {
