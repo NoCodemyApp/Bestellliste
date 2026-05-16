@@ -21,7 +21,6 @@ function closeCheckout() {
 if (openCheckoutBtn) openCheckoutBtn.addEventListener("click", openCheckout);
 if (checkoutBackBtn) checkoutBackBtn.addEventListener("click", closeCheckout);
 
-// Mobile Drawer "Zur Bestellübersicht" öffnet den Checkout
 if (cartDrawerSubmit) cartDrawerSubmit.addEventListener("click", () => { openCheckout(); });
 
 // ============================================================
@@ -32,18 +31,18 @@ async function renderCheckout() {
   const user = await getCurrentUser();
   if (!user) return;
 
-  const { data, error } = await db
-    .from("cart_items")
-    .select(`id, quantity, product_id, clothing_size_id, weight_size_id,
-             products(id,name,sku,price_brutto,price_netto),
-             sizes_clothing(id,code), sizes_weight(id,code)`)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // FIX: Fehler und leerer Warenkorb werden separat behandelt
+  const { data, error } = await fetchCartItems(user.id);
 
-  if (error || !data || data.length === 0) {
+  if (error) {
+    checkoutList.innerHTML = `<p class="checkout-error">Fehler beim Laden: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
     checkoutList.innerHTML = "";
     checkoutEmpty.classList.remove("hidden");
-    checkoutTotal.textContent = "0,00 €";
+    checkoutTotal.textContent = "0,00 \u20ac";
     checkoutItemCount.textContent = "0";
     return;
   }
@@ -69,6 +68,7 @@ async function renderCheckout() {
     groupedItems[productId].items.push(item);
   });
 
+  // FIX: escapeHtml auf alle DB-Werte (XSS)
   checkoutList.innerHTML = Object.values(groupedItems).map(group => {
     const productTotal = group.items.reduce((sum, item) => sum + (group.productPrice * Number(item.quantity || 0)), 0);
     total += productTotal;
@@ -78,14 +78,14 @@ async function renderCheckout() {
       const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
       const lineTotal = group.productPrice * Number(item.quantity || 0);
       return `<div class="checkout-item-row">
-        <div class="checkout-item-size">${sizeLabel ? `<span class="checkout-size-badge">${sizeLabel}</span>` : "<span class=\"checkout-size-badge checkout-size-badge--none\">Keine Größe</span>"}</div>
+        <div class="checkout-item-size">${sizeLabel ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>` : "<span class=\"checkout-size-badge checkout-size-badge--none\">Keine Gr\u00f6\u00dfe</span>"}</div>
         <div class="checkout-item-qty">
-          <button type="button" class="qty-stepper-btn" data-qty-dec="${item.id}" aria-label="Menge verringern">−</button>
-          <span class="qty-stepper-value" id="qty-val-${item.id}">${item.quantity}</span>
-          <button type="button" class="qty-stepper-btn" data-qty-inc="${item.id}" aria-label="Menge erhöhen">+</button>
+          <button type="button" class="qty-stepper-btn" data-qty-dec="${escapeHtml(String(item.id))}" aria-label="Menge verringern">−</button>
+          <span class="qty-stepper-value" id="qty-val-${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
+          <button type="button" class="qty-stepper-btn" data-qty-inc="${escapeHtml(String(item.id))}" aria-label="Menge erh\u00f6hen">+</button>
         </div>
         <div class="checkout-item-price">${formatPrice(lineTotal)}</div>
-        <button type="button" class="remove-btn icon-btn checkout-remove-btn" data-checkout-remove="${item.id}" aria-label="Position entfernen">
+        <button type="button" class="remove-btn icon-btn checkout-remove-btn" data-checkout-remove="${escapeHtml(String(item.id))}" aria-label="Position entfernen">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
           </svg>
@@ -96,14 +96,14 @@ async function renderCheckout() {
     return `<article class="checkout-product-group">
       <div class="checkout-product-header">
         <div class="checkout-product-name-wrap">
-          <span class="checkout-product-name">${group.productName}</span>
-          ${group.productSku ? `<span class="checkout-product-sku">${group.productSku}</span>` : ""}
+          <span class="checkout-product-name">${escapeHtml(group.productName)}</span>
+          ${group.productSku ? `<span class="checkout-product-sku">${escapeHtml(group.productSku)}</span>` : ""}
         </div>
         <span class="checkout-product-total">${formatPrice(productTotal)}</span>
       </div>
       <div class="checkout-item-rows">
         <div class="checkout-item-row checkout-item-row--header">
-          <div class="checkout-item-size">Größe</div>
+          <div class="checkout-item-size">Gr\u00f6\u00dfe</div>
           <div class="checkout-item-qty">Menge</div>
           <div class="checkout-item-price">Preis</div>
           <div></div>
@@ -116,40 +116,55 @@ async function renderCheckout() {
   checkoutTotal.textContent = formatPrice(total);
   checkoutItemCount.textContent = totalItems;
 
-  checkoutList.querySelectorAll("[data-qty-inc]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      await updateCheckoutItemQty(btn.getAttribute("data-qty-inc"), 1);
-    });
-  });
-  checkoutList.querySelectorAll("[data-qty-dec]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      await updateCheckoutItemQty(btn.getAttribute("data-qty-dec"), -1);
-    });
-  });
-  checkoutList.querySelectorAll("[data-checkout-remove]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      await removeCheckoutItem(btn.getAttribute("data-checkout-remove"));
-    });
-  });
+  // FIX: Event Delegation (verhindert doppelte Listener bei mehrfachem renderCheckout)
+  checkoutList.addEventListener("click", async (e) => {
+    const incBtn = e.target.closest("[data-qty-inc]");
+    if (incBtn) { await updateCheckoutItemQty(incBtn.getAttribute("data-qty-inc"), 1); return; }
+
+    const decBtn = e.target.closest("[data-qty-dec]");
+    if (decBtn) { await updateCheckoutItemQty(decBtn.getAttribute("data-qty-dec"), -1); return; }
+
+    const removeBtn = e.target.closest("[data-checkout-remove]");
+    if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute("data-checkout-remove")); }
+  }, { once: true });
 }
+
+// FIX: Debounce-Map für Qty-Stepper (verhindert Race Condition bei schnellen Klicks)
+const qtyDebounceMap = {};
 
 async function updateCheckoutItemQty(cartItemId, delta) {
   const user = await getCurrentUser();
   if (!user) return;
 
-  const valEl = document.getElementById(`qty-val-${cartItemId}`);
-  const currentQty = valEl ? Number(valEl.textContent) : 1;
-  const newQty = Math.max(1, currentQty + delta);
+  // Debounce: doppelten schnellen Klick blockieren
+  if (qtyDebounceMap[cartItemId]) return;
+  qtyDebounceMap[cartItemId] = true;
 
-  const { error } = await db
-    .from("cart_items")
-    .update({ quantity: newQty })
-    .eq("id", cartItemId)
-    .eq("user_id", user.id);
+  try {
+    const valEl = document.getElementById(`qty-val-${cartItemId}`);
+    const currentQty = valEl ? Number(valEl.textContent) : 1;
+    const newQty = Math.max(1, currentQty + delta);
 
-  if (error) { setOrderMessage(`Fehler beim Aktualisieren: ${error.message}`, true); return; }
+    // Optimistisches Update im DOM
+    if (valEl) valEl.textContent = newQty;
 
-  await Promise.all([renderCheckout(), loadCart()]);
+    const { error } = await db
+      .from("cart_items")
+      .update({ quantity: newQty })
+      .eq("id", cartItemId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      // Rollback bei Fehler
+      if (valEl) valEl.textContent = currentQty;
+      setOrderMessage(`Fehler beim Aktualisieren: ${error.message}`, true);
+      return;
+    }
+
+    await Promise.all([renderCheckout(), loadCart()]);
+  } finally {
+    delete qtyDebounceMap[cartItemId];
+  }
 }
 
 async function removeCheckoutItem(cartItemId) {
@@ -174,7 +189,10 @@ async function removeCheckoutItem(cartItemId) {
 async function submitOrder() {
   const user = await getCurrentUser();
   if (!user) { setOrderMessage("Du musst eingeloggt sein.", true); return; }
-  const cartItems = await loadCart();
+
+  // FIX: fetchCartItems() statt loadCart() – keine DOM-Seiteneffekte
+  const { data: cartItems, error: cartError } = await fetchCartItems(user.id);
+  if (cartError) { setOrderMessage(`Fehler beim Laden des Warenkorbs: ${cartError.message}`, true); return; }
   if (!cartItems || cartItems.length === 0) { setOrderMessage("Dein Warenkorb ist leer.", true); return; }
 
   const { data: orderData, error: orderError } = await db
@@ -197,12 +215,24 @@ async function submitOrder() {
   }));
 
   const { error: itemsError } = await db.from("order_items").insert(itemRows);
-  if (itemsError) { setOrderMessage(`Bestellpositionen konnten nicht gespeichert werden: ${itemsError.message}`, true); return; }
+  if (itemsError) {
+    // FIX: Rollback – Order löschen wenn Items nicht gespeichert werden konnten
+    await db.from("orders").delete().eq("id", orderData.id);
+    setOrderMessage(`Bestellpositionen konnten nicht gespeichert werden: ${itemsError.message}`, true);
+    return;
+  }
 
   try {
     await sendOrderEmailViaEdgeFunction(orderData.id);
   } catch (mailError) {
-    setOrderMessage(`Bestellung gespeichert, aber E-Mail konnte nicht gesendet werden: ${mailError.message}`, true);
+    // E-Mail-Fehler: Order ist gespeichert, Benutzer informieren aber NICHT abbrechen
+    console.warn("E-Mail-Fehler:", mailError.message);
+    setOrderMessage(`Bestellung gespeichert (ID: ${orderData.id}), aber E-Mail konnte nicht gesendet werden.`, true);
+    // FIX: Cart trotzdem leeren, Bestellung ist gültig
+    await db.from("cart_items").delete().eq("user_id", user.id);
+    closeCheckout();
+    closeCartDrawer();
+    await loadCart();
     return;
   }
 
@@ -220,8 +250,6 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
   const accessToken = sessionData?.session?.access_token;
   if (!accessToken) throw new Error("Kein Access Token gefunden.");
 
-  // recipientEmail wird NICHT mehr im Frontend übergeben.
-  // Die Edge Function liest ADMIN_EMAIL aus dem Supabase Secret.
   const response = await fetch("https://fniweelbmnsrdmotkmzu.supabase.co/functions/v1/resend-email", {
     method: "POST",
     headers: {
@@ -239,4 +267,12 @@ async function sendOrderEmailViaEdgeFunction(orderId) {
   return parsed;
 }
 
-submitOrderBtn.addEventListener("click", async () => { await submitOrder(); });
+// FIX: Submit-Button wird während der Bestellung disabled (verhindert Doppelklick)
+submitOrderBtn.addEventListener("click", async () => {
+  submitOrderBtn.disabled = true;
+  try {
+    await submitOrder();
+  } finally {
+    submitOrderBtn.disabled = false;
+  }
+});
