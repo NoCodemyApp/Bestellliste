@@ -113,9 +113,6 @@ function updateTriggerBar() {
   if (count === 0) {
     // Nur "Neue erstellen"-Button
     bar.innerHTML = `
-      <div class="go-trigger-bar-text" style="color:var(--muted);font-size:12px;">
-        Keine aktiven Sammelbestellungen
-      </div>
       <div class="go-trigger-bar-actions">
         <button class="go-create-btn" id="go-trigger-create-btn" type="button">
           + Sammelbestellung eröffnen
