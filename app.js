@@ -219,7 +219,6 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     return;
   }
 
-  // FIX: escapeHtml auf Filter-Werte anwenden (XSS)
   container.innerHTML = values.map(val => {
     const isActive = activeFilters[filterKey] === val;
     return `<button
@@ -278,7 +277,6 @@ function updateFilterUI() {
     const tag = document.createElement("button");
     tag.type = "button";
     tag.className = "active-filter-tag";
-    // FIX: escapeHtml für Label-Text (XSS)
     tag.innerHTML = `${escapeHtml(label)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     tag.addEventListener("click", () => {
       activeFilters[key] = null;
@@ -329,7 +327,6 @@ function syncDrawer(totalText, itemCount) {
 
   cartDrawerTotal.textContent = totalText;
 
-  // FIX: Event Delegation statt forEach/addEventListener (verhindert doppelte Listener)
   cartDrawerBody.addEventListener("click", async (e) => {
     const removeBtn = e.target.closest("[data-remove-cart]");
     if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
@@ -378,7 +375,6 @@ async function getCurrentUser() {
 
 // ============================================================
 // FETCH CART DATA (pure – keine DOM-Seiteneffekte)
-// FIX: Trennung von Daten-Laden und Rendern für submitOrder()
 // ============================================================
 
 async function fetchCartItems(userId) {
@@ -398,7 +394,6 @@ async function fetchCartItems(userId) {
 // RENDER PRODUCTS
 // ============================================================
 
-// FIX: Fallback-Bild als Data-URI – kein Abhängigkeit von externem Dienst
 const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='28' fill='%23999'%3EKein Bild%3C/text%3E%3C/svg%3E";
 
 function renderProducts(products) {
@@ -425,7 +420,6 @@ function renderProducts(products) {
     const sizeType = clothingSizes.length > 0 ? "clothing" : weightSizes.length > 0 ? "weight" : null;
     const sizes    = sizeType === "clothing" ? clothingSizes : weightSizes;
 
-    // FIX: escapeHtml auf alle DB-Werte in HTML-Templates (XSS)
     const safeName = escapeHtml(product.name);
     const safeId   = escapeHtml(String(product.id));
 
@@ -478,13 +472,13 @@ function renderProducts(products) {
 
   document.querySelectorAll("[data-add-to-cart]").forEach(button => {
     button.addEventListener("click", async () => {
-      const productId      = button.getAttribute("data-add-to-cart");
-      const card           = document.querySelector(`[data-product-card="${productId}"]`);
-      const qtyInput       = document.querySelector(`[data-qty-for="${productId}"]`);
-      const quantity       = Number(qtyInput?.value || 1);
-      const selectedSizeId = card?.getAttribute("data-selected-size-id");
+      const productId        = button.getAttribute("data-add-to-cart");
+      const card             = document.querySelector(`[data-product-card="${productId}"]`);
+      const qtyInput         = document.querySelector(`[data-qty-for="${productId}"]`);
+      const quantity         = Number(qtyInput?.value || 1);
+      const selectedSizeId   = card?.getAttribute("data-selected-size-id");
       const selectedSizeType = card?.getAttribute("data-selected-size-type");
-      const hasSizeSelector = card?.querySelector(".size-selector");
+      const hasSizeSelector  = card?.querySelector(".size-selector");
 
       if (hasSizeSelector && (!selectedSizeId || !selectedSizeType)) {
         setMessage("Bitte zuerst eine Groesse auswaehlen.", true); return;
@@ -540,7 +534,9 @@ async function loadProducts() {
 }
 
 // ============================================================
-// CART
+// CART — addToCart
+// GO-Modus:      schreibt in group_order_cart
+// Normaler Modus: schreibt in cart_items
 // ============================================================
 
 async function addToCart(productId, quantity, selectedSize) {
@@ -552,23 +548,65 @@ async function addToCart(productId, quantity, selectedSize) {
   const clothingSizeId = isClothing ? selectedSize.sizeId : null;
   const weightSizeId   = isWeight   ? selectedSize.sizeId : null;
 
-  let existingQuery = db.from("cart_items").select("id, quantity").eq("user_id", user.id).eq("product_id", productId);
+  // ── GO-Modus: in group_order_cart schreiben ──────────────
+  if (window.goSession) {
+    const goId = window.goSession.groupOrderId;
 
-  // FIX: Explizite Null-Size-Prüfung wenn kein selectedSize
-  if (isClothing)       existingQuery = existingQuery.eq("clothing_size_id", clothingSizeId);
-  else if (isWeight)    existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
-  else {
-    existingQuery = existingQuery.is("clothing_size_id", null).is("weight_size_id", null);
+    let goQuery = db.from("group_order_cart")
+      .select("id, quantity")
+      .eq("user_id", user.id)
+      .eq("group_order_id", goId)
+      .eq("product_id", productId);
+
+    if (isClothing)    goQuery = goQuery.eq("clothing_size_id", clothingSizeId);
+    else if (isWeight) goQuery = goQuery.eq("weight_size_id", weightSizeId);
+    else               goQuery = goQuery.is("clothing_size_id", null).is("weight_size_id", null);
+
+    const { data: existing, error: goErr } = await goQuery.maybeSingle();
+    if (goErr) { setMessage(`Fehler: ${goErr.message}`, true); return; }
+
+    if (existing) {
+      const { error: updErr } = await db.from("group_order_cart")
+        .update({ quantity: Number(existing.quantity || 0) + Number(quantity || 0) })
+        .eq("id", existing.id);
+      if (updErr) { setMessage(`Fehler: ${updErr.message}`, true); return; }
+    } else {
+      const { error: insErr } = await db.from("group_order_cart").insert({
+        user_id:          user.id,
+        group_order_id:   goId,
+        product_id:       productId,
+        quantity,
+        clothing_size_id: clothingSizeId,
+        weight_size_id:   weightSizeId
+      });
+      if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
+    }
+
+    setMessage("Produkt zur Sammelbestellung hinzugefügt.");
+    return;
   }
+
+  // ── Normaler Modus: cart_items ───────────────────────────
+  let existingQuery = db.from("cart_items")
+    .select("id, quantity").eq("user_id", user.id).eq("product_id", productId);
+
+  if (isClothing)    existingQuery = existingQuery.eq("clothing_size_id", clothingSizeId);
+  else if (isWeight) existingQuery = existingQuery.eq("weight_size_id", weightSizeId);
+  else               existingQuery = existingQuery.is("clothing_size_id", null).is("weight_size_id", null);
 
   const { data: existingItem, error: existingError } = await existingQuery.maybeSingle();
   if (existingError) { setMessage(`Fehler beim Pruefen des Warenkorbs: ${existingError.message}`, true); return; }
 
   if (existingItem) {
-    const { error: updateError } = await db.from("cart_items").update({ quantity: Number(existingItem.quantity||0) + Number(quantity||0) }).eq("id", existingItem.id);
+    const { error: updateError } = await db.from("cart_items")
+      .update({ quantity: Number(existingItem.quantity || 0) + Number(quantity || 0) })
+      .eq("id", existingItem.id);
     if (updateError) { setMessage(`Fehler beim Aktualisieren des Warenkorbs: ${updateError.message}`, true); return; }
   } else {
-    const { error: insertError } = await db.from("cart_items").insert({ user_id: user.id, product_id: productId, quantity, clothing_size_id: clothingSizeId, weight_size_id: weightSizeId });
+    const { error: insertError } = await db.from("cart_items").insert({
+      user_id: user.id, product_id: productId, quantity,
+      clothing_size_id: clothingSizeId, weight_size_id: weightSizeId
+    });
     if (insertError) { setMessage(`Fehler beim Speichern im Warenkorb: ${insertError.message}`, true); return; }
   }
 
@@ -583,7 +621,6 @@ async function loadCart(highlightProductId = null) {
   const user = await getCurrentUser();
   if (!user) { cartList.innerHTML = ""; cartTotal.textContent = ""; updateCartBadge(0); return []; }
 
-  // FIX: fetchCartItems() für pure Daten-Abfrage nutzen
   const { data, error } = await fetchCartItems(user.id);
 
   if (error) { cartList.innerHTML = `<p>Fehler beim Laden des Warenkorbs: ${escapeHtml(error.message)}</p>`; cartTotal.textContent = ""; updateCartBadge(0); return []; }
@@ -611,7 +648,6 @@ async function loadCart(highlightProductId = null) {
     groupedItems[productId].items.push(item);
   });
 
-  // FIX: escapeHtml auf Produktnamen (XSS)
   cartList.innerHTML = Object.values(groupedItems).map(group => {
     const productTotal = group.items.reduce((sum, item) => sum + (group.productPrice * Number(item.quantity || 0)), 0);
     total += productTotal;
@@ -649,7 +685,6 @@ async function loadCart(highlightProductId = null) {
 
   syncDrawer(totalText, totalItems);
 
-  // FIX: Event Delegation statt forEach/addEventListener (verhindert doppelte Listener)
   cartList.addEventListener("click", async (e) => {
     const removeBtn = e.target.closest("[data-remove-cart]");
     if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
