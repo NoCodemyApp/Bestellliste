@@ -8,12 +8,16 @@ let _checkoutSnapshot = null;
 // Set mit IDs die zum Löschen markiert sind (soft delete / toggle)
 const _goDeletePending = new Set();
 
+// Flag: wurde eine Qty in den submitted items geändert?
+let _goQtyDirty = false;
+
 function openCheckout() {
   productsSection.classList.add('hidden');
   checkoutSection.classList.remove('hidden');
   checkoutSection.classList.add('checkout-enter');
   closeCartDrawer();
   _checkoutSnapshot = null;
+  _goQtyDirty = false;
   renderCheckout();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -22,6 +26,7 @@ function closeCheckout() {
   checkoutSection.classList.add('hidden');
   checkoutSection.classList.remove('checkout-enter');
   _checkoutSnapshot = null;
+  _goQtyDirty = false;
   if (window.goSession) {
     productsSection.classList.remove('hidden');
     filterProductsForGo(window.goSession.supplierName);
@@ -244,13 +249,13 @@ async function renderGoSubmittedItems(user) {
   const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
   const rowsHtml = submittedItems.map(item => {
-    const lineTotal  = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
-    const sizeText   = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
-    const isMarked   = _goDeletePending.has(String(item.id));
-    const rowStyle   = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
+    const lineTotal   = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
+    const sizeText    = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
+    const isMarked    = _goDeletePending.has(String(item.id));
+    const rowStyle    = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
     const btnDisabled = isMarked ? ' disabled' : '';
-    const removeBtnClass = isMarked ? 'go-submitted-remove go-submitted-remove--undo' : 'go-submitted-remove';
-    const removeBtnLabel = isMarked ? 'Löschen rückgängig' : 'Entfernen';
+    const removeBtnClass   = isMarked ? 'go-submitted-remove go-submitted-remove--undo' : 'go-submitted-remove';
+    const removeBtnLabel   = isMarked ? 'Löschen rückgängig' : 'Entfernen';
     const removeBtnContent = isMarked ? '↩' : trashIcon;
     return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}" data-unit-price="${Number(item.unit_price_netto || 0)}" style="${rowStyle}">
       <span class="go-submitted-name">
@@ -316,6 +321,7 @@ function toggleGoSubmittedDelete(orderItemId) {
 
 // ============================================================
 // Qty eines bereits gesendeten order_items ändern
+// (Qty wird direkt in DB geschrieben; _goQtyDirty trackt ob Änderung vorliegt)
 // ============================================================
 
 const _goQtyDebounce = {};
@@ -343,7 +349,10 @@ async function updateGoSubmittedQty(orderItemId, delta, orderId) {
       setOrderMessage('Fehler beim Aktualisieren: ' + error.message, true);
       return;
     }
-    markCheckoutDirty();
+
+    // Qty-Änderung als dirty markieren → aktiviert den Aktualisieren-Button
+    _goQtyDirty = true;
+    _recheckUpdateButtonState();
   } finally {
     delete _goQtyDebounce[orderItemId];
   }
@@ -385,11 +394,12 @@ async function updateSubmitButtonLabel() {
   _recheckUpdateButtonState();
 }
 
-// Prüft ob der Aktualisieren-Button aktiv sein soll
+// Prüft ob der Aktualisieren-Button aktiv sein soll.
+// Aktiv wenn: neuer Warenkorb-Inhalt ODER pending deletes ODER Qty geändert.
 function _recheckUpdateButtonState() {
   if (!window.goSession) return;
   if (!submitOrderBtn.textContent.includes('aktualisieren')) return;
-  const hasChanges = _checkoutSnapshot !== null || _goDeletePending.size > 0;
+  const hasChanges = _checkoutSnapshot !== null || _goDeletePending.size > 0 || _goQtyDirty;
   submitOrderBtn.disabled      = !hasChanges;
   submitOrderBtn.style.opacity = hasChanges ? '1' : '0.4';
   submitOrderBtn.style.cursor  = hasChanges ? 'pointer' : 'not-allowed';
@@ -452,9 +462,9 @@ async function submitOrder() {
   const { data: cartItems, error: cartError } = await fetchCartItems(user.id);
   if (cartError) { setOrderMessage(`Fehler beim Laden: ${cartError.message}`, true); return; }
 
-  // Im GO-Aktualisieren-Modus: leerer Warenkorb erlaubt wenn pending deletes vorhanden
+  // Im GO-Aktualisieren-Modus: leerer Warenkorb ok wenn pending deletes oder Qty-Änderungen vorhanden
   if (!cartItems || cartItems.length === 0) {
-    if (window.goSession && _goDeletePending.size > 0) {
+    if (window.goSession && (_goDeletePending.size > 0 || _goQtyDirty)) {
       await submitGoOrder(user, []);
       return;
     }
@@ -525,7 +535,7 @@ async function submitGoOrder(user, cartItems) {
   if (existingOrders && existingOrders.length > 0) {
     orderId = existingOrders[0].id;
 
-    // 1. Pending Deletes ausführen (echtes DB-Delete nur jetzt beim Submit)
+    // 1. Pending Deletes ausführen
     if (_goDeletePending.size > 0) {
       for (const itemId of _goDeletePending) {
         const { error: delErr } = await db.from('order_items').delete().eq('id', itemId);
@@ -537,7 +547,7 @@ async function submitGoOrder(user, cartItems) {
       _goDeletePending.clear();
     }
 
-    // 2. Neue Warenkorb-Items zur bestehenden Order hinzufügen (additive, kein Reset)
+    // 2. Neue Warenkorb-Items additiv hinzufügen
     if (cartItems && cartItems.length > 0) {
       const itemRows = cartItems.map(item => ({
         order_id:         orderId,
@@ -587,6 +597,9 @@ async function submitGoOrder(user, cartItems) {
     const { error: itemsError } = await db.from('order_items').insert(itemRows);
     if (itemsError) { setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true); return; }
   }
+
+  // Dirty-Flags zurücksetzen
+  _goQtyDirty = false;
 
   await db.from('cart_items').delete().eq('user_id', user.id);
   await loadCart();
