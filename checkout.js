@@ -5,11 +5,9 @@
 
 let _checkoutSnapshot = null;
 
-// Set mit IDs die zum Löschen markiert sind (soft delete / toggle)
-const _goDeletePending = new Set();
-
-// Flag: wurde eine Qty in den submitted items geändert?
-let _goQtyDirty = false;
+// Pending-Zustände für GO-Modus: werden erst beim Submit in die DB geschrieben
+const _goDeletePending = new Set();          // IDs die gelöscht werden sollen
+const _goQtyPending    = new Map();          // itemId -> neue Qty
 
 function openCheckout() {
   productsSection.classList.add('hidden');
@@ -17,7 +15,6 @@ function openCheckout() {
   checkoutSection.classList.add('checkout-enter');
   closeCartDrawer();
   _checkoutSnapshot = null;
-  _goQtyDirty = false;
   renderCheckout();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -26,7 +23,6 @@ function closeCheckout() {
   checkoutSection.classList.add('hidden');
   checkoutSection.classList.remove('checkout-enter');
   _checkoutSnapshot = null;
-  _goQtyDirty = false;
   if (window.goSession) {
     productsSection.classList.remove('hidden');
     filterProductsForGo(window.goSession.supplierName);
@@ -217,7 +213,7 @@ async function renderCheckout() {
 }
 
 // ============================================================
-// GO SUBMITTED ITEMS — inline editable mit Soft-Delete Toggle
+// GO SUBMITTED ITEMS — inline editable mit Pending-State
 // ============================================================
 
 async function renderGoSubmittedItems(user) {
@@ -249,27 +245,31 @@ async function renderGoSubmittedItems(user) {
   const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
   const rowsHtml = submittedItems.map(item => {
-    const lineTotal   = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
-    const sizeText    = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
-    const isMarked    = _goDeletePending.has(String(item.id));
-    const rowStyle    = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
+    const id         = String(item.id);
+    // Pending-Qty hat Vorrang vor DB-Wert
+    const displayQty = _goQtyPending.has(id) ? _goQtyPending.get(id) : Number(item.quantity);
+    const unitPrice  = Number(item.unit_price_netto || 0);
+    const lineTotal  = unitPrice * displayQty;
+    const sizeText   = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
+    const isMarked   = _goDeletePending.has(id);
+    const rowStyle   = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
     const btnDisabled = isMarked ? ' disabled' : '';
     const removeBtnClass   = isMarked ? 'go-submitted-remove go-submitted-remove--undo' : 'go-submitted-remove';
     const removeBtnLabel   = isMarked ? 'Löschen rückgängig' : 'Entfernen';
     const removeBtnContent = isMarked ? '↩' : trashIcon;
-    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}" data-unit-price="${Number(item.unit_price_netto || 0)}" style="${rowStyle}">
+    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(id)}" data-unit-price="${unitPrice}" style="${rowStyle}">
       <span class="go-submitted-name">
         ${escapeHtml(item.product_name || '')}
         ${item.product_sku ? `<span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}
       </span>
       <span class="go-submitted-meta">${sizeText}</span>
       <div class="go-submitted-qty-stepper">
-        <button type="button" class="go-submitted-qty-btn" data-go-dec="${escapeHtml(String(item.id))}" aria-label="Weniger"${btnDisabled}>−</button>
-        <span class="go-submitted-qty-val" id="go-qty-val-${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
-        <button type="button" class="go-submitted-qty-btn" data-go-inc="${escapeHtml(String(item.id))}" aria-label="Mehr"${btnDisabled}>+</button>
+        <button type="button" class="go-submitted-qty-btn" data-go-dec="${escapeHtml(id)}" aria-label="Weniger"${btnDisabled}>−</button>
+        <span class="go-submitted-qty-val" id="go-qty-val-${escapeHtml(id)}">${displayQty}</span>
+        <button type="button" class="go-submitted-qty-btn" data-go-inc="${escapeHtml(id)}" aria-label="Mehr"${btnDisabled}>+</button>
       </div>
-      <span class="go-submitted-price" id="go-price-val-${escapeHtml(String(item.id))}">${formatPrice(lineTotal)}</span>
-      <button type="button" class="${removeBtnClass}" data-go-remove="${escapeHtml(String(item.id))}" aria-label="${removeBtnLabel}">${removeBtnContent}</button>
+      <span class="go-submitted-price" id="go-price-val-${escapeHtml(id)}">${formatPrice(lineTotal)}</span>
+      <button type="button" class="${removeBtnClass}" data-go-remove="${escapeHtml(id)}" aria-label="${removeBtnLabel}">${removeBtnContent}</button>
     </div>`;
   }).join('');
 
@@ -283,18 +283,18 @@ async function renderGoSubmittedItems(user) {
   const checkoutBody = document.querySelector('.checkout-items-wrap') || checkoutList?.parentElement;
   if (checkoutBody) checkoutBody.appendChild(wrap);
 
-  wrap.addEventListener('click', async (e) => {
+  wrap.addEventListener('click', (e) => {
     const incBtn    = e.target.closest('[data-go-inc]');
     const decBtn    = e.target.closest('[data-go-dec]');
     const removeBtn = e.target.closest('[data-go-remove]');
-    if (incBtn)    { await updateGoSubmittedQty(incBtn.getAttribute('data-go-inc'),    1, existing.id); return; }
-    if (decBtn)    { await updateGoSubmittedQty(decBtn.getAttribute('data-go-dec'),   -1, existing.id); return; }
+    if (incBtn)    { updateGoSubmittedQtyPending(incBtn.getAttribute('data-go-inc'),    1); return; }
+    if (decBtn)    { updateGoSubmittedQtyPending(decBtn.getAttribute('data-go-dec'),   -1); return; }
     if (removeBtn) { toggleGoSubmittedDelete(removeBtn.getAttribute('data-go-remove')); }
   });
 }
 
 // ============================================================
-// SOFT-DELETE TOGGLE — kein sofortiges DB-Delete
+// SOFT-DELETE TOGGLE
 // ============================================================
 
 function toggleGoSubmittedDelete(orderItemId) {
@@ -303,6 +303,8 @@ function toggleGoSubmittedDelete(orderItemId) {
     _goDeletePending.delete(id);
   } else {
     _goDeletePending.add(id);
+    // Delete überschreibt ggf. pending Qty
+    _goQtyPending.delete(id);
   }
 
   const isMarked = _goDeletePending.has(id);
@@ -320,42 +322,23 @@ function toggleGoSubmittedDelete(orderItemId) {
 }
 
 // ============================================================
-// Qty eines bereits gesendeten order_items ändern
-// (Qty wird direkt in DB geschrieben; _goQtyDirty trackt ob Änderung vorliegt)
+// QTY PENDING — kein sofortiger DB-Write, nur lokaler State
 // ============================================================
 
-const _goQtyDebounce = {};
-async function updateGoSubmittedQty(orderItemId, delta, orderId) {
-  if (_goQtyDebounce[orderItemId]) return;
-  _goQtyDebounce[orderItemId] = true;
-  try {
-    const valEl   = document.getElementById(`go-qty-val-${orderItemId}`);
-    const priceEl = document.getElementById(`go-price-val-${orderItemId}`);
-    const row     = document.querySelector(`[data-go-item-id="${orderItemId}"]`);
-    const currentQty = valEl ? Number(valEl.textContent) : 1;
-    const unitPrice  = row   ? Number(row.dataset.unitPrice || 0) : 0;
-    const newQty     = Math.max(1, currentQty + delta);
+function updateGoSubmittedQtyPending(orderItemId, delta) {
+  const id         = String(orderItemId);
+  const valEl      = document.getElementById(`go-qty-val-${id}`);
+  const priceEl    = document.getElementById(`go-price-val-${id}`);
+  const row        = document.querySelector(`[data-go-item-id="${id}"]`);
+  const currentQty = valEl ? Number(valEl.textContent) : 1;
+  const unitPrice  = row   ? Number(row.dataset.unitPrice || 0) : 0;
+  const newQty     = Math.max(1, currentQty + delta);
 
-    if (valEl)   valEl.textContent   = String(newQty);
-    if (priceEl) priceEl.textContent = formatPrice(unitPrice * newQty);
+  if (valEl)   valEl.textContent   = String(newQty);
+  if (priceEl) priceEl.textContent = formatPrice(unitPrice * newQty);
 
-    const { error } = await db.from('order_items')
-      .update({ quantity: newQty })
-      .eq('id', orderItemId);
-
-    if (error) {
-      if (valEl)   valEl.textContent   = String(currentQty);
-      if (priceEl) priceEl.textContent = formatPrice(unitPrice * currentQty);
-      setOrderMessage('Fehler beim Aktualisieren: ' + error.message, true);
-      return;
-    }
-
-    // Qty-Änderung als dirty markieren → aktiviert den Aktualisieren-Button
-    _goQtyDirty = true;
-    _recheckUpdateButtonState();
-  } finally {
-    delete _goQtyDebounce[orderItemId];
-  }
+  _goQtyPending.set(id, newQty);
+  _recheckUpdateButtonState();
 }
 
 // ============================================================
@@ -394,12 +377,11 @@ async function updateSubmitButtonLabel() {
   _recheckUpdateButtonState();
 }
 
-// Prüft ob der Aktualisieren-Button aktiv sein soll.
-// Aktiv wenn: neuer Warenkorb-Inhalt ODER pending deletes ODER Qty geändert.
+// Aktiv wenn: neuer Warenkorb-Inhalt ODER pending deletes ODER pending Qty-Änderungen
 function _recheckUpdateButtonState() {
   if (!window.goSession) return;
   if (!submitOrderBtn.textContent.includes('aktualisieren')) return;
-  const hasChanges = _checkoutSnapshot !== null || _goDeletePending.size > 0 || _goQtyDirty;
+  const hasChanges = _checkoutSnapshot !== null || _goDeletePending.size > 0 || _goQtyPending.size > 0;
   submitOrderBtn.disabled      = !hasChanges;
   submitOrderBtn.style.opacity = hasChanges ? '1' : '0.4';
   submitOrderBtn.style.cursor  = hasChanges ? 'pointer' : 'not-allowed';
@@ -462,9 +444,9 @@ async function submitOrder() {
   const { data: cartItems, error: cartError } = await fetchCartItems(user.id);
   if (cartError) { setOrderMessage(`Fehler beim Laden: ${cartError.message}`, true); return; }
 
-  // Im GO-Aktualisieren-Modus: leerer Warenkorb ok wenn pending deletes oder Qty-Änderungen vorhanden
+  // GO-Aktualisieren: leerer Warenkorb ok wenn pending Änderungen vorhanden
   if (!cartItems || cartItems.length === 0) {
-    if (window.goSession && (_goDeletePending.size > 0 || _goQtyDirty)) {
+    if (window.goSession && (_goDeletePending.size > 0 || _goQtyPending.size > 0)) {
       await submitGoOrder(user, []);
       return;
     }
@@ -519,7 +501,7 @@ async function submitOrder() {
 }
 
 // ============================================================
-// GO ORDER SUBMIT — Additive Logik (kein Komplett-Reset)
+// GO ORDER SUBMIT — Pending-Änderungen in DB schreiben
 // ============================================================
 
 async function submitGoOrder(user, cartItems) {
@@ -535,7 +517,21 @@ async function submitGoOrder(user, cartItems) {
   if (existingOrders && existingOrders.length > 0) {
     orderId = existingOrders[0].id;
 
-    // 1. Pending Deletes ausführen
+    // 1. Pending Qty-Updates in DB schreiben
+    if (_goQtyPending.size > 0) {
+      for (const [itemId, newQty] of _goQtyPending) {
+        const { error: qtyErr } = await db.from('order_items')
+          .update({ quantity: newQty })
+          .eq('id', itemId);
+        if (qtyErr) {
+          setOrderMessage('Fehler beim Aktualisieren der Menge: ' + qtyErr.message, true);
+          return;
+        }
+      }
+      _goQtyPending.clear();
+    }
+
+    // 2. Pending Deletes in DB ausführen
     if (_goDeletePending.size > 0) {
       for (const itemId of _goDeletePending) {
         const { error: delErr } = await db.from('order_items').delete().eq('id', itemId);
@@ -547,7 +543,7 @@ async function submitGoOrder(user, cartItems) {
       _goDeletePending.clear();
     }
 
-    // 2. Neue Warenkorb-Items additiv hinzufügen
+    // 3. Neue Warenkorb-Items additiv hinzufügen
     if (cartItems && cartItems.length > 0) {
       const itemRows = cartItems.map(item => ({
         order_id:         orderId,
@@ -564,7 +560,7 @@ async function submitGoOrder(user, cartItems) {
       if (itemsError) { setOrderMessage('Fehler beim Hinzufügen: ' + itemsError.message, true); return; }
     }
 
-    // 3. Prüfen ob nach allen Deletes noch Items übrig sind
+    // 4. Prüfen ob noch Items übrig sind
     const { count } = await db.from('order_items')
       .select('id', { count: 'exact', head: true }).eq('order_id', orderId);
     if ((count || 0) === 0) {
@@ -572,7 +568,7 @@ async function submitGoOrder(user, cartItems) {
     }
 
   } else {
-    // Neue Order anlegen — nur wenn Warenkorb nicht leer
+    // Neue Order anlegen
     if (!cartItems || cartItems.length === 0) {
       setOrderMessage('Dein Warenkorb ist leer.', true);
       return;
@@ -597,9 +593,6 @@ async function submitGoOrder(user, cartItems) {
     const { error: itemsError } = await db.from('order_items').insert(itemRows);
     if (itemsError) { setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true); return; }
   }
-
-  // Dirty-Flags zurücksetzen
-  _goQtyDirty = false;
 
   await db.from('cart_items').delete().eq('user_id', user.id);
   await loadCart();
