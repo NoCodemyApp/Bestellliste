@@ -5,6 +5,9 @@
 
 let _checkoutSnapshot = null;
 
+// Set mit IDs die zum Löschen markiert sind (soft delete / toggle)
+const _goDeletePending = new Set();
+
 function openCheckout() {
   productsSection.classList.add('hidden');
   checkoutSection.classList.remove('hidden');
@@ -209,7 +212,7 @@ async function renderCheckout() {
 }
 
 // ============================================================
-// GO SUBMITTED ITEMS — inline editable
+// GO SUBMITTED ITEMS — inline editable mit Soft-Delete Toggle
 // ============================================================
 
 async function renderGoSubmittedItems(user) {
@@ -238,23 +241,30 @@ async function renderGoSubmittedItems(user) {
   const wrap = document.createElement('div');
   wrap.id = 'go-submitted-wrap';
 
+  const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+
   const rowsHtml = submittedItems.map(item => {
-    const lineTotal = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
-    const sizeText  = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
-    const trashIcon = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
-    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}" data-unit-price="${Number(item.unit_price_netto || 0)}">
+    const lineTotal  = Number(item.unit_price_netto || 0) * Number(item.quantity || 0);
+    const sizeText   = item.size_label ? `<span style="color:var(--muted);">${escapeHtml(item.size_label)}</span> · ` : '';
+    const isMarked   = _goDeletePending.has(String(item.id));
+    const rowStyle   = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
+    const btnDisabled = isMarked ? ' disabled' : '';
+    const removeBtnClass = isMarked ? 'go-submitted-remove go-submitted-remove--undo' : 'go-submitted-remove';
+    const removeBtnLabel = isMarked ? 'Löschen rückgängig' : 'Entfernen';
+    const removeBtnContent = isMarked ? '↩' : trashIcon;
+    return `<div class="go-submitted-row" data-go-item-id="${escapeHtml(String(item.id))}" data-unit-price="${Number(item.unit_price_netto || 0)}" style="${rowStyle}">
       <span class="go-submitted-name">
         ${escapeHtml(item.product_name || '')}
         ${item.product_sku ? `<span class="go-submitted-sku">${escapeHtml(item.product_sku)}</span>` : ''}
       </span>
       <span class="go-submitted-meta">${sizeText}</span>
       <div class="go-submitted-qty-stepper">
-        <button type="button" class="go-submitted-qty-btn" data-go-dec="${escapeHtml(String(item.id))}" aria-label="Weniger">−</button>
+        <button type="button" class="go-submitted-qty-btn" data-go-dec="${escapeHtml(String(item.id))}" aria-label="Weniger"${btnDisabled}>−</button>
         <span class="go-submitted-qty-val" id="go-qty-val-${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
-        <button type="button" class="go-submitted-qty-btn" data-go-inc="${escapeHtml(String(item.id))}" aria-label="Mehr">+</button>
+        <button type="button" class="go-submitted-qty-btn" data-go-inc="${escapeHtml(String(item.id))}" aria-label="Mehr"${btnDisabled}>+</button>
       </div>
       <span class="go-submitted-price" id="go-price-val-${escapeHtml(String(item.id))}">${formatPrice(lineTotal)}</span>
-      <button type="button" class="go-submitted-remove" data-go-remove="${escapeHtml(String(item.id))}" aria-label="Entfernen">${trashIcon}</button>
+      <button type="button" class="${removeBtnClass}" data-go-remove="${escapeHtml(String(item.id))}" aria-label="${removeBtnLabel}">${removeBtnContent}</button>
     </div>`;
   }).join('');
 
@@ -274,11 +284,40 @@ async function renderGoSubmittedItems(user) {
     const removeBtn = e.target.closest('[data-go-remove]');
     if (incBtn)    { await updateGoSubmittedQty(incBtn.getAttribute('data-go-inc'),    1, existing.id); return; }
     if (decBtn)    { await updateGoSubmittedQty(decBtn.getAttribute('data-go-dec'),   -1, existing.id); return; }
-    if (removeBtn) { await removeGoSubmittedItem(removeBtn.getAttribute('data-go-remove'), existing.id); }
+    if (removeBtn) { toggleGoSubmittedDelete(removeBtn.getAttribute('data-go-remove')); }
   });
 }
 
+// ============================================================
+// SOFT-DELETE TOGGLE — kein sofortiges DB-Delete
+// ============================================================
+
+function toggleGoSubmittedDelete(orderItemId) {
+  const id = String(orderItemId);
+  if (_goDeletePending.has(id)) {
+    _goDeletePending.delete(id);
+  } else {
+    _goDeletePending.add(id);
+  }
+
+  const isMarked = _goDeletePending.has(id);
+  const row    = document.querySelector(`[data-go-item-id="${id}"]`);
+  const btn    = row?.querySelector('[data-go-remove]');
+  const decBtn = row?.querySelector('[data-go-dec]');
+  const incBtn = row?.querySelector('[data-go-inc]');
+
+  if (row)    row.style.cssText = isMarked ? 'text-decoration:line-through;opacity:0.5;' : '';
+  if (btn)  { btn.textContent = isMarked ? '↩' : ''; btn.setAttribute('aria-label', isMarked ? 'Löschen rückgängig' : 'Entfernen'); }
+  if (decBtn) decBtn.disabled = isMarked;
+  if (incBtn) incBtn.disabled = isMarked;
+
+  _recheckUpdateButtonState();
+}
+
+// ============================================================
 // Qty eines bereits gesendeten order_items ändern
+// ============================================================
+
 const _goQtyDebounce = {};
 async function updateGoSubmittedQty(orderItemId, delta, orderId) {
   if (_goQtyDebounce[orderItemId]) return;
@@ -287,22 +326,18 @@ async function updateGoSubmittedQty(orderItemId, delta, orderId) {
     const valEl   = document.getElementById(`go-qty-val-${orderItemId}`);
     const priceEl = document.getElementById(`go-price-val-${orderItemId}`);
     const row     = document.querySelector(`[data-go-item-id="${orderItemId}"]`);
-    const currentQty  = valEl ? Number(valEl.textContent) : 1;
-    const unitPrice   = row   ? Number(row.dataset.unitPrice || 0) : 0;
-    const newQty      = Math.max(1, currentQty + delta);
+    const currentQty = valEl ? Number(valEl.textContent) : 1;
+    const unitPrice  = row   ? Number(row.dataset.unitPrice || 0) : 0;
+    const newQty     = Math.max(1, currentQty + delta);
 
-    // Optimistisches UI-Update
     if (valEl)   valEl.textContent   = String(newQty);
     if (priceEl) priceEl.textContent = formatPrice(unitPrice * newQty);
 
-    // FIX: .maybeSingle() statt .single() — vermeidet "Cannot coerce" wenn RLS
-    // keinen Row zurückgibt (kein Select-Return benötigt, Update reicht)
     const { error } = await db.from('order_items')
       .update({ quantity: newQty })
       .eq('id', orderItemId);
 
     if (error) {
-      // Rollback
       if (valEl)   valEl.textContent   = String(currentQty);
       if (priceEl) priceEl.textContent = formatPrice(unitPrice * currentQty);
       setOrderMessage('Fehler beim Aktualisieren: ' + error.message, true);
@@ -312,35 +347,6 @@ async function updateGoSubmittedQty(orderItemId, delta, orderId) {
   } finally {
     delete _goQtyDebounce[orderItemId];
   }
-}
-
-// Einzelne Position aus Sammelbestellung entfernen
-async function removeGoSubmittedItem(orderItemId, orderId) {
-  const row = document.querySelector(`[data-go-item-id="${orderItemId}"]`);
-  if (row) row.style.opacity = '0.4';
-
-  const { error } = await db.from('order_items')
-    .delete()
-    .eq('id', orderItemId);
-
-  if (error) {
-    if (row) row.style.opacity = '1';
-    setOrderMessage('Fehler beim Entfernen: ' + error.message, true);
-    return;
-  }
-
-  const { count } = await db.from('order_items')
-    .select('id', { count: 'exact', head: true })
-    .eq('order_id', orderId);
-
-  if ((count || 0) === 0) {
-    await db.from('orders').delete().eq('id', orderId);
-  }
-
-  markCheckoutDirty();
-  const user = await getCurrentUser();
-  if (user) await renderGoSubmittedItems(user);
-  await updateSubmitButtonLabel();
 }
 
 // ============================================================
@@ -376,24 +382,23 @@ async function updateSubmitButtonLabel() {
   }
 
   submitOrderBtn.textContent = 'Bestellung aktualisieren';
+  _recheckUpdateButtonState();
+}
 
-  if (_checkoutSnapshot !== null) {
-    submitOrderBtn.disabled      = false;
-    submitOrderBtn.style.opacity = '1';
-    submitOrderBtn.style.cursor  = 'pointer';
-  } else {
-    submitOrderBtn.disabled      = true;
-    submitOrderBtn.style.opacity = '0.4';
-    submitOrderBtn.style.cursor  = 'not-allowed';
-  }
+// Prüft ob der Aktualisieren-Button aktiv sein soll
+function _recheckUpdateButtonState() {
+  if (!window.goSession) return;
+  if (!submitOrderBtn.textContent.includes('aktualisieren')) return;
+  const hasChanges = _checkoutSnapshot !== null || _goDeletePending.size > 0;
+  submitOrderBtn.disabled      = !hasChanges;
+  submitOrderBtn.style.opacity = hasChanges ? '1' : '0.4';
+  submitOrderBtn.style.cursor  = hasChanges ? 'pointer' : 'not-allowed';
 }
 
 function markCheckoutDirty() {
   if (!window.goSession) return;
   if (!submitOrderBtn.textContent.includes('aktualisieren')) return;
-  submitOrderBtn.disabled      = false;
-  submitOrderBtn.style.opacity = '1';
-  submitOrderBtn.style.cursor  = 'pointer';
+  _recheckUpdateButtonState();
 }
 
 // ============================================================
@@ -446,7 +451,16 @@ async function submitOrder() {
 
   const { data: cartItems, error: cartError } = await fetchCartItems(user.id);
   if (cartError) { setOrderMessage(`Fehler beim Laden: ${cartError.message}`, true); return; }
-  if (!cartItems || cartItems.length === 0) { setOrderMessage('Dein Warenkorb ist leer.', true); return; }
+
+  // Im GO-Aktualisieren-Modus: leerer Warenkorb erlaubt wenn pending deletes vorhanden
+  if (!cartItems || cartItems.length === 0) {
+    if (window.goSession && _goDeletePending.size > 0) {
+      await submitGoOrder(user, []);
+      return;
+    }
+    setOrderMessage('Dein Warenkorb ist leer.', true);
+    return;
+  }
 
   if (window.goSession) {
     await submitGoOrder(user, cartItems);
@@ -495,7 +509,7 @@ async function submitOrder() {
 }
 
 // ============================================================
-// GO ORDER SUBMIT
+// GO ORDER SUBMIT — Additive Logik (kein Komplett-Reset)
 // ============================================================
 
 async function submitGoOrder(user, cartItems) {
@@ -510,30 +524,69 @@ async function submitGoOrder(user, cartItems) {
 
   if (existingOrders && existingOrders.length > 0) {
     orderId = existingOrders[0].id;
-    const { error: delError } = await db.from('order_items').delete().eq('order_id', orderId);
-    if (delError) { setOrderMessage('Fehler beim Aktualisieren: ' + delError.message, true); return; }
+
+    // 1. Pending Deletes ausführen (echtes DB-Delete nur jetzt beim Submit)
+    if (_goDeletePending.size > 0) {
+      for (const itemId of _goDeletePending) {
+        const { error: delErr } = await db.from('order_items').delete().eq('id', itemId);
+        if (delErr) {
+          setOrderMessage('Fehler beim Löschen: ' + delErr.message, true);
+          return;
+        }
+      }
+      _goDeletePending.clear();
+    }
+
+    // 2. Neue Warenkorb-Items zur bestehenden Order hinzufügen (additive, kein Reset)
+    if (cartItems && cartItems.length > 0) {
+      const itemRows = cartItems.map(item => ({
+        order_id:         orderId,
+        product_id:       item.product_id,
+        product_name:     item.products?.name || 'Produkt',
+        product_sku:      item.products?.sku  || null,
+        quantity:         item.quantity,
+        unit_price_netto: Number(item.products?.price_netto || 0),
+        clothing_size_id: item.clothing_size_id || null,
+        weight_size_id:   item.weight_size_id   || null,
+        size_label:       item.sizes_clothing?.code || item.sizes_weight?.code || null
+      }));
+      const { error: itemsError } = await db.from('order_items').insert(itemRows);
+      if (itemsError) { setOrderMessage('Fehler beim Hinzufügen: ' + itemsError.message, true); return; }
+    }
+
+    // 3. Prüfen ob nach allen Deletes noch Items übrig sind
+    const { count } = await db.from('order_items')
+      .select('id', { count: 'exact', head: true }).eq('order_id', orderId);
+    if ((count || 0) === 0) {
+      await db.from('orders').delete().eq('id', orderId);
+    }
+
   } else {
+    // Neue Order anlegen — nur wenn Warenkorb nicht leer
+    if (!cartItems || cartItems.length === 0) {
+      setOrderMessage('Dein Warenkorb ist leer.', true);
+      return;
+    }
     const { data: newOrder, error: newErr } = await db.from('orders')
       .insert({ user_id: user.id, status: 'submitted', group_order_id: sess.groupOrderId, note: null })
       .select().single();
     if (newErr || !newOrder) { setOrderMessage('Fehler beim Anlegen: ' + (newErr?.message || 'Unbekannt'), true); return; }
     orderId = newOrder.id;
+
+    const itemRows = cartItems.map(item => ({
+      order_id:         orderId,
+      product_id:       item.product_id,
+      product_name:     item.products?.name || 'Produkt',
+      product_sku:      item.products?.sku  || null,
+      quantity:         item.quantity,
+      unit_price_netto: Number(item.products?.price_netto || 0),
+      clothing_size_id: item.clothing_size_id || null,
+      weight_size_id:   item.weight_size_id   || null,
+      size_label:       item.sizes_clothing?.code || item.sizes_weight?.code || null
+    }));
+    const { error: itemsError } = await db.from('order_items').insert(itemRows);
+    if (itemsError) { setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true); return; }
   }
-
-  const itemRows = cartItems.map(item => ({
-    order_id:         orderId,
-    product_id:       item.product_id,
-    product_name:     item.products?.name || 'Produkt',
-    product_sku:      item.products?.sku  || null,
-    quantity:         item.quantity,
-    unit_price_netto: Number(item.products?.price_netto || 0),
-    clothing_size_id: item.clothing_size_id || null,
-    weight_size_id:   item.weight_size_id   || null,
-    size_label:       item.sizes_clothing?.code || item.sizes_weight?.code || null
-  }));
-
-  const { error: itemsError } = await db.from('order_items').insert(itemRows);
-  if (itemsError) { setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true); return; }
 
   await db.from('cart_items').delete().eq('user_id', user.id);
   await loadCart();
