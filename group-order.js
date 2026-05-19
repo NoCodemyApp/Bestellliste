@@ -122,7 +122,9 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierId);
-  if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierId);
+  // FIX: supplierName übergeben, nicht supplierId
+  if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
+  if (typeof loadGoCart === 'function') await loadGoCart();
 }
 
 function deactivateGoMode() {
