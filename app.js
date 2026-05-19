@@ -510,7 +510,16 @@ async function loadProducts() {
   const { data, error } = await db
     .from("products")
     .select(`
-      id, name, sku, category, supplier , price_brutto,
+      id,
+      name,
+      sku,
+      category,
+      price_brutto,
+      price_netto,
+      supplier_id,
+      brand_id,
+      suppliers(id, name, logo_url),
+      brands(id, name, logo_url),
       product_images(image_id, image_url, sort_order, is_primary),
       product_clothing_sizes(size_id, sizes_clothing(id, code, sort_order)),
       product_weight_sizes(size_id, sizes_weight(id, code, sort_order))
