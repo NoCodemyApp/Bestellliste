@@ -470,46 +470,49 @@ async function leaveGroupOrder(groupOrderId) {
 // SUPPLIER DROPDOWN
 // ============================================================
 
+// ============================================================
+// SUPPLIER DROPDOWN
+// ============================================================
+
 async function loadSupplierDropdown() {
   const select  = document.getElementById('go-supplier-select');
   const errorEl = document.getElementById('go-supplier-error');
   if (!select) return;
   select.innerHTML = `<option value="">— wird geladen …</option>`;
-  const { data, error } = await db.from('products')
-    .select('supplier').eq('active', true).not('supplier', 'is', null);
+
+  const { data, error } = await db.from('suppliers')
+    .select('id, name')
+    .eq('active', true)
+    .order('name', { ascending: true });
+
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
-  const suppliers = [...new Set(data.map(p => p.supplier_id).filter(Boolean))].sort();
-  if (suppliers.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
+  if (!data || data.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
+
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
-    suppliers.map(s => {
-      const isBlocked = blockedSuppliers.has(s.trim().toLowerCase());
-      return `<option value="${escapeAttr(s)}"${isBlocked ? ' disabled' : ''}>${escapeHtml(s)}${isBlocked ? ' (bereits aktiv)' : ''}</option>`;
+    data.map(s => {
+      const isBlocked = blockedSuppliers.has(s.id);
+      return `<option value="${escapeAttr(s.id)}" data-name="${escapeAttr(s.name)}"${isBlocked ? ' disabled' : ''}>
+        ${escapeHtml(s.name)}${isBlocked ? ' (bereits aktiv)' : ''}
+      </option>`;
     }).join('');
+
   select.addEventListener('change', () => onSupplierChange(select, errorEl));
 }
 
 function onSupplierChange(select, errorEl) {
   const val = select.value.trim();
   if (!val) { setCreateFieldsEnabled(false); if (errorEl) errorEl.textContent = ''; return; }
-  const isBlocked = blockedSuppliers.has(val.toLowerCase());
+  const isBlocked = blockedSuppliers.has(val);
   if (isBlocked) {
     setCreateFieldsEnabled(false);
-    if (errorEl) errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(val)}“.`;
+    const name = select.options[select.selectedIndex]?.getAttribute('data-name') || val;
+    if (errorEl) errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(name)}".`;
     return;
   }
   setCreateFieldsEnabled(true);
   if (errorEl) errorEl.textContent = '';
   const createError = document.getElementById('go-create-error');
   if (createError) createError.textContent = '';
-}
-
-function setCreateFieldsEnabled(enabled) {
-  const deadlineWrap  = document.getElementById('go-deadline-wrap');
-  const deadlineInput = document.getElementById('go-deadline-input');
-  const submitBtn     = document.getElementById('go-create-submit-btn');
-  if (deadlineWrap)  { deadlineWrap.style.opacity = enabled ? '1' : '0.4'; deadlineWrap.style.pointerEvents = enabled ? 'auto' : 'none'; }
-  if (deadlineInput)   deadlineInput.disabled = !enabled;
-  if (submitBtn)     { submitBtn.disabled = !enabled; submitBtn.style.opacity = enabled ? '1' : '0.4'; submitBtn.style.cursor = enabled ? 'pointer' : 'not-allowed'; }
 }
 
 // ============================================================
