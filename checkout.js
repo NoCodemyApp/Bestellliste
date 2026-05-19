@@ -102,7 +102,6 @@ function renderCheckoutHeader() {
 // ============================================================
 
 async function fetchGoCartItems(userId, groupOrderId) {
-  // HINWEIS: supplier_logo ist KEIN Feld in products — nicht abfragen
   return db.from('group_order_cart')
     .select(`
       id, quantity, product_id, clothing_size_id, weight_size_id,
@@ -154,13 +153,11 @@ async function renderCheckout() {
 
   renderCheckoutHeader();
 
-  // GO-Modus: group_order_cart anzeigen
   if (window.goSession) {
     await renderGoCheckout(user);
     return;
   }
 
-  // Normaler Modus: cart_items
   const { data, error } = await fetchCartItems(user.id);
 
   if (error) {
@@ -292,7 +289,6 @@ function renderCartItemsList(data, isGoCart = false) {
   checkoutTotal.textContent    = formatPrice(total);
   checkoutItemCount.textContent = totalItems;
 
-  // Event-Listener einmalig setzen
   checkoutList.addEventListener('click', async (e) => {
     if (isGoCart) {
       const incBtn    = e.target.closest('[data-go-qty-inc]');
@@ -366,7 +362,6 @@ async function updateSubmitButtonLabel() {
   const user = await getCurrentUser();
   if (!user) return;
 
-  // Hat der Nutzer bereits eine submitted Order für diese GO?
   const { count } = await db.from('orders')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
@@ -383,7 +378,6 @@ async function updateSubmitButtonLabel() {
     return;
   }
 
-  // Schon submitted: Button "aktualisieren"
   submitOrderBtn.textContent   = 'Bestellung aktualisieren';
   submitOrderBtn.disabled      = _checkoutSnapshot === null;
   submitOrderBtn.style.opacity = _checkoutSnapshot !== null ? '1' : '0.4';
@@ -441,7 +435,6 @@ async function submitOrder() {
     return;
   }
 
-  // Normaler Modus
   const { data: cartItems, error: cartError } = await fetchCartItems(user.id);
   if (cartError) { setOrderMessage(`Fehler beim Laden: ${cartError.message}`, true); return; }
   if (!cartItems || cartItems.length === 0) { setOrderMessage('Dein Warenkorb ist leer.', true); return; }
@@ -541,6 +534,15 @@ async function submitGoOrder(user) {
     return;
   }
 
+  // FIX: group_order_cart nach erfolgreichem Submit leeren
+  await db.from('group_order_cart')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('group_order_id', sess.groupOrderId);
+
+  if (typeof loadGoCart === 'function') await loadGoCart();
+  await loadGoCartBadge();
+
   showGoPostSubmitDialog(sess);
 }
 
@@ -575,7 +577,7 @@ function showGoPostSubmitDialog(sess) {
   dialog.classList.remove('hidden');
   dialog.setAttribute('aria-hidden', 'false');
 
-  dialog.querySelector('#go-post-go-back').addEventListener('click', () => {
+  dialog.querySelector('#go-post-go-back').addEventListener('click', async () => {
     dialog.classList.add('hidden');
     dialog.setAttribute('aria-hidden', 'true');
     checkoutSection.classList.add('hidden');
@@ -583,6 +585,8 @@ function showGoPostSubmitDialog(sess) {
     filterProductsForGo(sess.supplierId);
     renderGoSignalBanner();
     updateCartLabelsForGo(sess.supplierName);
+    // FIX: Cart nach Rückkehr neu laden (ist jetzt leer)
+    if (typeof loadGoCart === 'function') await loadGoCart();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
