@@ -349,6 +349,169 @@ function syncDrawer(totalText, itemCount) {
 }
 
 // ============================================================
+// GO-MODUS: Warenkorb-Header auf Supplier-Logo/Name umstellen
+// ============================================================
+
+function updateCartLabelsForGo(supplierId) {
+  const sess = window.goSession;
+  const supplierName = sess?.supplierName || supplierId;
+  const supplierLogo = sess?.supplierLogo || null;
+
+  // Desktop Warenkorb-Titel
+  const cartHeading = cartSection?.querySelector(".section-head h2");
+  if (cartHeading) {
+    if (supplierLogo) {
+      cartHeading.innerHTML = `
+        <img src="${escapeHtml(supplierLogo)}" alt="${escapeHtml(supplierName)}"
+             style="height:24px;max-width:80px;object-fit:contain;vertical-align:middle;margin-right:6px;"
+             onerror="this.style.display='none';this.nextSibling.style.display='inline';">
+        <span style="display:none;">${escapeHtml(supplierName)}</span>
+        <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:4px;">Sammelbestellung</span>`;
+    } else {
+      cartHeading.textContent = supplierName + " – Sammelbestellung";
+    }
+  }
+
+  // Mobile Drawer-Titel
+  const drawerTitle = cartDrawer?.querySelector(".cart-drawer-title");
+  if (drawerTitle) {
+    drawerTitle.textContent = supplierName + " – Sammelbestellung";
+  }
+}
+
+function resetCartLabels() {
+  const cartHeading = cartSection?.querySelector(".section-head h2");
+  if (cartHeading) cartHeading.textContent = "Warenkorb";
+
+  const drawerTitle = cartDrawer?.querySelector(".cart-drawer-title");
+  if (drawerTitle) drawerTitle.textContent = "Warenkorb";
+}
+
+// ============================================================
+// GO-MODUS: group_order_cart laden und rendern
+// ============================================================
+
+async function loadGoCart() {
+  const user = await getCurrentUser();
+  if (!user || !window.goSession) return;
+
+  const goId = window.goSession.groupOrderId;
+
+  const { data, error } = await db
+    .from("group_order_cart")
+    .select(`id, quantity, product_id,
+             clothing_size_id, weight_size_id,
+             products(id, name, sku, price_brutto),
+             sizes_clothing(id, code),
+             sizes_weight(id, code)`)
+    .eq("user_id", user.id)
+    .eq("group_order_id", goId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    cartList.innerHTML = `<p>Fehler beim Laden: ${escapeHtml(error.message)}</p>`;
+    updateCartBadge(0);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    cartList.innerHTML = "<p>Noch keine Produkte in dieser Sammelbestellung.</p>";
+    cartTotal.textContent = "Gesamt: 0,00 \u20ac";
+    updateCartBadge(0);
+    syncDrawer("0,00 \u20ac", 0);
+    return;
+  }
+
+  const totalItems = data.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+  updateCartBadge(totalItems);
+
+  let total = 0;
+  const groupedItems = {};
+
+  data.forEach(item => {
+    const product = item.products || {};
+    const productId = item.product_id;
+    if (!groupedItems[productId]) {
+      groupedItems[productId] = {
+        productId,
+        productName:  product.name  || "Produkt",
+        productSku:   product.sku   || null,
+        productPrice: Number(product.price_brutto || 0),
+        items: []
+      };
+    }
+    groupedItems[productId].items.push(item);
+  });
+
+  cartList.innerHTML = Object.values(groupedItems).map(group => {
+    const productTotal = group.items.reduce(
+      (sum, item) => sum + group.productPrice * Number(item.quantity || 0), 0
+    );
+    total += productTotal;
+
+    const rowsHtml = group.items.map(item => {
+      const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
+      const lineTotal = group.productPrice * Number(item.quantity || 0);
+      return `<div class="cart-size-row">
+        <div class="cart-size-row-left"><div class="cart-line-meta">
+          ${sizeLabel ? `<span class="cart-line-qty">Gr\u00f6\u00dfe: ${escapeHtml(sizeLabel)}</span>` : ""}
+          <span class="cart-line-qty">Menge: ${Number(item.quantity)}</span>
+        </div></div>
+        <div class="cart-size-row-right">
+          <span class="cart-line-total">${formatPrice(lineTotal)}</span>
+          <button class="remove-btn icon-btn" data-remove-go-cart="${escapeHtml(String(item.id))}" type="button"
+                  aria-label="Produkt entfernen" title="Entfernen">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+            </svg>
+          </button>
+        </div>
+      </div>`;
+    }).join("");
+
+    return `<article class="cart-line" data-cart-product-id="${escapeHtml(String(group.productId))}">
+      <div class="cart-line-top">
+        <button class="cart-line-link" type="button"
+                data-scroll-to-product="${escapeHtml(String(group.productId))}">${escapeHtml(group.productName)}</button>
+        <p class="cart-line-total">${formatPrice(productTotal)}</p>
+      </div>
+      <div class="cart-group-rows">${rowsHtml}</div>
+    </article>`;
+  }).join("");
+
+  const totalText = formatPrice(total);
+  cartTotal.textContent = `Gesamt: ${totalText}`;
+  syncDrawer(totalText, totalItems);
+
+  // Remove-Handler für GO-Cart
+  cartList.addEventListener("click", async (e) => {
+    const removeBtn = e.target.closest("[data-remove-go-cart]");
+    if (removeBtn) {
+      await removeFromGoCart(removeBtn.getAttribute("data-remove-go-cart"));
+      return;
+    }
+    const scrollBtn = e.target.closest("[data-scroll-to-product]");
+    if (scrollBtn) {
+      const productId = scrollBtn.getAttribute("data-scroll-to-product");
+      const card = document.querySelector(`[data-product-card="${productId}"]`);
+      if (!card) return;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.add("product-card-highlight");
+      setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
+    }
+  }, { once: true });
+}
+
+async function removeFromGoCart(goCartItemId) {
+  const { error } = await db.from("group_order_cart").delete().eq("id", goCartItemId);
+  if (error) { setMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
+  setMessage("Produkt aus Sammelbestellung entfernt.");
+  await loadGoCart();
+}
+
+// ============================================================
 // HELPERS
 // ============================================================
 
@@ -544,7 +707,7 @@ async function loadProducts() {
 
 // ============================================================
 // CART — addToCart
-// GO-Modus:      schreibt in group_order_cart
+// GO-Modus:      schreibt in group_order_cart + rendert GO-Warenkorb
 // Normaler Modus: schreibt in cart_items
 // ============================================================
 
@@ -591,7 +754,12 @@ async function addToCart(productId, quantity, selectedSize) {
       if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
     }
 
-    setMessage("Produkt zur Sammelbestellung hinzugefügt.");
+    setMessage("Produkt zur Sammelbestellung hinzugef\u00fcgt.");
+    // GO-Warenkorb neu laden und im Warenkorb-Container anzeigen
+    await loadGoCart();
+    cartSection.classList.remove("cart-bump");
+    void cartSection.offsetWidth;
+    cartSection.classList.add("cart-bump");
     return;
   }
 
