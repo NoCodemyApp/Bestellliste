@@ -130,7 +130,6 @@ function deactivateGoMode() {
   removeGoSignalBanner();
   if (typeof resetCartLabels === 'function') resetCartLabels();
 
-  // Sidebar + alle GO-versteckten Elemente wiederherstellen
   const sidebar = document.getElementById('shop-sidebar-desktop');
   if (sidebar) sidebar.classList.remove('go-sidebar-hidden');
   const filterBtn = document.getElementById('filter-toggle-btn');
@@ -140,7 +139,6 @@ function deactivateGoMode() {
   const activeFilterBarEl = document.getElementById('active-filter-bar');
   if (activeFilterBarEl) activeFilterBarEl.classList.remove('go-sidebar-hidden');
 
-  // Trigger-Bar wieder einblenden
   const triggerBar = document.getElementById('go-trigger-bar');
   if (triggerBar) triggerBar.style.display = '';
 
@@ -158,18 +156,12 @@ function filterProductsForGo(supplierId) {
 
   const filtered = allProducts.filter(p => p.supplier_id === supplierId);
 
-  // Desktop-Sidebar ausblenden (kein Platz mehr im Grid)
   const sidebar = document.getElementById('shop-sidebar-desktop');
   if (sidebar) sidebar.classList.add('go-sidebar-hidden');
 
-  // FIX: Filter-FAB und Filter-Toggle-Btn im GO-Mode SICHTBAR lassen —
-  // User soll innerhalb der GO-Produkte noch filtern können.
-  // Nur die active-filter-bar ausblenden (kein manueller Filter aktiv beim Einstieg)
   const activeFilterBarEl = document.getElementById('active-filter-bar');
   if (activeFilterBarEl) activeFilterBarEl.classList.add('go-sidebar-hidden');
 
-  // FIX: Trigger-Bar während GO-Mode ausblenden — verhindert die Abstandslücke
-  // zwischen Signal-Banner und Produkt-Grid
   const triggerBar = document.getElementById('go-trigger-bar');
   if (triggerBar) triggerBar.style.display = 'none';
 
@@ -433,9 +425,9 @@ async function joinGroupOrder(groupOrderId) {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id).eq('group_order_id', groupOrderId);
 
-  // FIX #7 (join): 6-Parameter-Signatur
-  // FIX #8: pendingOrders-Check (altes Konzept) entfernt
   const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
+
+  // FIX #7 (join) + FIX #8: pendingOrders-Check entfernt
   if ((alreadyJoined || 0) > 0) {
     if (order) await activateGoMode(
       String(order.id),
@@ -494,7 +486,6 @@ async function loadSupplierDropdown() {
 
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     data.map(s => {
-      // FIX #2: blockedSuppliers enthält UUIDs — direkter Vergleich
       const isBlocked = blockedSuppliers.has(s.id);
       return `<option value="${escapeAttr(s.id)}" data-name="${escapeAttr(s.name)}"${isBlocked ? ' disabled' : ''}>
         ${escapeHtml(s.name)}${isBlocked ? ' (bereits aktiv)' : ''}
@@ -531,7 +522,7 @@ function setCreateFieldsEnabled(enabled) {
   }
   if (deadlineInput) deadlineInput.disabled = !enabled;
   if (submitBtn) {
-    submitBtn.disabled     = !enabled;
+    submitBtn.disabled      = !enabled;
     submitBtn.style.opacity = enabled ? '1' : '.4';
     submitBtn.style.cursor  = enabled ? '' : 'not-allowed';
   }
@@ -547,10 +538,10 @@ async function submitGroupOrder() {
   const errorEl        = document.getElementById('go-create-error');
   if (!errorEl) return;
 
-  // FIX #10: supplier enthält UUID (supplier_id), nicht title
-  const supplierId = supplierSelect?.value?.trim() || '';
+  // FIX #10: supplierId = UUID aus dem Select-Value
+  const supplierId   = supplierSelect?.value?.trim() || '';
   const supplierName = supplierSelect?.options[supplierSelect.selectedIndex]?.getAttribute('data-name') || supplierId;
-  const deadline   = deadlineInput?.value || '';
+  const deadline     = deadlineInput?.value || '';
   errorEl.textContent = '';
 
   if (!supplierId) { errorEl.textContent = 'Bitte einen Lieferanten wählen.'; return; }
