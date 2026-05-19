@@ -202,7 +202,7 @@ document.addEventListener("keydown", e => {
 
 function buildFilterChips(products) {
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
-  const suppliers  = [...new Set(products.map(p => p.suppliers?.name)).filter(Boolean))].sort();
+  const suppliers  = [...new Set(products.map(p => p.suppliers?.name).filter(Boolean))].sort();
 
   renderChips("filter-chips-category",        categories, "category", false);
   renderChips("filter-chips-supplier",         suppliers,  "supplier",  false);
