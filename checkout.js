@@ -102,10 +102,11 @@ function renderCheckoutHeader() {
 // ============================================================
 
 async function fetchGoCartItems(userId, groupOrderId) {
+  // HINWEIS: supplier_logo ist KEIN Feld in products — nicht abfragen
   return db.from('group_order_cart')
     .select(`
       id, quantity, product_id, clothing_size_id, weight_size_id,
-      products ( name, sku, price_brutto, price_netto, supplier_logo ),
+      products ( name, sku, price_brutto, price_netto ),
       sizes_clothing ( code ),
       sizes_weight   ( code )
     `)
@@ -125,6 +126,22 @@ async function deleteGoCartItem(cartItemId, userId) {
     .delete()
     .eq('id', cartItemId)
     .eq('user_id', userId);
+}
+
+// ============================================================
+// GO-CART BADGE — Anzahl Items im group_order_cart zählen + anzeigen
+// ============================================================
+
+async function loadGoCartBadge() {
+  const user = await getCurrentUser();
+  if (!user || !window.goSession) return;
+  const { data, error } = await db.from('group_order_cart')
+    .select('quantity')
+    .eq('user_id', user.id)
+    .eq('group_order_id', window.goSession.groupOrderId);
+  if (error) return;
+  const total = (data || []).reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+  updateCartBadge(total);
 }
 
 // ============================================================
@@ -318,6 +335,7 @@ async function updateGoCartItemQty(cartItemId, delta) {
       return;
     }
     await renderGoCheckout(user);
+    await loadGoCartBadge();
   } finally {
     delete goQtyDebounceMap[cartItemId];
   }
@@ -329,6 +347,7 @@ async function removeGoCartItem(cartItemId) {
   const { error } = await deleteGoCartItem(cartItemId, user.id);
   if (error) { setOrderMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
   await renderGoCheckout(user);
+  await loadGoCartBadge();
 }
 
 // ============================================================
@@ -365,7 +384,6 @@ async function updateSubmitButtonLabel() {
   }
 
   // Schon submitted: Button "aktualisieren"
-  // Aktiv wenn GO-Cart Inhalt vorhanden (snapshot != null)
   submitOrderBtn.textContent   = 'Bestellung aktualisieren';
   submitOrderBtn.disabled      = _checkoutSnapshot === null;
   submitOrderBtn.style.opacity = _checkoutSnapshot !== null ? '1' : '0.4';
@@ -476,7 +494,6 @@ async function submitOrder() {
 async function submitGoOrder(user) {
   const sess = window.goSession;
 
-  // Aktuelle GO-Cart Items laden
   const { data: goCartItems, error: cartErr } = await fetchGoCartItems(user.id, sess.groupOrderId);
   if (cartErr) { setOrderMessage('Fehler beim Laden: ' + cartErr.message, true); return; }
   if (!goCartItems || goCartItems.length === 0) {
@@ -484,7 +501,6 @@ async function submitGoOrder(user) {
     return;
   }
 
-  // Existiert bereits eine submitted Order für diesen Nutzer + GO?
   const { data: existingOrders } = await db.from('orders')
     .select('id')
     .eq('user_id', user.id)
@@ -495,12 +511,10 @@ async function submitGoOrder(user) {
   let orderId;
 
   if (existingOrders && existingOrders.length > 0) {
-    // Update: alte order_items löschen, neue einfügen
     orderId = existingOrders[0].id;
     const { error: delErr } = await db.from('order_items').delete().eq('order_id', orderId);
     if (delErr) { setOrderMessage('Fehler beim Aktualisieren: ' + delErr.message, true); return; }
   } else {
-    // Neue Order anlegen
     const { data: newOrder, error: newErr } = await db.from('orders')
       .insert({ user_id: user.id, status: 'submitted', group_order_id: sess.groupOrderId, note: null })
       .select().single();
@@ -508,7 +522,6 @@ async function submitGoOrder(user) {
     orderId = newOrder.id;
   }
 
-  // GO-Cart Items als order_items schreiben
   const itemRows = goCartItems.map(item => ({
     order_id:         orderId,
     product_id:       item.product_id,
@@ -527,9 +540,6 @@ async function submitGoOrder(user) {
     setOrderMessage('Fehler beim Speichern: ' + itemsError.message, true);
     return;
   }
-
-  // group_order_cart NICHT löschen — bleibt als persistente Quelle bis zur Deadline.
-  // Nach Deadline-Ablauf räumt flush_expired_group_order_carts() auf.
 
   showGoPostSubmitDialog(sess);
 }
