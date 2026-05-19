@@ -8,7 +8,7 @@ let activeGroupOrders = [];
 let groupOrderChannel = null;
 let blockedSuppliers  = new Set();
 
-// { groupOrderId, supplierId, supplierLogo, isCreator, deadline }
+// { groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline }
 window.goSession = null;
 
 // ============================================================
@@ -50,8 +50,9 @@ async function autoCloseExpiredOrders() {
 
 async function loadActiveGroupOrders() {
   const now = new Date().toISOString();
+  // FIX #1: supplier_id + suppliers-Join ergänzt
   const { data, error } = await db.from('group_orders')
-    .select('id, title, deadline, status, created_by, created_at')
+    .select('id, title, deadline, status, created_by, created_at, supplier_id, suppliers(name)')
     .eq('status', 'open').gt('deadline', now)
     .order('deadline', { ascending: true });
 
@@ -60,7 +61,8 @@ async function loadActiveGroupOrders() {
     activeGroupOrders = []; blockedSuppliers = new Set();
   } else {
     activeGroupOrders = data || [];
-    blockedSuppliers  = new Set(activeGroupOrders.map(o => (o.title || '').trim().toLowerCase()));
+    // FIX #2: blockedSuppliers auf supplier_id (UUID) umgestellt
+    blockedSuppliers  = new Set(activeGroupOrders.map(o => o.supplier_id).filter(Boolean));
   }
   updateTriggerBar();
   if (document.getElementById('go-panel')?.classList.contains('go-panel--open')) renderPanelContent();
@@ -96,7 +98,8 @@ function updateTriggerBar() {
     bar.innerHTML = `<div class="go-trigger-bar-actions"><button class="go-create-btn" id="go-trigger-create-btn" type="button">+ Sammelbestellung eröffnen</button></div>`;
     document.getElementById('go-trigger-create-btn')?.addEventListener('click', openGroupPanel);
   } else {
-    const titles = activeGroupOrders.map(o => escapeHtml(o.title || 'Sammelbestellung'));
+    // FIX #3: o.suppliers?.name statt o.title
+    const titles = activeGroupOrders.map(o => escapeHtml(o.suppliers?.name || o.title || 'Sammelbestellung'));
     const label  = count === 1 ? titles[0] : `${count} Sammelbestellungen aktiv`;
     bar.innerHTML = `
       <div class="go-trigger-bar-text"><span class="go-trigger-dot"></span><span>${label}</span></div>
@@ -113,14 +116,9 @@ function updateTriggerBar() {
 // GO-MODE — Signal-Banner + gefilterte Produktseite
 // ============================================================
 
-async function activateGoMode(groupOrderId, supplierId, isCreator, deadline) {
-  let supplierLogo = null;
-  const { data: logoData } = await db.from('products')
-    .select('supplier_logo').eq('supplier', supplierId).eq('active', true)
-    .not('supplier_logo', 'is', null).limit(1).maybeSingle();
-  supplierLogo = logoData?.supplier_logo || null;
-
-  window.goSession = { groupOrderId, supplierId, supplierLogo, isCreator, deadline };
+// FIX #4: 6-Parameter-Signatur + kein products-Query mehr
+async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline) {
+  window.goSession = { groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierId);
@@ -154,12 +152,11 @@ function deactivateGoMode() {
   }
 }
 
+// FIX #5: Direkter ===-Vergleich (kein toLowerCase auf UUID)
 function filterProductsForGo(supplierId) {
   if (typeof allProducts === 'undefined') return;
 
-  const filtered = allProducts.filter(p =>
-    (p.supplier_id || '').toLowerCase() === supplierId.toLowerCase()
-  );
+  const filtered = allProducts.filter(p => p.supplier_id === supplierId);
 
   // Desktop-Sidebar ausblenden (kein Platz mehr im Grid)
   const sidebar = document.getElementById('shop-sidebar-desktop');
@@ -186,11 +183,12 @@ function renderGoSignalBanner() {
   const banner = document.createElement('div');
   banner.id = 'go-signal-banner';
   banner.className = 'go-signal-banner';
+  // FIX #6: sess.supplierName statt sess.supplierId
   banner.innerHTML = `
     <div class="go-signal-left">
       <span class="go-signal-dot"></span>
       <span class="go-signal-label">Sammelbestellung</span>
-      <span class="go-signal-supplier">${escapeHtml(sess.supplierId)}</span>
+      <span class="go-signal-supplier">${escapeHtml(sess.supplierName)}</span>
     </div>
     <button class="go-signal-leave-btn" id="go-signal-leave" type="button">Verlassen</button>`;
   const ps = document.getElementById('products-section');
@@ -301,7 +299,7 @@ function renderPanelContent() {
     html += orders.map(o => `
       <div class="go-item" data-go-item-id="${escapeHtml(String(o.id))}">
         <div class="go-item-info">
-          <p class="go-item-title">${escapeHtml(o.title || 'Sammelbestellung')}</p>
+          <p class="go-item-title">${escapeHtml(o.suppliers?.name || o.title || 'Sammelbestellung')}</p>
           <p class="go-item-deadline">Endet am ${escapeHtml(formatDeadline(o.deadline))}</p>
         </div>
         <div class="go-item-actions">
@@ -309,7 +307,7 @@ function renderPanelContent() {
           <button class="go-undo-btn hidden" data-undo-id="${escapeHtml(String(o.id))}" type="button">Austreten</button>
           <button class="go-edit-btn"
             data-edit-id="${escapeHtml(String(o.id))}"
-            data-edit-title="${escapeAttr(o.title || '')}"
+            data-edit-title="${escapeAttr(o.suppliers?.name || o.title || '')}"
             data-edit-deadline="${escapeAttr(o.deadline)}"
             data-edit-creator="${escapeAttr(o.created_by || '')}"
             type="button" aria-label="Bearbeiten">✏️</button>
@@ -399,10 +397,18 @@ async function syncJoinState(groupOrderId) {
       goBtn.textContent = '→ Zur Sammelbestellung';
       undoBtn.after(goBtn);
       const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
+      // FIX #7: 6-Parameter-Signatur
       goBtn.addEventListener('click', async () => {
         const u = await getCurrentUser();
         if (!u || !order) return;
-        await activateGoMode(String(order.id), order.title || '', u.id === order.created_by, order.deadline);
+        await activateGoMode(
+          String(order.id),
+          order.supplier_id,
+          order.suppliers?.name || order.title || '',
+          null,
+          u.id === order.created_by,
+          order.deadline
+        );
       });
     }
   }
@@ -427,27 +433,29 @@ async function joinGroupOrder(groupOrderId) {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id).eq('group_order_id', groupOrderId);
 
-  if ((alreadyJoined || 0) > 0) {
-    const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
-    if (order) await activateGoMode(String(order.id), order.title || '', user.id === order.created_by, order.deadline);
-    return;
-  }
-
-  const { data: pendingOrders } = await db.from('orders')
-    .select('id').eq('user_id', user.id)
-    .is('group_order_id', null).eq('status', 'pending').limit(1);
-
-  if (!pendingOrders || pendingOrders.length === 0) {
-    showBannerError('Keine offene Bestellung gefunden. Bitte lege zuerst Produkte in den Warenkorb.');
-    return;
-  }
-
-  const { error } = await db.from('orders')
-    .update({ group_order_id: groupOrderId }).eq('id', pendingOrders[0].id);
-  if (error) { showBannerError('Fehler beim Beitreten: ' + error.message); return; }
-
+  // FIX #7 (join): 6-Parameter-Signatur
+  // FIX #8: pendingOrders-Check (altes Konzept) entfernt
   const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
-  if (order) await activateGoMode(String(order.id), order.title || '', user.id === order.created_by, order.deadline);
+  if ((alreadyJoined || 0) > 0) {
+    if (order) await activateGoMode(
+      String(order.id),
+      order.supplier_id,
+      order.suppliers?.name || order.title || '',
+      null,
+      user.id === order.created_by,
+      order.deadline
+    );
+    return;
+  }
+
+  if (order) await activateGoMode(
+    String(order.id),
+    order.supplier_id,
+    order.suppliers?.name || order.title || '',
+    null,
+    user.id === order.created_by,
+    order.deadline
+  );
 }
 
 async function leaveGroupOrder(groupOrderId) {
@@ -470,10 +478,6 @@ async function leaveGroupOrder(groupOrderId) {
 // SUPPLIER DROPDOWN
 // ============================================================
 
-// ============================================================
-// SUPPLIER DROPDOWN
-// ============================================================
-
 async function loadSupplierDropdown() {
   const select  = document.getElementById('go-supplier-select');
   const errorEl = document.getElementById('go-supplier-error');
@@ -490,6 +494,7 @@ async function loadSupplierDropdown() {
 
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     data.map(s => {
+      // FIX #2: blockedSuppliers enthält UUIDs — direkter Vergleich
       const isBlocked = blockedSuppliers.has(s.id);
       return `<option value="${escapeAttr(s.id)}" data-name="${escapeAttr(s.name)}"${isBlocked ? ' disabled' : ''}>
         ${escapeHtml(s.name)}${isBlocked ? ' (bereits aktiv)' : ''}
@@ -515,6 +520,23 @@ function onSupplierChange(select, errorEl) {
   if (createError) createError.textContent = '';
 }
 
+// FIX #9: setCreateFieldsEnabled eingefügt
+function setCreateFieldsEnabled(enabled) {
+  const deadlineWrap  = document.getElementById('go-deadline-wrap');
+  const deadlineInput = document.getElementById('go-deadline-input');
+  const submitBtn     = document.getElementById('go-create-submit-btn');
+  if (deadlineWrap) {
+    deadlineWrap.style.opacity       = enabled ? '1' : '.4';
+    deadlineWrap.style.pointerEvents = enabled ? '' : 'none';
+  }
+  if (deadlineInput) deadlineInput.disabled = !enabled;
+  if (submitBtn) {
+    submitBtn.disabled     = !enabled;
+    submitBtn.style.opacity = enabled ? '1' : '.4';
+    submitBtn.style.cursor  = enabled ? '' : 'not-allowed';
+  }
+}
+
 // ============================================================
 // CREATE SUBMIT
 // ============================================================
@@ -525,23 +547,27 @@ async function submitGroupOrder() {
   const errorEl        = document.getElementById('go-create-error');
   if (!errorEl) return;
 
-  const supplier = supplierSelect?.value?.trim() || '';
-  const deadline = deadlineInput?.value || '';
+  // FIX #10: supplier enthält UUID (supplier_id), nicht title
+  const supplierId = supplierSelect?.value?.trim() || '';
+  const supplierName = supplierSelect?.options[supplierSelect.selectedIndex]?.getAttribute('data-name') || supplierId;
+  const deadline   = deadlineInput?.value || '';
   errorEl.textContent = '';
 
-  if (!supplier) { errorEl.textContent = 'Bitte einen Lieferanten wählen.'; return; }
-  if (blockedSuppliers.has(supplier.toLowerCase())) {
-    errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplier)}“.`; return;
+  if (!supplierId) { errorEl.textContent = 'Bitte einen Lieferanten wählen.'; return; }
+  // FIX #10: direkter UUID-Vergleich (kein .toLowerCase())
+  if (blockedSuppliers.has(supplierId)) {
+    errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplierName)}".`; return;
   }
   if (!deadline) { errorEl.textContent = 'Bitte eine Deadline angeben.'; return; }
   const deadlineDate = new Date(deadline);
   if (deadlineDate <= new Date()) { errorEl.textContent = 'Die Deadline muss in der Zukunft liegen.'; return; }
 
+  // FIX #10: Duplicate-Check gegen supplier_id statt title
   const { data: existing, error: checkError } = await db.from('group_orders')
-    .select('id').eq('status', 'open').eq('title', supplier)
+    .select('id').eq('status', 'open').eq('supplier_id', supplierId)
     .gt('deadline', new Date().toISOString()).maybeSingle();
   if (checkError) { errorEl.textContent = 'Prüfungsfehler: ' + checkError.message; return; }
-  if (existing)   { errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplier)}“.`; return; }
+  if (existing)   { errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplierName)}".`; return; }
 
   const user = await getCurrentUser();
   if (!user) { errorEl.textContent = 'Nicht eingeloggt.'; return; }
@@ -550,17 +576,19 @@ async function submitGroupOrder() {
   if (submitBtn) submitBtn.disabled = true;
 
   const { data: newOrder, error: insertError } = await db.from('group_orders').insert({
-    title:      supplier,
-    deadline:   deadlineDate.toISOString(),
-    status:     'open',
-    created_by: user.id,
+    supplier_id: supplierId,
+    title:       supplierName,
+    deadline:    deadlineDate.toISOString(),
+    status:      'open',
+    created_by:  user.id,
   }).select().single();
 
   if (submitBtn) submitBtn.disabled = false;
   if (insertError) { errorEl.textContent = 'Fehler beim Erstellen: ' + insertError.message; return; }
 
   await loadActiveGroupOrders();
-  if (newOrder) await activateGoMode(String(newOrder.id), supplier, true, newOrder.deadline);
+  // FIX #7: 6-Parameter-Signatur
+  if (newOrder) await activateGoMode(String(newOrder.id), supplierId, supplierName, null, true, newOrder.deadline);
 }
 
 // ============================================================
