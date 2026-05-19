@@ -389,8 +389,6 @@ function resetCartLabels() {
 
 // ============================================================
 // GO-MODUS: group_order_cart laden und rendern
-// Nur confirmed=false Items werden geladen (Warenkorb-State).
-// Nach Deadline sind Löschen & Mengenänderung deaktiviert.
 // ============================================================
 
 async function loadGoCart() {
@@ -398,8 +396,6 @@ async function loadGoCart() {
   if (!user || !window.goSession) return;
 
   const goId = window.goSession.groupOrderId;
-  const deadline = window.goSession.deadline ? new Date(window.goSession.deadline) : null;
-  const deadlinePassed = deadline ? new Date() > deadline : false;
 
   const { data, error } = await db
     .from("group_order_cart")
@@ -410,7 +406,6 @@ async function loadGoCart() {
              sizes_weight(id, code)`)
     .eq("user_id", user.id)
     .eq("group_order_id", goId)
-    .eq("confirmed", false)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -457,38 +452,21 @@ async function loadGoCart() {
     const rowsHtml = group.items.map(item => {
       const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
       const lineTotal = group.productPrice * Number(item.quantity || 0);
-      const qty = Number(item.quantity);
-
-      const editControls = !deadlinePassed ? `
-        <div class="cart-qty-controls">
-          <button class="qty-btn icon-btn" data-go-qty-dec="${escapeHtml(String(item.id))}"
-                  data-current-qty="${qty}" type="button" aria-label="Menge verringern"
-                  ${qty <= 1 ? 'disabled' : ''}>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-          <span class="cart-qty-display">${qty}</span>
-          <button class="qty-btn icon-btn" data-go-qty-inc="${escapeHtml(String(item.id))}"
-                  data-current-qty="${qty}" type="button" aria-label="Menge erhöhen">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <button class="remove-btn icon-btn" data-remove-go-cart="${escapeHtml(String(item.id))}" type="button"
-                aria-label="Produkt entfernen" title="Entfernen">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
-            <path d="M10 11v6"/><path d="M14 11v6"/>
-          </svg>
-        </button>` : `<span class="cart-line-qty" style="color:var(--muted);font-size:.75rem;">Deadline abgelaufen</span>`;
-
       return `<div class="cart-size-row">
         <div class="cart-size-row-left"><div class="cart-line-meta">
           ${sizeLabel ? `<span class="cart-line-qty">Gr\u00f6\u00dfe: ${escapeHtml(sizeLabel)}</span>` : ""}
-          <span class="cart-line-qty">Menge: ${qty}</span>
+          <span class="cart-line-qty">Menge: ${Number(item.quantity)}</span>
         </div></div>
         <div class="cart-size-row-right">
           <span class="cart-line-total">${formatPrice(lineTotal)}</span>
-          ${editControls}
+          <button class="remove-btn icon-btn" data-remove-go-cart="${escapeHtml(String(item.id))}" type="button"
+                  aria-label="Produkt entfernen" title="Entfernen">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+            </svg>
+          </button>
         </div>
       </div>`;
     }).join("");
@@ -507,30 +485,13 @@ async function loadGoCart() {
   cartTotal.textContent = `Gesamt: ${totalText}`;
   syncDrawer(totalText, totalItems);
 
-  // Event-Handler für GO-Cart (löschen + Menge)
+  // Remove-Handler für GO-Cart
   cartList.addEventListener("click", async (e) => {
     const removeBtn = e.target.closest("[data-remove-go-cart]");
     if (removeBtn) {
       await removeFromGoCart(removeBtn.getAttribute("data-remove-go-cart"));
       return;
     }
-
-    const incBtn = e.target.closest("[data-go-qty-inc]");
-    if (incBtn) {
-      const id  = incBtn.getAttribute("data-go-qty-inc");
-      const qty = Number(incBtn.getAttribute("data-current-qty") || 1);
-      await updateGoCartQty(id, qty + 1);
-      return;
-    }
-
-    const decBtn = e.target.closest("[data-go-qty-dec]");
-    if (decBtn) {
-      const id  = decBtn.getAttribute("data-go-qty-dec");
-      const qty = Number(decBtn.getAttribute("data-current-qty") || 1);
-      if (qty > 1) await updateGoCartQty(id, qty - 1);
-      return;
-    }
-
     const scrollBtn = e.target.closest("[data-scroll-to-product]");
     if (scrollBtn) {
       const productId = scrollBtn.getAttribute("data-scroll-to-product");
@@ -544,24 +505,9 @@ async function loadGoCart() {
 }
 
 async function removeFromGoCart(goCartItemId) {
-  const { error } = await db
-    .from("group_order_cart")
-    .delete()
-    .eq("id", goCartItemId)
-    .eq("confirmed", false);
+  const { error } = await db.from("group_order_cart").delete().eq("id", goCartItemId);
   if (error) { setMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
   setMessage("Produkt aus Sammelbestellung entfernt.");
-  await loadGoCart();
-}
-
-async function updateGoCartQty(goCartItemId, newQty) {
-  if (newQty < 1) return;
-  const { error } = await db
-    .from("group_order_cart")
-    .update({ quantity: newQty })
-    .eq("id", goCartItemId)
-    .eq("confirmed", false);
-  if (error) { setMessage(`Fehler beim Aktualisieren: ${error.message}`, true); return; }
   await loadGoCart();
 }
 
@@ -778,13 +724,11 @@ async function addToCart(productId, quantity, selectedSize) {
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
-    // Nur unconfirmed Items prüfen (Warenkorb-State)
     let goQuery = db.from("group_order_cart")
       .select("id, quantity")
       .eq("user_id", user.id)
       .eq("group_order_id", goId)
-      .eq("product_id", productId)
-      .eq("confirmed", false);
+      .eq("product_id", productId);
 
     if (isClothing)    goQuery = goQuery.eq("clothing_size_id", clothingSizeId);
     else if (isWeight) goQuery = goQuery.eq("weight_size_id", weightSizeId);
@@ -796,8 +740,7 @@ async function addToCart(productId, quantity, selectedSize) {
     if (existing) {
       const { error: updErr } = await db.from("group_order_cart")
         .update({ quantity: Number(existing.quantity || 0) + Number(quantity || 0) })
-        .eq("id", existing.id)
-        .eq("confirmed", false);
+        .eq("id", existing.id);
       if (updErr) { setMessage(`Fehler: ${updErr.message}`, true); return; }
     } else {
       const { error: insErr } = await db.from("group_order_cart").insert({
@@ -805,7 +748,6 @@ async function addToCart(productId, quantity, selectedSize) {
         group_order_id:   goId,
         product_id:       productId,
         quantity,
-        confirmed:        false,
         clothing_size_id: clothingSizeId,
         weight_size_id:   weightSizeId
       });
