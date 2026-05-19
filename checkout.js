@@ -23,7 +23,7 @@ function closeCheckout() {
   _checkoutSnapshot = null;
   if (window.goSession) {
     productsSection.classList.remove('hidden');
-    filterProductsForGo(window.goSession.supplierName);
+    filterProductsForGo(window.goSession.supplierId);
     renderGoSignalBanner();
   } else {
     productsSection.classList.remove('hidden');
@@ -580,7 +580,7 @@ function showGoPostSubmitDialog(sess) {
     dialog.setAttribute('aria-hidden', 'true');
     checkoutSection.classList.add('hidden');
     productsSection.classList.remove('hidden');
-    filterProductsForGo(sess.supplierName);
+    filterProductsForGo(sess.supplierId);
     renderGoSignalBanner();
     updateCartLabelsForGo(sess.supplierName);
     window.scrollTo({ top: 0, behavior: 'smooth' });
