@@ -1,650 +1,207 @@
 /* ============================================================
-   SAMMELBESTELLUNG — group-order.css
-   Desktop: Fullscreen-Takeover
-   Mobile:  Bottom-Sheet
+   GROUP ORDER STYLES — group-order.css
 ============================================================ */
 
 /* ============================================================
-   TRIGGER-BUTTON
+   TRIGGER BAR
 ============================================================ */
 
 .go-trigger-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 20px;
-  background: rgba(1, 105, 111, 0.12);
-  border-bottom: 1px solid rgba(1, 105, 111, 0.25);
-  font-size: 13px;
+}
+
+.go-trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-3);
   color: var(--text);
-  flex-wrap: wrap;
-}
-
-.go-trigger-bar-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  font-weight: 500;
-}
-
-.go-trigger-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #01b0b8;
-  flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(1,176,184,.6);
-  animation: go-pulse 2s ease-in-out infinite;
-}
-
-@keyframes go-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: .55; transform: scale(.85); }
-}
-
-.go-trigger-bar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.go-open-btn {
-  background: #01696f;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: .875rem;
   font-weight: 600;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 32px;
-  transition: background 140ms ease;
   font-family: inherit;
-}
-.go-open-btn:hover  { background: #018a92; transform: none; }
-.go-open-btn:active { transform: scale(.96); opacity: 1; }
-
-.go-create-btn {
-  background: none;
-  border: 1.5px solid rgba(1,105,111,.5);
-  color: #01b0b8;
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  font-family: inherit;
-  min-height: 32px;
-  white-space: nowrap;
+  transition: background 140ms ease, border-color 140ms ease;
 }
-.go-create-btn:hover  { background: rgba(1,105,111,.15); border-color: #01696f; color: #fff; transform: none; }
-.go-create-btn:active { transform: scale(.96); opacity: 1; }
+.go-trigger-btn:hover { background: var(--surface-4); }
+.go-trigger-btn:active { transform: scale(.97); }
 
 /* ============================================================
-   SIGNAL BANNER (aktive GO-Sitzung — Signalfarbe)
-============================================================ */
-
-.go-signal-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 20px;
-  background: linear-gradient(90deg, rgba(1,176,184,.18) 0%, rgba(1,105,111,.12) 100%);
-  border-bottom: 2px solid #01b0b8;
-  font-size: 13px;
-  flex-wrap: wrap;
-}
-
-.go-signal-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.go-signal-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #01b0b8;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(1,176,184,.25);
-  animation: go-pulse 1.5s ease-in-out infinite;
-}
-
-.go-signal-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  color: #01b0b8;
-}
-
-.go-signal-supplier {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.go-signal-leave-btn {
-  background: rgba(224,85,105,.12);
-  border: 1px solid rgba(224,85,105,.35);
-  color: #ffaab4;
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 32px;
-  font-family: inherit;
-  transition: background 140ms ease;
-  flex-shrink: 0;
-}
-.go-signal-leave-btn:hover  { background: rgba(224,85,105,.22); transform: none; }
-.go-signal-leave-btn:active { transform: scale(.96); opacity: 1; }
-
-/* ============================================================
-   PANEL (Fullscreen Desktop)
+   PANEL (Drawer-artiges Overlay)
 ============================================================ */
 
 .go-panel {
   position: fixed;
-  inset: 0;
-  z-index: 210;
-  background: var(--bg);
-  overflow-y: auto;
-  display: none;
+  top: 0;
+  right: -420px;
+  width: min(420px, 100vw);
+  height: 100dvh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 24px rgba(0,0,0,.12);
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  transition: right 260ms cubic-bezier(.16,1,.3,1);
+  overflow: hidden;
 }
-
-.go-panel.go-panel--open {
-  display: block;
-  animation: go-panel-slide-in 240ms cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes go-panel-slide-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 1023px) {
-  .go-panel {
-    top: auto; left: 0; right: 0; bottom: 0;
-    overflow-y: visible;
-    display: flex !important;
-    flex-direction: column;
-    max-height: 92dvh;
-    border-radius: 20px 20px 0 0;
-    border: 1px solid var(--border);
-    border-bottom: none;
-    box-shadow: 0 -8px 40px rgba(0,0,0,.45);
-    background: var(--surface);
-    transform: translateY(100%);
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(.34,1.56,.64,1)),
-      opacity   var(--dur-mid, 220ms)  ease,
-      visibility 0s linear var(--dur-slow, 400ms);
-    will-change: transform;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    animation: none !important;
-  }
-  .go-panel.go-panel--open {
-    transform: translateY(0);
-    opacity: 1;
-    visibility: visible;
-    transition:
-      transform var(--dur-slow, 400ms) var(--ease-spring, cubic-bezier(.34,1.56,.64,1)),
-      opacity   var(--dur-fast, 150ms) ease,
-      visibility 0s linear 0s;
-  }
-}
-
-.go-panel-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
-}
-
-@media (max-width: 1023px) {
-  .go-panel-inner {
-    display: flex;
-    flex-direction: column;
-    max-height: 92dvh;
-    padding: 0;
-    overflow: hidden;
-  }
-}
-
-.go-panel-handle { display: none; }
-
-@media (max-width: 1023px) {
-  .go-panel-handle {
-    display: block;
-    width: 36px;
-    height: 4px;
-    border-radius: 99px;
-    background: var(--border-strong);
-    margin: 12px auto 0;
-    flex-shrink: 0;
-  }
-}
+.go-panel.open { right: 0; }
 
 .go-panel-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding-block: 1rem 1.5rem;
+  justify-content: space-between;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 2rem;
+  flex-shrink: 0;
 }
-
-@media (max-width: 1023px) {
-  .go-panel-header { padding: 12px 20px 14px; margin-bottom: 0; flex-shrink: 0; }
+.go-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
 }
-
-.go-panel-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  font-size: .875rem;
-  font-weight: 500;
-  color: var(--muted);
+.go-panel-close {
   background: none;
   border: none;
   cursor: pointer;
-  padding: .5rem .75rem;
+  color: var(--muted);
+  padding: 4px;
   border-radius: 6px;
-  transition: background 180ms ease, color 180ms ease;
-  min-height: 44px;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 140ms ease, background 140ms ease;
 }
-.go-panel-back-btn:hover  { background: rgba(255,255,255,.06); color: var(--text); transform: none; }
-.go-panel-back-btn:active { transform: scale(.96); opacity: 1; }
+.go-panel-close:hover { color: var(--text); background: var(--surface-3); }
 
-.go-panel-header-title {
+.go-panel-inner {
   flex: 1;
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.go-panel-close-btn { display: none; }
-
-@media (max-width: 1023px) {
-  .go-panel-back-btn  { display: none; }
-  .go-panel-close-btn {
-    display: flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; min-height: 36px; padding: 0;
-    border-radius: 50%;
-    background: var(--surface-3);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    flex-shrink: 0;
-    cursor: pointer;
-    margin-left: auto;
-    transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
-  }
-  .go-panel-close-btn:hover  { background: var(--surface-4); color: var(--text); transform: none; }
-  .go-panel-close-btn:active { transform: scale(.88); opacity: 1; }
-  .go-panel-close-btn svg { width: 16px; height: 16px; pointer-events: none; }
-}
-
-.go-panel-body { padding: 0; }
-
-@media (max-width: 1023px) {
-  .go-panel-body {
-    flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding: 16px 20px 24px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .go-panel-body::-webkit-scrollbar { width: 3px; }
-  .go-panel-body::-webkit-scrollbar-track { background: transparent; }
-  .go-panel-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
-}
-
-/* ============================================================
-   GO LISTE
-============================================================ */
-
-.go-list {
+  overflow-y: auto;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
-.go-item {
-  background: var(--surface);
+.go-panel-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   ORDER CARDS
+============================================================ */
+
+.go-order-card {
+  background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.go-order-card-header {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.go-item-info { flex: 1; min-width: 0; }
-.go-item-title { font-size: .9375rem; font-weight: 600; color: var(--text); margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.go-item-deadline { font-size: .8125rem; color: var(--muted); }
-.go-item-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-
-/* ============================================================
-   BUTTONS
-============================================================ */
-
-.go-join-btn {
-  background: #01696f;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 7px 16px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 34px;
-  transition: background 140ms ease;
-  font-family: inherit;
-}
-.go-join-btn:hover  { background: #018a92; transform: none; }
-.go-join-btn:active { transform: scale(.96); opacity: 1; }
-.go-join-btn.go-join-btn--active {
-  background: rgba(1,176,184,.15);
-  color: #01b0b8;
-  border: 1px solid rgba(1,176,184,.35);
-}
-.go-join-btn.go-join-btn--goto {
-  background: rgba(1,176,184,.1);
-  color: #01b0b8;
-  border: 1px solid rgba(1,176,184,.3);
-}
-.go-join-btn.go-join-btn--goto:hover { background: rgba(1,176,184,.2); }
-
-.go-undo-btn {
-  background: none;
-  border: 1px solid var(--border-strong);
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 34px;
-  font-family: inherit;
-  transition: background 140ms ease, color 140ms ease;
-}
-.go-undo-btn:hover  { background: rgba(224,85,105,.1); color: #ffaab4; border-color: rgba(224,85,105,.3); transform: none; }
-.go-undo-btn:active { transform: scale(.96); opacity: 1; }
-
-.go-edit-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 0;
-  width: 34px;
-  height: 34px;
-  min-height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 140ms ease;
-}
-.go-edit-btn:hover  { background: var(--surface-3); border-color: var(--border-strong); transform: none; }
-.go-edit-btn:active { transform: scale(.9); opacity: 1; }
-
-/* ============================================================
-   ERSTELL-FORM
-============================================================ */
-
-.go-section-title {
-  font-size: .8125rem;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  margin: 0 0 12px;
-}
-
-.go-create-form {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.go-label { display: block; font-size: .8125rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
-.go-required { color: var(--accent); }
-
-.go-input {
-  display: block;
-  width: 100%;
-  padding: 9px 12px;
-  border: 1.5px solid var(--border-strong);
-  border-radius: 7px;
-  font-size: .875rem;
-  font-family: inherit;
-  background: var(--surface-2);
-  color: var(--text);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
-  outline: none;
-  min-height: 0;
-}
-.go-input:focus { border-color: #01696f; box-shadow: 0 0 0 3px rgba(1,105,111,.15); }
-
-.go-error { font-size: .8125rem; color: #ffaab4; min-height: 16px; margin: 0; }
-.go-value-readonly { font-size: .9375rem; font-weight: 600; color: var(--text); padding: 8px 0; margin: 0; }
-
-/* ============================================================
-   MODAL
-============================================================ */
-
-.go-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.go-modal.hidden { display: none !important; }
-
-.go-modal-backdrop { position: absolute; inset: 0; cursor: default; }
-
-.go-modal-box {
-  position: relative;
-  background: var(--surface-2);
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  animation: go-modal-in 200ms cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes go-modal-in {
-  from { opacity: 0; transform: scale(.94) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.go-modal-close {
-  position: absolute;
-  top: 12px; right: 12px;
-  width: 32px; height: 32px; min-height: 32px; padding: 0;
-  border-radius: 50%;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 140ms ease, color 140ms ease;
-}
-.go-modal-close:hover  { background: var(--surface-4); color: var(--text); transform: none; }
-.go-modal-close:active { transform: scale(.88); opacity: 1; }
-
-.go-modal-title { font-size: 1rem; font-weight: 700; margin: 0; padding-right: 32px; color: var(--text); }
-
-.go-modal-footer {
-  display: flex;
-  justify-content: flex-end;
   gap: 10px;
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
 }
 
-.go-modal-footer--col {
-  flex-direction: column;
-  align-items: stretch;
-}
-
-/* ============================================================
-   POST-SUBMIT DIALOG
-============================================================ */
-
-.go-post-submit-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: rgba(1,176,184,.15);
-  border: 2px solid rgba(1,176,184,.4);
-  color: #01b0b8;
-  font-size: 22px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-}
-
-.go-post-submit-text {
-  font-size: .9rem;
-  color: var(--text);
-  margin: 0;
-  text-align: center;
-  line-height: 1.5;
-}
-
-/* ============================================================
-   CHECKOUT — GO Supplier Badge im Header
-============================================================ */
-
-.checkout-header-go-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.checkout-supplier-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(1,176,184,.1);
-  border: 1px solid rgba(1,176,184,.3);
-  border-radius: 20px;
-  padding: 4px 12px 4px 10px;
-}
-
-.checkout-supplier-logo {
-  height: 20px;
+.go-supplier-logo {
+  height: 28px;
   width: auto;
+  max-width: 100px;
   object-fit: contain;
-  max-width: 80px;
+  border-radius: 4px;
 }
 
-.checkout-supplier-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #01b0b8;
-}
-
-/* ============================================================
-   CHECKOUT — Bereits übermittelte GO-Artikel
-============================================================ */
-
-#go-submitted-wrap {
-  margin-top: 24px;
-  border: 1px solid rgba(1,176,184,.25);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.go-submitted-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(1,176,184,.08);
-  border-bottom: 1px solid rgba(1,176,184,.2);
-  font-size: .8125rem;
+.go-supplier-name {
+  font-size: .9375rem;
   font-weight: 600;
+  color: var(--text);
+}
+
+.go-order-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.go-order-deadline {
+  font-size: .8125rem;
   color: var(--muted);
 }
 
-.go-submitted-badge {
-  background: rgba(1,176,184,.15);
-  border: 1px solid rgba(1,176,184,.3);
-  color: #01b0b8;
-  border-radius: 99px;
-  padding: 2px 10px;
-  font-size: 11px;
+.go-creator-badge {
+  font-size: .6875rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  padding: 2px 7px;
+  border-radius: 99px;
 }
 
-.go-submitted-list {
+.go-order-card-footer {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-.go-submitted-row {
+/* ============================================================
+   BANNER (aktive GO-Sitzung)
+============================================================ */
+
+.go-banner {
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.go-banner.hidden { display: none; }
+
+.go-banner-inner {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 16px;
-  border-bottom: 1px solid var(--border);
-  font-size: .875rem;
+  justify-content: space-between;
+  gap: 10px;
 }
-.go-submitted-row:last-child { border-bottom: none; }
 
-.go-submitted-name { flex: 1; color: var(--text); font-weight: 500; }
-.go-submitted-sku  { font-size: 11px; color: var(--muted); margin-left: 4px; }
-.go-submitted-meta { font-size: .8125rem; color: var(--muted); white-space: nowrap; }
-.go-submitted-price { font-size: .875rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+.go-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .9375rem;
+  color: var(--text);
+}
+
+.go-banner-logo {
+  height: 24px;
+  width: auto;
+  max-width: 80px;
+  object-fit: contain;
+  border-radius: 3px;
+}
+
+.go-banner-deadline {
+  font-size: .8125rem;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+.go-banner-leave {
+  flex-shrink: 0;
+}
 
 /* ============================================================
    BANNER ERROR
@@ -652,7 +209,7 @@
 
 #go-banner-error {
   font-size: .8125rem;
-  color: #ffaab4;
+  color: var(--danger);
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -691,7 +248,187 @@
   cursor: pointer;
   min-height: 38px;
   font-family: inherit;
-  transition: background 140ms ease;
+  transition: background 140ms ease, border-color 140ms ease;
 }
-.go-btn-secondary:hover  { background: var(--surface-4); transform: none; }
-.go-btn-secondary:active { transform: scale(.97); opacity: 1; }
+.go-btn-secondary:hover  { background: var(--surface-4); }
+.go-btn-secondary:active { transform: scale(.97); }
+
+/* ============================================================
+   CREATE FORM
+============================================================ */
+
+.go-create-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.go-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.go-label {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.go-select,
+.go-input {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: .9375rem;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.go-select:focus,
+.go-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+.go-select:disabled,
+.go-input:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.go-error { font-size: .8125rem; color: var(--danger); min-height: 16px; margin: 0; }
+.go-value-readonly { font-size: .9375rem; font-weight: 600; color: var(--text); padding: 8px 0; margin: 0; }
+
+/* ============================================================
+   MODAL
+============================================================ */
+
+.go-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.go-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: min(440px, 100%);
+  box-shadow: 0 12px 48px rgba(0,0,0,.2);
+  overflow: hidden;
+}
+
+.go-modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.go-modal-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.go-modal-body {
+  padding: 16px 20px;
+  color: var(--text);
+  font-size: .9375rem;
+  line-height: 1.5;
+}
+
+.go-modal-footer {
+  padding: 12px 20px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   SECTION TITLE
+============================================================ */
+
+.go-section-title {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin: 0 0 12px;
+}
+
+.go-create-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* ============================================================
+   NEUE KLASSEN (ersetzt Inline-Styles)
+============================================================ */
+
+/* go-banner-error als Klasse (wird per class statt id-Selektor angesprochen) */
+.go-banner-error {
+  font-size: .8125rem;
+  color: var(--danger);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  transition: opacity 200ms ease;
+}
+
+/* Leerer Zustand */
+.go-empty-state {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+/* Abstand vor "Neue Sammelbestellung" */
+.go-section-title--spacious {
+  margin-top: 28px;
+}
+
+/* go-error mit Feldabstand */
+.go-error--field {
+  margin-top: 4px;
+}
+
+/* Deadline-Wrap deaktiviert */
+.go-deadline-wrap--disabled {
+  opacity: .4;
+  pointer-events: none;
+}
+
+/* Submit-Button-Container */
+.go-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Disabled-Zustand des Primary-Buttons */
+.go-btn-primary--disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+.go-btn-primary--disabled:hover {
+  background: var(--accent);
+  transform: none;
+}
