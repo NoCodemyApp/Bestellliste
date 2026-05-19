@@ -8,7 +8,7 @@ let activeGroupOrders = [];
 let groupOrderChannel = null;
 let blockedSuppliers  = new Set();
 
-// { groupOrderId, supplierName, supplierLogo, isCreator, deadline }
+// { groupOrderId, supplierId, supplierLogo, isCreator, deadline }
 window.goSession = null;
 
 // ============================================================
@@ -113,18 +113,18 @@ function updateTriggerBar() {
 // GO-MODE — Signal-Banner + gefilterte Produktseite
 // ============================================================
 
-async function activateGoMode(groupOrderId, supplierName, isCreator, deadline) {
+async function activateGoMode(groupOrderId, supplierId, isCreator, deadline) {
   let supplierLogo = null;
   const { data: logoData } = await db.from('products')
-    .select('supplier_logo').eq('supplier', supplierName).eq('active', true)
+    .select('supplier_logo').eq('supplier', supplierId).eq('active', true)
     .not('supplier_logo', 'is', null).limit(1).maybeSingle();
   supplierLogo = logoData?.supplier_logo || null;
 
-  window.goSession = { groupOrderId, supplierName, supplierLogo, isCreator, deadline };
+  window.goSession = { groupOrderId, supplierId, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
-  filterProductsForGo(supplierName);
-  if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
+  filterProductsForGo(supplierId);
+  if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierId);
 }
 
 function deactivateGoMode() {
@@ -154,11 +154,11 @@ function deactivateGoMode() {
   }
 }
 
-function filterProductsForGo(supplierName) {
+function filterProductsForGo(supplierId) {
   if (typeof allProducts === 'undefined') return;
 
   const filtered = allProducts.filter(p =>
-    (p.supplier || '').toLowerCase() === supplierName.toLowerCase()
+    (p.supplier_id || '').toLowerCase() === supplierId.toLowerCase()
   );
 
   // Desktop-Sidebar ausblenden (kein Platz mehr im Grid)
@@ -190,7 +190,7 @@ function renderGoSignalBanner() {
     <div class="go-signal-left">
       <span class="go-signal-dot"></span>
       <span class="go-signal-label">Sammelbestellung</span>
-      <span class="go-signal-supplier">${escapeHtml(sess.supplierName)}</span>
+      <span class="go-signal-supplier">${escapeHtml(sess.supplierId)}</span>
     </div>
     <button class="go-signal-leave-btn" id="go-signal-leave" type="button">Verlassen</button>`;
   const ps = document.getElementById('products-section');
@@ -478,7 +478,7 @@ async function loadSupplierDropdown() {
   const { data, error } = await db.from('products')
     .select('supplier').eq('active', true).not('supplier', 'is', null);
   if (error) { select.innerHTML = `<option value="">Fehler beim Laden</option>`; return; }
-  const suppliers = [...new Set(data.map(p => p.supplier).filter(Boolean))].sort();
+  const suppliers = [...new Set(data.map(p => p.supplier_id).filter(Boolean))].sort();
   if (suppliers.length === 0) { select.innerHTML = `<option value="">Keine aktiven Lieferanten</option>`; return; }
   select.innerHTML = `<option value="">Bitte wählen …</option>` +
     suppliers.map(s => {
