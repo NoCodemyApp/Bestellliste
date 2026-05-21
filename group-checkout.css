@@ -728,3 +728,30 @@
   padding: 0.75rem 0.25rem;
   margin: 0;
 }
+
+/* ------------------------------------------------------------
+   Bereich 2 ("Meine Bestellung") visuell hervorheben
+   — Teal-Farbschema analog zu .checkout-supplier-badge
+------------------------------------------------------------ */
+#go-order-section.go-checkout-area {
+  background: rgba(1,176,184,.06);
+  border-color: rgba(1,176,184,.3);
+}
+
+#go-order-section .go-checkout-area-title {
+  color: #01b0b8;
+}
+
+/* ------------------------------------------------------------
+   Lokal als "gelöscht" markierte Bereich-2-Zeile (Toggle)
+------------------------------------------------------------ */
+.checkout-item-row.is-pending-removed {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.checkout-item-row.is-pending-removed .checkout-size-badge,
+.checkout-item-row.is-pending-removed .qty-stepper-value,
+.checkout-item-row.is-pending-removed [data-line-total] {
+  text-decoration: line-through;
+}

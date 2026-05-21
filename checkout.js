@@ -177,6 +177,11 @@ function hasPendingOrderEdits() {
 
 // Tracking: hat Bereich 1 (Warenkorb) unbestätigte Artikel?
 let _goHasUnconfirmed = false;
+// Tracking: existiert in dieser GO bereits mind. eine confirmed=true-Zeile?
+// Steuert das Label des Sidebar-Submit-Buttons:
+//   false → "Bestellung absenden"
+//   true  → "Bestellung aktualisieren"
+let _goHasConfirmed = false;
 
 async function renderCheckout() {
   const user = await getCurrentUser();
@@ -254,15 +259,16 @@ async function renderGoCheckout(user) {
   }
 
   // ── Bereich 2: Meine Bestellung (confirmed=true) ──
-  // Lokale Edits anwenden: removed-Filter + qty-Override
-  const visibleOrderItems = orderItems
-    .filter(i => !pendingOrderEdits.removed[i.id])
-    .map(i => ({
-      ...i,
-      quantity: pendingOrderEdits.qty[i.id] != null
-        ? pendingOrderEdits.qty[i.id]
-        : i.quantity
-    }));
+  // Lokale Edits anwenden: qty-Override + pendingRemoved-Flag (durchgestrichen)
+  // Lokal gelöschte Zeilen bleiben sichtbar als Strikethrough, bis der Submit
+  // sie endgültig persistiert.
+  const visibleOrderItems = orderItems.map(i => ({
+    ...i,
+    quantity: pendingOrderEdits.qty[i.id] != null
+      ? pendingOrderEdits.qty[i.id]
+      : i.quantity,
+    pendingRemoved: !!pendingOrderEdits.removed[i.id]
+  }));
 
   if (visibleOrderItems.length === 0) {
     goOrderListEl.innerHTML = '';
@@ -273,8 +279,11 @@ async function renderGoCheckout(user) {
   }
 
   // Zusammenfassung in der Sidebar: Summe über BEIDE Bereiche
-  // (Bereich 2 inkl. lokaler Edits, ohne lokal gelöschte).
-  const combined = [...cartItems, ...visibleOrderItems];
+  // (Bereich 2 inkl. lokaler Edits, ohne lokal als gelöscht markierte).
+  const combined = [
+    ...cartItems,
+    ...visibleOrderItems.filter(i => !i.pendingRemoved)
+  ];
   let totalSum = 0, totalCount = 0;
   combined.forEach(item => {
     const price = Number(item.products?.price_brutto || 0);
@@ -287,6 +296,11 @@ async function renderGoCheckout(user) {
 
   // Submit-Button-Status: aktiv, wenn Bereich 1 Artikel hat ODER lokale Edits in Bereich 2
   _goHasUnconfirmed = cartItems.length > 0;
+  // Label-Trigger: gibt es überhaupt confirmed=true-Zeilen?
+  // Wichtig: orderItems (ungefiltert) zählen, nicht visibleOrderItems — lokal als
+  // gelöscht markierte Zeilen sind in der DB noch da. Erst nach Submit wird die
+  // DB geändert und der Flag kippt eventuell auf false.
+  _goHasConfirmed = orderItems.length > 0;
   _checkoutSnapshot = (cartItems.length > 0) ? 'has-cart' : null;
 
   await updateSubmitButtonLabel();
@@ -417,7 +431,8 @@ function renderGoSection(containerEl, items, mode) {
     const rowsHtml = group.items.map(item => {
       const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
       const lineTotal = group.productPrice * Number(item.quantity || 0);
-      return `<div class="checkout-item-row">
+      const removedCls = item.pendingRemoved ? ' is-pending-removed' : '';
+      return `<div class="checkout-item-row${removedCls}">
         <div class="checkout-item-size">${sizeLabel
           ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>`
           : `<span class="checkout-size-badge checkout-size-badge--none">Keine Größe</span>`}</div>
@@ -517,6 +532,8 @@ function goOrderLocalQtyDelta(cartItemId, delta) {
 
   // Zeilenpreis lokal aktualisieren
   const row = valEl ? valEl.closest('.checkout-item-row') : null;
+  // Strikethrough-Markierung visuell zurücknehmen, falls vorher gesetzt
+  if (row) row.classList.remove('is-pending-removed');
   const priceEl = row ? row.querySelector('[data-line-total]') : null;
   // Preis aus dem Header der Produktgruppe ableiten geht hier nicht zuverlässig;
   // wir rerendern stattdessen die Summen-Anzeige sauber via renderGoCheckout.
@@ -527,15 +544,20 @@ function goOrderLocalQtyDelta(cartItemId, delta) {
   refreshGoCheckoutTotals();
 }
 
-function goOrderLocalRemove(cartItemId) {
-  pendingOrderEdits.removed[cartItemId] = true;
-  delete pendingOrderEdits.qty[cartItemId];
+async function goOrderLocalRemove(cartItemId) {
+  // Toggle: bereits als gelöscht markiert? → Markierung zurücknehmen.
+  // Sonst: als gelöscht markieren (lokale Edits in qty werden verworfen).
+  if (pendingOrderEdits.removed[cartItemId]) {
+    delete pendingOrderEdits.removed[cartItemId];
+  } else {
+    pendingOrderEdits.removed[cartItemId] = true;
+    delete pendingOrderEdits.qty[cartItemId];
+  }
   updateSubmitButtonLabel();
-  // Zeile aus dem DOM nehmen für sofortiges visuelles Feedback
-  const valEl = document.getElementById(`go-order-qty-val-${cartItemId}`);
-  const row = valEl ? valEl.closest('.checkout-item-row') : null;
-  if (row) row.remove();
-  refreshGoCheckoutTotals();
+  // Komplettes Re-Render, damit durchgestrichene Zeilen sichtbar bleiben
+  // bzw. die Strikethrough-Markierung beim erneuten Klick zurückkommt.
+  const user = await getCurrentUser();
+  if (user) await renderGoCheckout(user);
 }
 
 // Summen über Bereich 1 + Bereich 2 (inkl. lokaler Edits) neu berechnen,
@@ -569,14 +591,18 @@ async function refreshGoCheckoutTotals() {
 // ============================================================
 
 async function updateSubmitButtonLabel() {
-  submitOrderBtn.textContent = 'Bestellung absenden';
-
   if (!window.goSession) {
+    submitOrderBtn.textContent   = 'Bestellung absenden';
     submitOrderBtn.disabled      = false;
     submitOrderBtn.style.opacity = '1';
     submitOrderBtn.style.cursor  = 'pointer';
     return;
   }
+
+  // GO-Modus: Label nach Existenz von confirmed=true-Zeilen wechseln
+  submitOrderBtn.textContent = _goHasConfirmed
+    ? 'Bestellung aktualisieren'
+    : 'Bestellung absenden';
 
   const enabled = _goHasUnconfirmed || hasPendingOrderEdits();
   submitOrderBtn.disabled      = !enabled;
@@ -636,11 +662,14 @@ async function submitOrder() {
     //   2) Unbestätigte Items aus Bereich 1 bestätigen (confirmed=false → true)
     // Reihenfolge: erst Edits, dann Confirm, damit gelöschte Bereich-2-Zeilen
     // nicht durch frisches Confirmen überlebt werden könnten.
-    if (hasPendingOrderEdits()) {
-      await applyPendingOrderEdits();
-    }
-    if (_goHasUnconfirmed) {
-      await confirmGoCartItems(user);
+    const didEdits   = hasPendingOrderEdits();
+    const didConfirm = _goHasUnconfirmed;
+    if (didEdits)   await applyPendingOrderEdits();
+    if (didConfirm) await confirmGoCartItems(user);
+
+    // Post-Submit-Dialog anzeigen, falls tatsächlich etwas passiert ist
+    if (didEdits || didConfirm) {
+      showGoPostSubmitDialog(window.goSession);
     }
     return;
   }
@@ -791,12 +820,22 @@ function showGoPostSubmitDialog(sess) {
     document.body.appendChild(dialog);
   }
 
+  // Titel/Text je nachdem, ob es ein Erst-Submit oder Update war.
+  // _goHasConfirmed wurde durch das vorherige render aktualisiert und
+  // beschreibt den Zustand VOR dem aktuellen Submit nicht mehr zuverlässig;
+  // wir orientieren uns am aktuellen Label-Stand des Sidebar-Buttons.
+  const wasUpdate = submitOrderBtn.textContent === 'Bestellung aktualisieren';
+  const title     = wasUpdate ? 'Bestellung aktualisiert' : 'Bestellung gespeichert';
+  const message   = wasUpdate
+    ? `Deine Änderungen wurden in der Sammelbestellung <strong>${escapeHtml(sess.supplierName)}</strong> gespeichert.`
+    : `Deine Artikel wurden der Sammelbestellung <strong>${escapeHtml(sess.supplierName)}</strong> hinzugefügt.`;
+
   dialog.innerHTML = `
     <div class="go-modal-backdrop"></div>
     <div class="go-modal-box">
       <div class="go-post-submit-icon">✓</div>
-      <h2 class="go-modal-title">Bestellung gespeichert</h2>
-      <p class="go-post-submit-text">Deine Artikel wurden der Sammelbestellung <strong>${escapeHtml(sess.supplierName)}</strong> hinzugefügt.</p>
+      <h2 class="go-modal-title">${title}</h2>
+      <p class="go-post-submit-text">${message}</p>
       <div class="go-modal-footer go-modal-footer--col">
         <button type="button" class="go-btn-primary"   id="go-post-go-back">Zur Sammelbestellung</button>
         <button type="button" class="go-btn-secondary" id="go-post-close-go">Sammelbestellung schließen</button>
