@@ -225,6 +225,27 @@
         <!-- Checkout Body -->
         <div class="checkout-body">
           <div class="checkout-items-wrap">
+            <!-- Bereich 1: Warenkorb (confirmed = false) - nur im GO-Modus genutzt -->
+            <section id="go-cart-section" class="go-checkout-area hidden" aria-label="Warenkorb">
+              <h3 class="go-checkout-area-title">Warenkorb</h3>
+              <div id="go-cart-list" class="checkout-list"></div>
+              <p id="go-cart-empty" class="go-checkout-empty hidden">Dein Warenkorb ist leer.</p>
+              <div id="go-cart-actions" class="go-checkout-area-actions hidden">
+                <button id="go-confirm-btn" type="button" class="submit-btn">Zur Bestellung hinzufügen</button>
+              </div>
+            </section>
+
+            <!-- Bereich 2: Meine Bestellung (confirmed = true) - nur im GO-Modus genutzt -->
+            <section id="go-order-section" class="go-checkout-area hidden" aria-label="Meine Bestellung">
+              <h3 class="go-checkout-area-title">Meine Bestellung</h3>
+              <div id="go-order-list" class="checkout-list"></div>
+              <p id="go-order-empty" class="go-checkout-empty hidden">Du hast noch keine Artikel zur Bestellung hinzugefügt.</p>
+              <div id="go-order-actions" class="go-checkout-area-actions hidden">
+                <button id="go-update-btn" type="button" class="submit-btn" disabled>Bestellung aktualisieren</button>
+              </div>
+            </section>
+
+            <!-- Normaler Modus (cart_items) - unverändert -->
             <div id="checkout-list" class="checkout-list"></div>
             <p id="checkout-empty" class="products-empty hidden">Dein Warenkorb ist leer.</p>
           </div>

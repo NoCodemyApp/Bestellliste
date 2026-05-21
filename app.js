@@ -397,6 +397,8 @@ async function loadGoCart() {
 
   const goId = window.goSession.groupOrderId;
 
+  // Sidebar-Warenkorb zeigt nur Artikel, die noch NICHT zur Sammelbestellung
+  // hinzugefügt wurden (confirmed = false).
   const { data, error } = await db
     .from("group_order_cart")
     .select(`id, quantity, product_id,
@@ -406,6 +408,7 @@ async function loadGoCart() {
              sizes_weight(id, code)`)
     .eq("user_id", user.id)
     .eq("group_order_id", goId)
+    .eq("confirmed", false)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -724,11 +727,15 @@ async function addToCart(productId, quantity, selectedSize) {
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
+    // Nur unbestätigte Cart-Zeilen (confirmed=false) wieder aufmunitionieren.
+    // Bereits bestätigte Artikel (confirmed=true) bleiben unberührt;
+    // ein neuer "Klick" erzeugt dann ggf. eine zweite, unbestätigte Zeile.
     let goQuery = db.from("group_order_cart")
       .select("id, quantity")
       .eq("user_id", user.id)
       .eq("group_order_id", goId)
-      .eq("product_id", productId);
+      .eq("product_id", productId)
+      .eq("confirmed", false);
 
     if (isClothing)    goQuery = goQuery.eq("clothing_size_id", clothingSizeId);
     else if (isWeight) goQuery = goQuery.eq("weight_size_id", weightSizeId);
@@ -749,7 +756,8 @@ async function addToCart(productId, quantity, selectedSize) {
         product_id:       productId,
         quantity,
         clothing_size_id: clothingSizeId,
-        weight_size_id:   weightSizeId
+        weight_size_id:   weightSizeId,
+        confirmed:        false
       });
       if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
     }

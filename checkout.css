@@ -354,3 +354,50 @@
   background: var(--accent-hover);
   transform: translateY(-1px);
 }
+
+/* ============================================================
+   GO-CHECKOUT — Zwei-Bereich-Layout
+   Bereich 1: Warenkorb (confirmed = false)
+   Bereich 2: Meine Bestellung (confirmed = true)
+============================================================ */
+
+.go-checkout-area {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  padding: 1rem 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.go-checkout-area-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.75rem;
+  color: var(--text, #111);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.go-checkout-empty {
+  color: var(--muted, #6b7280);
+  font-size: 0.9rem;
+  padding: 0.75rem 0.25rem;
+  margin: 0;
+}
+
+.go-checkout-area-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.go-checkout-area-actions .submit-btn {
+  min-width: 220px;
+}
+
+#go-update-btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
