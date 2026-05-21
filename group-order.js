@@ -50,6 +50,7 @@ async function autoCloseExpiredOrders() {
 
 async function loadActiveGroupOrders() {
   const now = new Date().toISOString();
+  // FIX #1: supplier_id + suppliers-Join ergänzt
   const { data, error } = await db.from('group_orders')
     .select('id, title, deadline, status, created_by, created_at, supplier_id, suppliers(name)')
     .eq('status', 'open').gt('deadline', now)
@@ -60,6 +61,7 @@ async function loadActiveGroupOrders() {
     activeGroupOrders = []; blockedSuppliers = new Set();
   } else {
     activeGroupOrders = data || [];
+    // FIX #2: blockedSuppliers auf supplier_id (UUID) umgestellt
     blockedSuppliers  = new Set(activeGroupOrders.map(o => o.supplier_id).filter(Boolean));
   }
   updateTriggerBar();
@@ -96,6 +98,7 @@ function updateTriggerBar() {
     bar.innerHTML = `<div class="go-trigger-bar-actions"><button class="go-create-btn" id="go-trigger-create-btn" type="button">+ Sammelbestellung eröffnen</button></div>`;
     document.getElementById('go-trigger-create-btn')?.addEventListener('click', openGroupPanel);
   } else {
+    // FIX #3: o.suppliers?.name statt o.title
     const titles = activeGroupOrders.map(o => escapeHtml(o.suppliers?.name || o.title || 'Sammelbestellung'));
     const label  = count === 1 ? titles[0] : `${count} Sammelbestellungen aktiv`;
     bar.innerHTML = `
@@ -113,12 +116,15 @@ function updateTriggerBar() {
 // GO-MODE — Signal-Banner + gefilterte Produktseite
 // ============================================================
 
+// FIX #4: 6-Parameter-Signatur + kein products-Query mehr
 async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline) {
   window.goSession = { groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
   filterProductsForGo(supplierId);
+  // FIX: supplierName übergeben, nicht supplierId
   if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
+  if (typeof loadGoCart === 'function') await loadGoCart();
 }
 
 function deactivateGoMode() {
@@ -146,6 +152,7 @@ function deactivateGoMode() {
   }
 }
 
+// FIX #5: Direkter ===-Vergleich (kein toLowerCase auf UUID)
 function filterProductsForGo(supplierId) {
   if (typeof allProducts === 'undefined') return;
 
@@ -170,6 +177,7 @@ function renderGoSignalBanner() {
   const banner = document.createElement('div');
   banner.id = 'go-signal-banner';
   banner.className = 'go-signal-banner';
+  // FIX #6: sess.supplierName statt sess.supplierId
   banner.innerHTML = `
     <div class="go-signal-left">
       <span class="go-signal-dot"></span>
@@ -383,6 +391,7 @@ async function syncJoinState(groupOrderId) {
       goBtn.textContent = '→ Zur Sammelbestellung';
       undoBtn.after(goBtn);
       const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
+      // FIX #7: 6-Parameter-Signatur
       goBtn.addEventListener('click', async () => {
         const u = await getCurrentUser();
         if (!u || !order) return;
@@ -420,6 +429,7 @@ async function joinGroupOrder(groupOrderId) {
 
   const order = activeGroupOrders.find(o => String(o.id) === String(groupOrderId));
 
+  // FIX #7 (join) + FIX #8: pendingOrders-Check entfernt
   if ((alreadyJoined || 0) > 0) {
     if (order) await activateGoMode(
       String(order.id),
@@ -503,6 +513,7 @@ function onSupplierChange(select, errorEl) {
   if (createError) createError.textContent = '';
 }
 
+// FIX #9: setCreateFieldsEnabled eingefügt
 function setCreateFieldsEnabled(enabled) {
   const deadlineWrap  = document.getElementById('go-deadline-wrap');
   const deadlineInput = document.getElementById('go-deadline-input');
@@ -529,12 +540,14 @@ async function submitGroupOrder() {
   const errorEl        = document.getElementById('go-create-error');
   if (!errorEl) return;
 
+  // FIX #10: supplierId = UUID aus dem Select-Value
   const supplierId   = supplierSelect?.value?.trim() || '';
   const supplierName = supplierSelect?.options[supplierSelect.selectedIndex]?.getAttribute('data-name') || supplierId;
   const deadline     = deadlineInput?.value || '';
   errorEl.textContent = '';
 
   if (!supplierId) { errorEl.textContent = 'Bitte einen Lieferanten wählen.'; return; }
+  // FIX #10: direkter UUID-Vergleich (kein .toLowerCase())
   if (blockedSuppliers.has(supplierId)) {
     errorEl.textContent = `Es gibt bereits eine offene Sammelbestellung für „${escapeHtml(supplierName)}".`; return;
   }
@@ -542,6 +555,7 @@ async function submitGroupOrder() {
   const deadlineDate = new Date(deadline);
   if (deadlineDate <= new Date()) { errorEl.textContent = 'Die Deadline muss in der Zukunft liegen.'; return; }
 
+  // FIX #10: Duplicate-Check gegen supplier_id statt title
   const { data: existing, error: checkError } = await db.from('group_orders')
     .select('id').eq('status', 'open').eq('supplier_id', supplierId)
     .gt('deadline', new Date().toISOString()).maybeSingle();
@@ -566,6 +580,7 @@ async function submitGroupOrder() {
   if (insertError) { errorEl.textContent = 'Fehler beim Erstellen: ' + insertError.message; return; }
 
   await loadActiveGroupOrders();
+  // FIX #7: 6-Parameter-Signatur
   if (newOrder) await activateGoMode(String(newOrder.id), supplierId, supplierName, null, true, newOrder.deadline);
 }
 
