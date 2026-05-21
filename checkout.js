@@ -289,23 +289,21 @@ function renderCartItemsList(data, isGoCart = false) {
   checkoutTotal.textContent    = formatPrice(total);
   checkoutItemCount.textContent = totalItems;
 
-  checkoutList.addEventListener('click', async (e) => {
-    if (isGoCart) {
-      const incBtn    = e.target.closest('[data-go-qty-inc]');
-      const decBtn    = e.target.closest('[data-go-qty-dec]');
-      const removeBtn = e.target.closest('[data-go-cart-remove]');
-      if (incBtn)    { await updateGoCartItemQty(incBtn.getAttribute('data-go-qty-inc'),    1); return; }
-      if (decBtn)    { await updateGoCartItemQty(decBtn.getAttribute('data-go-qty-dec'),   -1); return; }
-      if (removeBtn) { await removeGoCartItem(removeBtn.getAttribute('data-go-cart-remove')); }
-    } else {
-      const incBtn    = e.target.closest('[data-qty-inc]');
-      const decBtn    = e.target.closest('[data-qty-dec]');
-      const removeBtn = e.target.closest('[data-checkout-remove]');
-      if (incBtn)    { await updateCheckoutItemQty(incBtn.getAttribute('data-qty-inc'),    1); return; }
-      if (decBtn)    { await updateCheckoutItemQty(decBtn.getAttribute('data-qty-dec'),   -1); return; }
-      if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute('data-checkout-remove')); }
-    }
-  }, { once: true });
+  bindOnce(checkoutList, "checkoutListBound", async (e) => {
+    const goInc    = e.target.closest('[data-go-qty-inc]');
+    if (goInc)    { await updateGoCartItemQty(goInc.getAttribute('data-go-qty-inc'),    1); return; }
+    const goDec    = e.target.closest('[data-go-qty-dec]');
+    if (goDec)    { await updateGoCartItemQty(goDec.getAttribute('data-go-qty-dec'),   -1); return; }
+    const goRem    = e.target.closest('[data-go-cart-remove]');
+    if (goRem)    { await removeGoCartItem(goRem.getAttribute('data-go-cart-remove')); return; }
+
+    const incBtn  = e.target.closest('[data-qty-inc]');
+    if (incBtn)   { await updateCheckoutItemQty(incBtn.getAttribute('data-qty-inc'),    1); return; }
+    const decBtn  = e.target.closest('[data-qty-dec]');
+    if (decBtn)   { await updateCheckoutItemQty(decBtn.getAttribute('data-qty-dec'),   -1); return; }
+    const remBtn  = e.target.closest('[data-checkout-remove]');
+    if (remBtn)   { await removeCheckoutItem(remBtn.getAttribute('data-checkout-remove')); }
+  });
 }
 
 // ============================================================
@@ -540,8 +538,8 @@ async function submitGoOrder(user) {
     .eq('user_id', user.id)
     .eq('group_order_id', sess.groupOrderId);
 
+  // loadGoCart() aktualisiert sowohl Sidebar als auch Badge — kein separater Badge-Query nötig.
   if (typeof loadGoCart === 'function') await loadGoCart();
-  await loadGoCartBadge();
 
   showGoPostSubmitDialog(sess);
 }
