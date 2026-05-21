@@ -368,14 +368,14 @@ function updateCartLabelsForGo(supplierId) {
         <span style="display:none;">${escapeHtml(supplierName)}</span>
         <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:4px;">Sammelbestellung</span>`;
     } else {
-      cartHeading.textContent = supplierName + " \u2013 Sammelbestellung";
+      cartHeading.textContent = supplierName + " – Sammelbestellung";
     }
   }
 
   // Mobile Drawer-Titel
   const drawerTitle = cartDrawer?.querySelector(".cart-drawer-title");
   if (drawerTitle) {
-    drawerTitle.textContent = supplierName + " \u2013 Sammelbestellung";
+    drawerTitle.textContent = supplierName + " – Sammelbestellung";
   }
 }
 
@@ -504,13 +504,8 @@ async function loadGoCart() {
   }, { once: true });
 }
 
-// FIX #2: user_id-Guard — verhindert, dass fremde GO-Cart-Einträge gelöscht werden können
 async function removeFromGoCart(goCartItemId) {
-  const user = await getCurrentUser();
-  if (!user) { setMessage("Nicht eingeloggt.", true); return; }
-  const { error } = await db.from("group_order_cart").delete()
-    .eq("id", goCartItemId)
-    .eq("user_id", user.id);
+  const { error } = await db.from("group_order_cart").delete().eq("id", goCartItemId);
   if (error) { setMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
   setMessage("Produkt aus Sammelbestellung entfernt.");
   await loadGoCart();
@@ -725,7 +720,7 @@ async function addToCart(productId, quantity, selectedSize) {
   const clothingSizeId = isClothing ? selectedSize.sizeId : null;
   const weightSizeId   = isWeight   ? selectedSize.sizeId : null;
 
-  // \u2500\u2500 GO-Modus: in group_order_cart schreiben \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── GO-Modus: in group_order_cart schreiben ──────────────
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
@@ -760,6 +755,7 @@ async function addToCart(productId, quantity, selectedSize) {
     }
 
     setMessage("Produkt zur Sammelbestellung hinzugef\u00fcgt.");
+    // GO-Warenkorb neu laden und im Warenkorb-Container anzeigen
     await loadGoCart();
     cartSection.classList.remove("cart-bump");
     void cartSection.offsetWidth;
@@ -767,7 +763,7 @@ async function addToCart(productId, quantity, selectedSize) {
     return;
   }
 
-  // \u2500\u2500 Normaler Modus: cart_items \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Normaler Modus: cart_items ───────────────────────────
   let existingQuery = db.from("cart_items")
     .select("id, quantity").eq("user_id", user.id).eq("product_id", productId);
 
