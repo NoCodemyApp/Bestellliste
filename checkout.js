@@ -336,19 +336,31 @@ function renderCartItemsList(data) {
     total      += productTotal;
     totalItems += group.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
+    // "Keine Größen/Varianten": kein Item der Gruppe hat ein Größen-Code.
+    const hasAnySize = group.items.some(item =>
+      !!(item.sizes_clothing?.code || item.sizes_weight?.code)
+    );
+    const noSizeCls = !hasAnySize ? ' checkout-product-group--no-size' : '';
+
     const rowsHtml = group.items.map(item => {
       const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
       const lineTotal = group.productPrice * Number(item.quantity || 0);
+      const sizeCell = hasAnySize
+        ? `<div class="checkout-item-size">${sizeLabel
+            ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>`
+            : `<span class="checkout-size-badge checkout-size-badge--none">Keine Größe</span>`}</div>`
+        : '';
+      const priceCell = hasAnySize
+        ? `<div class="checkout-item-price">${formatPrice(lineTotal)}</div>`
+        : '';
       return `<div class="checkout-item-row">
-        <div class="checkout-item-size">${sizeLabel
-          ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>`
-          : `<span class="checkout-size-badge checkout-size-badge--none">Keine Größe</span>`}</div>
+        ${sizeCell}
         <div class="checkout-item-qty">
           <button type="button" class="qty-stepper-btn" data-qty-dec="${escapeHtml(String(item.id))}" aria-label="Menge verringern">−</button>
           <span class="qty-stepper-value" id="qty-val-${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
           <button type="button" class="qty-stepper-btn" data-qty-inc="${escapeHtml(String(item.id))}" aria-label="Menge erhöhen">+</button>
         </div>
-        <div class="checkout-item-price">${formatPrice(lineTotal)}</div>
+        ${priceCell}
         <button type="button" class="remove-btn icon-btn checkout-remove-btn"
           data-checkout-remove="${escapeHtml(String(item.id))}" aria-label="Position entfernen">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -358,7 +370,15 @@ function renderCartItemsList(data) {
       </div>`;
     }).join('');
 
-    return `<article class="checkout-product-group">
+    const headerRowHtml = hasAnySize ? `
+        <div class="checkout-item-row checkout-item-row--header">
+          <div class="checkout-item-size">Größe</div>
+          <div class="checkout-item-qty">Menge</div>
+          <div class="checkout-item-price">Preis</div>
+          <div></div>
+        </div>` : '';
+
+    return `<article class="checkout-product-group${noSizeCls}">
       <div class="checkout-product-header">
         <div class="checkout-product-name-wrap">
           <span class="checkout-product-name">${escapeHtml(group.productName)}</span>
@@ -367,12 +387,7 @@ function renderCartItemsList(data) {
         <span class="checkout-product-total">${formatPrice(productTotal)}</span>
       </div>
       <div class="checkout-item-rows">
-        <div class="checkout-item-row checkout-item-row--header">
-          <div class="checkout-item-size">Größe</div>
-          <div class="checkout-item-qty">Menge</div>
-          <div class="checkout-item-price">Preis</div>
-          <div></div>
-        </div>
+        ${headerRowHtml}
         ${rowsHtml}
       </div>
     </article>`;
@@ -428,20 +443,42 @@ function renderGoSection(containerEl, items, mode) {
       (sum, item) => sum + (group.productPrice * Number(item.quantity || 0)), 0
     );
 
+    // "Keine Größen/Varianten": kein Item der Gruppe hat ein Größen-Code.
+    const hasAnySize = group.items.some(item =>
+      !!(item.sizes_clothing?.code || item.sizes_weight?.code)
+    );
+
+    // Alle Items getoggelt? → Gruppen-Header durchstreichen
+    const allRemoved =
+      group.items.length > 0 &&
+      group.items.every(item => item.pendingRemoved === true);
+    const groupCls = allRemoved ? ' is-all-removed' : '';
+    // Single-Row-Layout für Produkte ohne Größen
+    const noSizeCls = !hasAnySize ? ' checkout-product-group--no-size' : '';
+
     const rowsHtml = group.items.map(item => {
       const sizeLabel = item.sizes_clothing?.code || item.sizes_weight?.code || null;
       const lineTotal = group.productPrice * Number(item.quantity || 0);
       const removedCls = item.pendingRemoved ? ' is-pending-removed' : '';
+      // Im no-size-Layout entfällt die Größen-Zelle komplett.
+      const sizeCell = hasAnySize
+        ? `<div class="checkout-item-size">${sizeLabel
+            ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>`
+            : `<span class="checkout-size-badge checkout-size-badge--none">Keine Größe</span>`}</div>`
+        : '';
+      // Im no-size-Layout wird der Zeilenpreis nicht zusätzlich angezeigt —
+      // der Gruppenpreis im Header reicht (eine Zeile pro Produkt).
+      const priceCell = hasAnySize
+        ? `<div class="checkout-item-price" data-line-total="${escapeHtml(String(item.id))}">${formatPrice(lineTotal)}</div>`
+        : '';
       return `<div class="checkout-item-row${removedCls}">
-        <div class="checkout-item-size">${sizeLabel
-          ? `<span class="checkout-size-badge">${escapeHtml(sizeLabel)}</span>`
-          : `<span class="checkout-size-badge checkout-size-badge--none">Keine Größe</span>`}</div>
+        ${sizeCell}
         <div class="checkout-item-qty">
           <button type="button" class="qty-stepper-btn" ${decAttr}="${escapeHtml(String(item.id))}" aria-label="Menge verringern">−</button>
           <span class="qty-stepper-value" id="${qtyValPrefix}${escapeHtml(String(item.id))}">${Number(item.quantity)}</span>
           <button type="button" class="qty-stepper-btn" ${incAttr}="${escapeHtml(String(item.id))}" aria-label="Menge erhöhen">+</button>
         </div>
-        <div class="checkout-item-price" data-line-total="${escapeHtml(String(item.id))}">${formatPrice(lineTotal)}</div>
+        ${priceCell}
         <button type="button" class="remove-btn icon-btn checkout-remove-btn"
           ${removeAttr}="${escapeHtml(String(item.id))}" aria-label="Position entfernen">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -451,7 +488,16 @@ function renderGoSection(containerEl, items, mode) {
       </div>`;
     }).join('');
 
-    return `<article class="checkout-product-group">
+    // Header-Zeile (Größe | Menge | Preis) nur, wenn das Produkt Größen hat.
+    const headerRowHtml = hasAnySize ? `
+        <div class="checkout-item-row checkout-item-row--header">
+          <div class="checkout-item-size">Größe</div>
+          <div class="checkout-item-qty">Menge</div>
+          <div class="checkout-item-price">Preis</div>
+          <div></div>
+        </div>` : '';
+
+    return `<article class="checkout-product-group${groupCls}${noSizeCls}">
       <div class="checkout-product-header">
         <div class="checkout-product-name-wrap">
           <span class="checkout-product-name">${escapeHtml(group.productName)}</span>
@@ -460,12 +506,7 @@ function renderGoSection(containerEl, items, mode) {
         <span class="checkout-product-total">${formatPrice(productTotal)}</span>
       </div>
       <div class="checkout-item-rows">
-        <div class="checkout-item-row checkout-item-row--header">
-          <div class="checkout-item-size">Größe</div>
-          <div class="checkout-item-qty">Menge</div>
-          <div class="checkout-item-price">Preis</div>
-          <div></div>
-        </div>
+        ${headerRowHtml}
         ${rowsHtml}
       </div>
     </article>`;

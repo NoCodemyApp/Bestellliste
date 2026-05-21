@@ -242,10 +242,15 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
 
 function applyFilters() {
   const { category, supplier } = activeFilters;
+  // Im GO-Modus ist der Lieferant durch die Sammelbestellung fix
+  // (window.goSession.supplierId). Wir wenden ihn zusätzlich an,
+  // damit der Kategorie-Filter nur innerhalb des passenden Sortiments arbeitet.
+  const goSupplierId = window.goSession?.supplierId || null;
   let filtered = allProducts.filter(p => {
     const matchCat = !category || p.category === category;
     const matchSup = !supplier || p.suppliers?.name  === supplier;
-    return matchCat && matchSup;
+    const matchGoSup = !goSupplierId || p.supplier_id === goSupplierId;
+    return matchCat && matchSup && matchGoSup;
   });
   renderProducts(filtered);
   updateFilterUI();

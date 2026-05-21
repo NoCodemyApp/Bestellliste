@@ -132,8 +132,16 @@ function deactivateGoMode() {
   removeGoSignalBanner();
   if (typeof resetCartLabels === 'function') resetCartLabels();
 
+  // GO-Mode-Klassen entfernen — Sidebar/Filter wieder im Normalzustand
   const sidebar = document.getElementById('shop-sidebar-desktop');
-  if (sidebar) sidebar.classList.remove('go-sidebar-hidden');
+  if (sidebar) {
+    sidebar.classList.remove('go-sidebar-hidden');
+    sidebar.classList.remove('go-sidebar-supplier-only');
+  }
+  const supplierBlock = document.getElementById('filter-block-supplier');
+  if (supplierBlock) supplierBlock.classList.remove('go-sidebar-hidden');
+  const supplierBlockMobile = document.getElementById('filter-block-supplier-mobile');
+  if (supplierBlockMobile) supplierBlockMobile.classList.remove('go-sidebar-hidden');
   const filterBtn = document.getElementById('filter-toggle-btn');
   if (filterBtn) filterBtn.classList.remove('go-sidebar-hidden');
   const filterFabEl = document.getElementById('filter-fab');
@@ -158,14 +166,44 @@ function filterProductsForGo(supplierId) {
 
   const filtered = allProducts.filter(p => p.supplier_id === supplierId);
 
+  // Sidebar bleibt sichtbar im GO-Mode, aber der Lieferanten-Block wird
+  // ausgeblendet (Lieferant ist durch die Sammelbestellung fix).
+  // Kategorie-Filter + Reset-Button bleiben nutzbar.
   const sidebar = document.getElementById('shop-sidebar-desktop');
-  if (sidebar) sidebar.classList.add('go-sidebar-hidden');
+  if (sidebar) {
+    sidebar.classList.remove('go-sidebar-hidden');
+    sidebar.classList.add('go-sidebar-supplier-only');
+  }
+  const supplierBlock = document.getElementById('filter-block-supplier');
+  if (supplierBlock) supplierBlock.classList.add('go-sidebar-hidden');
+  const supplierBlockMobile = document.getElementById('filter-block-supplier-mobile');
+  if (supplierBlockMobile) supplierBlockMobile.classList.add('go-sidebar-hidden');
 
+  // Filter-Toggle-Button (mobile) + FAB bleiben sichtbar
+  const filterBtn = document.getElementById('filter-toggle-btn');
+  if (filterBtn) filterBtn.classList.remove('go-sidebar-hidden');
+  const filterFabEl = document.getElementById('filter-fab');
+  if (filterFabEl) filterFabEl.classList.remove('go-sidebar-hidden');
+
+  // Active-Filter-Bar (Chips zeigen aktive Filter) sichtbar lassen
   const activeFilterBarEl = document.getElementById('active-filter-bar');
-  if (activeFilterBarEl) activeFilterBarEl.classList.add('go-sidebar-hidden');
+  if (activeFilterBarEl) activeFilterBarEl.classList.remove('go-sidebar-hidden');
 
   const triggerBar = document.getElementById('go-trigger-bar');
   if (triggerBar) triggerBar.style.display = 'none';
+
+  // Lieferanten-Vorauswahl anwenden, damit der Kategorie-Filter
+  // über Produkte des passenden Lieferanten arbeitet.
+  window.__goSupplierFilter = supplierId;
+
+  // Kategorie-Chips neu aufbauen — nur Kategorien des aktuellen Lieferanten
+  if (typeof buildFilterChips === 'function') {
+    if (typeof activeFilters !== 'undefined') {
+      activeFilters = { category: null, supplier: null };
+    }
+    buildFilterChips(filtered);
+    if (typeof updateFilterUI === 'function') updateFilterUI();
+  }
 
   renderProducts(filtered);
 }

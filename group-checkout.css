@@ -744,14 +744,94 @@
 
 /* ------------------------------------------------------------
    Lokal als "gelöscht" markierte Bereich-2-Zeile (Toggle)
+   Deutlicher diagonaler Strich über die gesamte Zeilenbreite
 ------------------------------------------------------------ */
 .checkout-item-row.is-pending-removed {
-  text-decoration: line-through;
-  opacity: 0.5;
+  position: relative;
+  opacity: 0.55;
 }
 
-.checkout-item-row.is-pending-removed .checkout-size-badge,
-.checkout-item-row.is-pending-removed .qty-stepper-value,
-.checkout-item-row.is-pending-removed [data-line-total] {
-  text-decoration: line-through;
+/* Diagonaler Strich über die volle Breite der Zeile.
+   linear-gradient mit transparentem Hintergrund + 2px Linie bei 50%. */
+.checkout-item-row.is-pending-removed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1.5px),
+    var(--danger, #e05569) calc(50% - 1.5px),
+    var(--danger, #e05569) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px)
+  );
+  z-index: 2;
 }
+
+/* Mengen-Stepper und Remove-Button bleiben klickbar (oberhalb des Strichs) */
+.checkout-item-row.is-pending-removed .qty-stepper-btn,
+.checkout-item-row.is-pending-removed .checkout-remove-btn {
+  position: relative;
+  z-index: 3;
+}
+
+/* ------------------------------------------------------------
+   Gruppen-Header: durchgestrichen, wenn alle Items getoggelt
+------------------------------------------------------------ */
+.checkout-product-group.is-all-removed .checkout-product-header {
+  position: relative;
+  opacity: 0.55;
+}
+
+.checkout-product-group.is-all-removed .checkout-product-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1.5px),
+    var(--danger, #e05569) calc(50% - 1.5px),
+    var(--danger, #e05569) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px)
+  );
+  z-index: 2;
+}
+
+/* ------------------------------------------------------------
+   Mülleimer-Icon in der Bestellübersicht (Bereich 1+2):
+   immer rot, beim Hover stärkeres Rot
+------------------------------------------------------------ */
+.checkout-remove-btn {
+  color: var(--danger, #e05569);
+}
+
+.checkout-remove-btn:hover,
+.checkout-remove-btn:focus-visible {
+  color: var(--danger-hover, #f0687a);
+  background: rgba(224, 85, 105, 0.14);
+}
+
+/* ------------------------------------------------------------
+   Produkte ohne Größen/Varianten:
+   einzeilige Darstellung — Größen-/Preis-Zelle entfernt,
+   Grid wird auf 3 Spalten reduziert (Menge | Spacer | Trash).
+   Der Preis steht ausschließlich im Gruppen-Header.
+------------------------------------------------------------ */
+.checkout-product-group--no-size .checkout-item-row {
+  grid-template-columns: 1fr 120px 36px;
+}
+.checkout-product-group--no-size .checkout-item-row > .checkout-item-qty {
+  grid-column: 2;
+  justify-self: end;
+}
+.checkout-product-group--no-size .checkout-item-row > .checkout-remove-btn {
+  grid-column: 3;
+}
+
