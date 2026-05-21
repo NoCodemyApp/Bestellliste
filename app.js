@@ -732,42 +732,63 @@ async function addToCart(productId, quantity, selectedSize) {
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
-    // Nur unbestätigte Cart-Zeilen (confirmed=false) wieder aufmunitionieren.
-    // Bereits bestätigte Artikel (confirmed=true) bleiben unberührt;
-    // ein neuer "Klick" erzeugt dann ggf. eine zweite, unbestätigte Zeile.
-    let goQuery = db.from("group_order_cart")
-      .select("id, quantity")
-      .eq("user_id", user.id)
-      .eq("group_order_id", goId)
-      .eq("product_id", productId)
-      .eq("confirmed", false);
+    // Helper: Query auf (user, go, product, size) — ohne confirmed-Filter.
+    const baseQuery = () => {
+      let q = db.from("group_order_cart")
+        .select("id, quantity, confirmed")
+        .eq("user_id", user.id)
+        .eq("group_order_id", goId)
+        .eq("product_id", productId);
+      if (isClothing)    q = q.eq("clothing_size_id", clothingSizeId);
+      else if (isWeight) q = q.eq("weight_size_id", weightSizeId);
+      else               q = q.is("clothing_size_id", null).is("weight_size_id", null);
+      return q;
+    };
 
-    if (isClothing)    goQuery = goQuery.eq("clothing_size_id", clothingSizeId);
-    else if (isWeight) goQuery = goQuery.eq("weight_size_id", weightSizeId);
-    else               goQuery = goQuery.is("clothing_size_id", null).is("weight_size_id", null);
+    // 1. Vorrang: unbestätigte Zeile (Bereich 1) — dort Menge addieren.
+    const { data: existingUnconfirmed, error: goErrU } =
+      await baseQuery().eq("confirmed", false).maybeSingle();
+    if (goErrU) { setMessage(`Fehler: ${goErrU.message}`, true); return; }
 
-    const { data: existing, error: goErr } = await goQuery.maybeSingle();
-    if (goErr) { setMessage(`Fehler: ${goErr.message}`, true); return; }
+    let mergedIntoConfirmed = false;
 
-    if (existing) {
+    if (existingUnconfirmed) {
       const { error: updErr } = await db.from("group_order_cart")
-        .update({ quantity: Number(existing.quantity || 0) + Number(quantity || 0) })
-        .eq("id", existing.id);
+        .update({ quantity: Number(existingUnconfirmed.quantity || 0) + Number(quantity || 0) })
+        .eq("id", existingUnconfirmed.id);
       if (updErr) { setMessage(`Fehler: ${updErr.message}`, true); return; }
     } else {
-      const { error: insErr } = await db.from("group_order_cart").insert({
-        user_id:          user.id,
-        group_order_id:   goId,
-        product_id:       productId,
-        quantity,
-        clothing_size_id: clothingSizeId,
-        weight_size_id:   weightSizeId,
-        confirmed:        false
-      });
-      if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
+      // 2. Keine unbestätigte Zeile? — dann prüfen, ob das gleiche
+      //    Produkt+Größe bereits als bestätigte Zeile (Bereich 2) existiert.
+      //    Wenn ja: dort Menge addieren, KEINE neue Zeile.
+      const { data: existingConfirmed, error: goErrC } =
+        await baseQuery().eq("confirmed", true).maybeSingle();
+      if (goErrC) { setMessage(`Fehler: ${goErrC.message}`, true); return; }
+
+      if (existingConfirmed) {
+        const { error: updErr } = await db.from("group_order_cart")
+          .update({ quantity: Number(existingConfirmed.quantity || 0) + Number(quantity || 0) })
+          .eq("id", existingConfirmed.id);
+        if (updErr) { setMessage(`Fehler: ${updErr.message}`, true); return; }
+        mergedIntoConfirmed = true;
+      } else {
+        // 3. Weder noch — neue unbestätigte Zeile anlegen.
+        const { error: insErr } = await db.from("group_order_cart").insert({
+          user_id:          user.id,
+          group_order_id:   goId,
+          product_id:       productId,
+          quantity,
+          clothing_size_id: clothingSizeId,
+          weight_size_id:   weightSizeId,
+          confirmed:        false
+        });
+        if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
+      }
     }
 
-    setMessage("Produkt zur Sammelbestellung hinzugef\u00fcgt.");
+    setMessage(mergedIntoConfirmed
+      ? "Menge zur bestehenden Bestellung addiert."
+      : "Produkt zur Sammelbestellung hinzugef\u00fcgt.");
     // GO-Warenkorb neu laden und im Warenkorb-Container anzeigen
     await loadGoCart();
     cartSection.classList.remove("cart-bump");
