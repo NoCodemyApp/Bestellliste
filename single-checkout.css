@@ -1,68 +1,33 @@
 /* ============================================================
-   CHECKOUT.CSS
-   Alle Styles für die Checkout-Fullscreen-Section.
+   SINGLE-CHECKOUT.CSS
+   Fachliche Styles fuer den regulaeren Checkout (Fullscreen-Takeover).
+   Generische Panel-/Overlay-Basis liegt in panel-base.css und wird
+   vor dieser Datei geladen.
    Eingebunden in index.html nach style.css.
 ============================================================ */
 
 /* ============================================================
    CHECKOUT SECTION — Fullscreen Takeover
+   Hinweis: position/inset/background/overflow-y kommen aus
+   .app-panel (panel-base.css). Hier nur fachlicher z-index.
 ============================================================ */
 
 .checkout-section {
-  position: fixed;
-  inset: 0;
   z-index: 200;
-  background: var(--bg);
-  overflow-y: auto;
 }
 
 .checkout-enter {
-  animation: checkout-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes checkout-slide-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.checkout-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  animation: panel-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ============================================================
    CHECKOUT HEADER
+   Hinweis: .checkout-back-btn ergaenzt nur das fachliche
+   flex-shrink. Layout/Farben/Hover kommen aus .app-panel-back-btn.
 ============================================================ */
 
-.checkout-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-block: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2rem;
-}
-
 .checkout-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  transition: background 180ms ease, color 180ms ease;
-  min-height: 44px;
   flex-shrink: 0;
-}
-.checkout-back-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
 }
 
 .checkout-header-title { flex: 1; }
@@ -331,7 +296,7 @@
 }
 
 /* ============================================================
-   CHECKOUT-ÖFFNEN-BUTTON (im Desktop-Warenkorb)
+   CHECKOUT-OEFFNEN-BUTTON (im Desktop-Warenkorb)
 ============================================================ */
 
 .btn-checkout-open {
@@ -353,51 +318,4 @@
 .btn-checkout-open:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-}
-
-/* ============================================================
-   GO-CHECKOUT — Zwei-Bereich-Layout
-   Bereich 1: Warenkorb (confirmed = false)
-   Bereich 2: Meine Bestellung (confirmed = true)
-============================================================ */
-
-.go-checkout-area {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 14px;
-  padding: 1rem 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.go-checkout-area-title {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  margin: 0 0 0.75rem;
-  color: var(--text, #111);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.go-checkout-empty {
-  color: var(--muted, #6b7280);
-  font-size: 0.9rem;
-  padding: 0.75rem 0.25rem;
-  margin: 0;
-}
-
-.go-checkout-area-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-
-.go-checkout-area-actions .submit-btn {
-  min-width: 220px;
-}
-
-#go-update-btn[disabled] {
-  opacity: 0.4;
-  cursor: not-allowed;
 }

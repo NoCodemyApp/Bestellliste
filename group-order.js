@@ -223,16 +223,16 @@ function closePanelOverlay() {
 function ensurePanel() {
   if (document.getElementById('go-panel')) return;
   const panel = document.createElement('div');
-  panel.id = 'go-panel'; panel.className = 'go-panel';
+  panel.id = 'go-panel'; panel.className = 'go-panel app-panel';
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
   panel.setAttribute('aria-label', 'Sammelbestellungen');
   panel.setAttribute('aria-hidden', 'true');
   panel.innerHTML = `
-    <div class="go-panel-inner">
+    <div class="go-panel-inner app-panel-inner">
       <div class="go-panel-handle" aria-hidden="true"></div>
-      <div class="go-panel-header">
-        <button class="go-panel-back-btn" id="go-panel-back" type="button">
+      <div class="go-panel-header app-panel-header">
+        <button class="go-panel-back-btn app-panel-back-btn" id="go-panel-back" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Zurück
         </button>

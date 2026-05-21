@@ -1,0 +1,77 @@
+/* ============================================================
+   PANEL-BASE.CSS
+   Generische Panel-/Overlay-Basis fuer Fullscreen-Takeover-Panels
+   (Checkout, Group Order, ...).
+   Enthaelt NUR wirklich generische Layout- und Animationsregeln.
+   Fachliche Styles bleiben in single-checkout.css und
+   group-checkout.css.
+   Wird VOR single-checkout.css und group-checkout.css geladen.
+============================================================ */
+
+/* ============================================================
+   PANEL — Fullscreen Overlay (Desktop-Basis)
+============================================================ */
+
+.app-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.app-panel--open {
+  animation: panel-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes panel-slide-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   PANEL — Innerer Container
+============================================================ */
+
+.app-panel-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+/* ============================================================
+   PANEL — Header-Rahmen
+============================================================ */
+
+.app-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+/* ============================================================
+   PANEL — Back-Button
+============================================================ */
+
+.app-panel-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background 180ms ease, color 180ms ease;
+  min-height: 44px;
+}
+
+.app-panel-back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}

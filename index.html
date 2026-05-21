@@ -10,8 +10,9 @@
   <link rel="stylesheet" href="./tokens.css">
   <link rel="stylesheet" href="./auth.css">
   <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./checkout.css">
-  <link rel="stylesheet" href="./group-order.css">
+  <link rel="stylesheet" href="./panel-base.css">
+  <link rel="stylesheet" href="./single-checkout.css">
+  <link rel="stylesheet" href="./group-checkout.css">
   <link rel="stylesheet" href="./filter-fab.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="./app.js"></script>
@@ -204,12 +205,12 @@
     <!-- ======================================================
          CHECKOUT FULLSCREEN
     ====================================================== -->
-    <section id="checkout-section" class="checkout-section hidden" aria-label="Bestellübersicht">
-      <div class="checkout-inner">
+    <section id="checkout-section" class="checkout-section app-panel hidden" aria-label="Bestellübersicht">
+      <div class="checkout-inner app-panel-inner">
 
         <!-- Checkout Header -->
-        <div class="checkout-header">
-          <button id="checkout-back-btn" type="button" class="checkout-back-btn" aria-label="Zurück zum Shop">
+        <div class="checkout-header app-panel-header">
+          <button id="checkout-back-btn" type="button" class="checkout-back-btn app-panel-back-btn" aria-label="Zurück zum Shop">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
               <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
@@ -230,9 +231,6 @@
               <h3 class="go-checkout-area-title">Warenkorb</h3>
               <div id="go-cart-list" class="checkout-list"></div>
               <p id="go-cart-empty" class="go-checkout-empty hidden">Dein Warenkorb ist leer.</p>
-              <div id="go-cart-actions" class="go-checkout-area-actions hidden">
-                <button id="go-confirm-btn" type="button" class="submit-btn">Zur Bestellung hinzufügen</button>
-              </div>
             </section>
 
             <!-- Bereich 2: Meine Bestellung (confirmed = true) - nur im GO-Modus genutzt -->
@@ -240,9 +238,6 @@
               <h3 class="go-checkout-area-title">Meine Bestellung</h3>
               <div id="go-order-list" class="checkout-list"></div>
               <p id="go-order-empty" class="go-checkout-empty hidden">Du hast noch keine Artikel zur Bestellung hinzugefügt.</p>
-              <div id="go-order-actions" class="go-checkout-area-actions hidden">
-                <button id="go-update-btn" type="button" class="submit-btn" disabled>Bestellung aktualisieren</button>
-              </div>
             </section>
 
             <!-- Normaler Modus (cart_items) - unverändert -->

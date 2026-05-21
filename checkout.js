@@ -155,14 +155,10 @@ async function loadGoCartBadge() {
 const goCartSection   = document.getElementById('go-cart-section');
 const goCartListEl    = document.getElementById('go-cart-list');
 const goCartEmptyEl   = document.getElementById('go-cart-empty');
-const goCartActionsEl = document.getElementById('go-cart-actions');
-const goConfirmBtn    = document.getElementById('go-confirm-btn');
 
 const goOrderSection   = document.getElementById('go-order-section');
 const goOrderListEl    = document.getElementById('go-order-list');
 const goOrderEmptyEl   = document.getElementById('go-order-empty');
-const goOrderActionsEl = document.getElementById('go-order-actions');
-const goUpdateBtn      = document.getElementById('go-update-btn');
 
 // Lokaler Pending-State für Bereich 2 "Meine Bestellung":
 //   pendingOrderEdits.qty[id]      = neue Menge (Number)
@@ -179,13 +175,8 @@ function hasPendingOrderEdits() {
       || Object.keys(pendingOrderEdits.removed).length > 0;
 }
 
-function updateGoUpdateBtnState() {
-  if (!goUpdateBtn) return;
-  const enabled = hasPendingOrderEdits();
-  goUpdateBtn.disabled      = !enabled;
-  goUpdateBtn.style.opacity = enabled ? '1' : '0.4';
-  goUpdateBtn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
-}
+// Tracking: hat Bereich 1 (Warenkorb) unbestätigte Artikel?
+let _goHasUnconfirmed = false;
 
 async function renderCheckout() {
   const user = await getCurrentUser();
@@ -257,10 +248,8 @@ async function renderGoCheckout(user) {
   if (cartItems.length === 0) {
     goCartListEl.innerHTML = '';
     goCartEmptyEl.classList.remove('hidden');
-    goCartActionsEl.classList.add('hidden');
   } else {
     goCartEmptyEl.classList.add('hidden');
-    goCartActionsEl.classList.remove('hidden');
     renderGoSection(goCartListEl, cartItems, 'cart');
   }
 
@@ -278,10 +267,8 @@ async function renderGoCheckout(user) {
   if (visibleOrderItems.length === 0) {
     goOrderListEl.innerHTML = '';
     goOrderEmptyEl.classList.remove('hidden');
-    goOrderActionsEl.classList.add('hidden');
   } else {
     goOrderEmptyEl.classList.add('hidden');
-    goOrderActionsEl.classList.remove('hidden');
     renderGoSection(goOrderListEl, visibleOrderItems, 'order');
   }
 
@@ -298,10 +285,10 @@ async function renderGoCheckout(user) {
   checkoutTotal.textContent     = formatPrice(totalSum);
   checkoutItemCount.textContent = String(totalCount);
 
-  // Snapshot dient hier nur dazu, den globalen Submit-Button-Status zu steuern
+  // Submit-Button-Status: aktiv, wenn Bereich 1 Artikel hat ODER lokale Edits in Bereich 2
+  _goHasUnconfirmed = cartItems.length > 0;
   _checkoutSnapshot = (cartItems.length > 0) ? 'has-cart' : null;
 
-  updateGoUpdateBtnState();
   await updateSubmitButtonLabel();
 }
 
@@ -512,7 +499,7 @@ async function removeGoCartItem(cartItemId) {
 // ============================================================
 // GO-CART BEREICH 2 (Meine Bestellung, confirmed=true):
 // QTY + REMOVE NUR LOKAL — erst beim Klick auf
-// "Bestellung aktualisieren" wird die DB verändert.
+// dem Sidebar-Submit-Button ("Bestellung absenden") wird die DB verändert.
 // ============================================================
 
 function goOrderLocalQtyDelta(cartItemId, delta) {
@@ -535,7 +522,7 @@ function goOrderLocalQtyDelta(cartItemId, delta) {
   // wir rerendern stattdessen die Summen-Anzeige sauber via renderGoCheckout.
   void priceEl;
 
-  updateGoUpdateBtnState();
+  updateSubmitButtonLabel();
   // Sidebar-Summe live aktualisieren
   refreshGoCheckoutTotals();
 }
@@ -543,7 +530,7 @@ function goOrderLocalQtyDelta(cartItemId, delta) {
 function goOrderLocalRemove(cartItemId) {
   pendingOrderEdits.removed[cartItemId] = true;
   delete pendingOrderEdits.qty[cartItemId];
-  updateGoUpdateBtnState();
+  updateSubmitButtonLabel();
   // Zeile aus dem DOM nehmen für sofortiges visuelles Feedback
   const valEl = document.getElementById(`go-order-qty-val-${cartItemId}`);
   const row = valEl ? valEl.closest('.checkout-item-row') : null;
@@ -574,26 +561,27 @@ async function refreshGoCheckoutTotals() {
 }
 
 // ============================================================
-// SUBMIT BUTTON LABEL (Sidebar-Button)
-//   Normaler Modus:    "Bestellung absenden"
-//   GO-Modus:          "Zur Bestellung hinzufügen"
-//   (aktiv nur, wenn Bereich 1 Artikel enthält)
+// SUBMIT BUTTON STATE (Sidebar-Button)
+//   Label bleibt immer "Bestellung absenden".
+//   Single-User: immer aktiv.
+//   GO-Modus:    aktiv gdw. Bereich 1 unbestätigte Artikel hat
+//                ODER Bereich 2 lokale Edits aufweist.
 // ============================================================
 
 async function updateSubmitButtonLabel() {
+  submitOrderBtn.textContent = 'Bestellung absenden';
+
   if (!window.goSession) {
-    submitOrderBtn.textContent   = 'Bestellung absenden';
     submitOrderBtn.disabled      = false;
     submitOrderBtn.style.opacity = '1';
     submitOrderBtn.style.cursor  = 'pointer';
     return;
   }
 
-  submitOrderBtn.textContent   = 'Zur Bestellung hinzufügen';
-  const hasCart = _checkoutSnapshot !== null;
-  submitOrderBtn.disabled      = !hasCart;
-  submitOrderBtn.style.opacity = hasCart ? '1' : '0.4';
-  submitOrderBtn.style.cursor  = hasCart ? 'pointer' : 'not-allowed';
+  const enabled = _goHasUnconfirmed || hasPendingOrderEdits();
+  submitOrderBtn.disabled      = !enabled;
+  submitOrderBtn.style.opacity = enabled ? '1' : '0.4';
+  submitOrderBtn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
 }
 
 // ============================================================
@@ -643,8 +631,17 @@ async function submitOrder() {
   if (!user) { setOrderMessage('Du musst eingeloggt sein.', true); return; }
 
   if (window.goSession) {
-    // GO-Modus: Sidebar-Button "Zur Bestellung hinzufügen" bestätigt Bereich 1.
-    await confirmGoCartItems(user);
+    // GO-Modus: Sidebar-Button "Bestellung absenden" macht zwei Dinge atomar:
+    //   1) Lokale Edits aus Bereich 2 persistieren (Menge/Löschungen)
+    //   2) Unbestätigte Items aus Bereich 1 bestätigen (confirmed=false → true)
+    // Reihenfolge: erst Edits, dann Confirm, damit gelöschte Bereich-2-Zeilen
+    // nicht durch frisches Confirmen überlebt werden könnten.
+    if (hasPendingOrderEdits()) {
+      await applyPendingOrderEdits();
+    }
+    if (_goHasUnconfirmed) {
+      await confirmGoCartItems(user);
+    }
     return;
   }
 
@@ -730,9 +727,10 @@ async function confirmGoCartItems(user) {
 }
 
 // ============================================================
-// GO BEREICH 2: "Bestellung aktualisieren"
+// GO BEREICH 2: lokale Edits persistieren
 // Schreibt alle lokal gesammelten Mengen- und Lösch-Änderungen
 // in einem Rutsch in die Datenbank — weiterhin nur in group_order_cart.
+// Wird vom Sidebar-Submit-Button mitausgeführt.
 // ============================================================
 
 async function applyPendingOrderEdits() {
@@ -883,22 +881,6 @@ if (goCartListEl) {
 }
 
 // ============================================================
-// GO BEREICH 1 — Button "Zur Bestellung hinzufügen"
-// ============================================================
-if (goConfirmBtn) {
-  goConfirmBtn.addEventListener('click', async () => {
-    goConfirmBtn.disabled = true;
-    try {
-      const user = await getCurrentUser();
-      if (!user) { setOrderMessage('Du musst eingeloggt sein.', true); return; }
-      await confirmGoCartItems(user);
-    } finally {
-      goConfirmBtn.disabled = false;
-    }
-  });
-}
-
-// ============================================================
 // GO BEREICH 2 — Click-Delegation (qty +/-, remove) NUR LOKAL
 // ============================================================
 if (goOrderListEl) {
@@ -912,25 +894,11 @@ if (goOrderListEl) {
   });
 }
 
-// ============================================================
-// GO BEREICH 2 — Button "Bestellung aktualisieren"
-// ============================================================
-if (goUpdateBtn) {
-  goUpdateBtn.addEventListener('click', async () => {
-    goUpdateBtn.disabled = true;
-    try {
-      await applyPendingOrderEdits();
-    } finally {
-      updateGoUpdateBtnState();
-    }
-  });
-}
-
 // Beim Verlassen des Checkouts lokale Edits verwerfen,
 // damit sie nicht beim nächsten Öffnen wieder erscheinen.
 if (checkoutBackBtn) {
   checkoutBackBtn.addEventListener('click', () => {
     resetPendingOrderEdits();
-    updateGoUpdateBtnState();
+    updateSubmitButtonLabel();
   });
 }
