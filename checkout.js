@@ -305,7 +305,7 @@ function renderCartItemsList(data, isGoCart = false) {
       if (decBtn)    { await updateCheckoutItemQty(decBtn.getAttribute('data-qty-dec'),   -1); return; }
       if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute('data-checkout-remove')); }
     }
-  });
+  }, { once: true });
 }
 
 // ============================================================
@@ -534,6 +534,7 @@ async function submitGoOrder(user) {
     return;
   }
 
+  // FIX: group_order_cart nach erfolgreichem Submit leeren
   await db.from('group_order_cart')
     .delete()
     .eq('user_id', user.id)
@@ -584,6 +585,7 @@ function showGoPostSubmitDialog(sess) {
     filterProductsForGo(sess.supplierId);
     renderGoSignalBanner();
     updateCartLabelsForGo(sess.supplierName);
+    // FIX: Cart nach Rückkehr neu laden (ist jetzt leer)
     if (typeof loadGoCart === 'function') await loadGoCart();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
