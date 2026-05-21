@@ -397,6 +397,9 @@ async function loadGoCart() {
 
   const goId = window.goSession.groupOrderId;
 
+  // Sidebar-Warenkorb zeigt ausschliesslich noch-nicht-bestaetigte Zeilen
+  // (confirmed = false). Bestaetigte Zeilen erscheinen unter "Meine Bestellung"
+  // in der Checkout-Ansicht.
   const { data, error } = await db
     .from("group_order_cart")
     .select(`id, quantity, product_id,
@@ -406,6 +409,7 @@ async function loadGoCart() {
              sizes_weight(id, code)`)
     .eq("user_id", user.id)
     .eq("group_order_id", goId)
+    .eq("confirmed", false)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -505,7 +509,12 @@ async function loadGoCart() {
 }
 
 async function removeFromGoCart(goCartItemId) {
-  const { error } = await db.from("group_order_cart").delete().eq("id", goCartItemId);
+  const user = await getCurrentUser();
+  if (!user) { setMessage("Du musst eingeloggt sein.", true); return; }
+  const { error } = await db.from("group_order_cart")
+    .delete()
+    .eq("id", goCartItemId)
+    .eq("user_id", user.id);
   if (error) { setMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
   setMessage("Produkt aus Sammelbestellung entfernt.");
   await loadGoCart();
@@ -724,11 +733,16 @@ async function addToCart(productId, quantity, selectedSize) {
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
+    // Beim Hinzufuegen wird ausschliesslich auf eine bestehende UNBESTAETIGTE
+    // Zeile (confirmed = false) aggregiert. Bestaetigte Zeilen ("Meine Bestellung")
+    // bleiben unangetastet, sonst koennte ein Add die bereits bestaetigte Menge
+    // veraendern, ohne dass der Nutzer das in Bereich 1 sieht.
     let goQuery = db.from("group_order_cart")
       .select("id, quantity")
       .eq("user_id", user.id)
       .eq("group_order_id", goId)
-      .eq("product_id", productId);
+      .eq("product_id", productId)
+      .eq("confirmed", false);
 
     if (isClothing)    goQuery = goQuery.eq("clothing_size_id", clothingSizeId);
     else if (isWeight) goQuery = goQuery.eq("weight_size_id", weightSizeId);
@@ -740,7 +754,8 @@ async function addToCart(productId, quantity, selectedSize) {
     if (existing) {
       const { error: updErr } = await db.from("group_order_cart")
         .update({ quantity: Number(existing.quantity || 0) + Number(quantity || 0) })
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .eq("user_id", user.id);
       if (updErr) { setMessage(`Fehler: ${updErr.message}`, true); return; }
     } else {
       const { error: insErr } = await db.from("group_order_cart").insert({
@@ -749,7 +764,8 @@ async function addToCart(productId, quantity, selectedSize) {
         product_id:       productId,
         quantity,
         clothing_size_id: clothingSizeId,
-        weight_size_id:   weightSizeId
+        weight_size_id:   weightSizeId,
+        confirmed:        false
       });
       if (insErr) { setMessage(`Fehler: ${insErr.message}`, true); return; }
     }

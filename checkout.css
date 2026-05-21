@@ -100,6 +100,39 @@
 }
 
 /* ============================================================
+   GO-CHECKOUT AREAS — "Warenkorb" + "Meine Bestellung"
+============================================================ */
+
+.checkout-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkout-area + .checkout-area {
+  margin-top: 1.5rem;
+}
+
+.checkout-area-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.checkout-area--confirmed .checkout-area-title::before {
+  content: "✓ ";
+  color: var(--accent, #2a8f5f);
+}
+
+/* Lokale Loesch-Markierung in Bereich 2 (wirkt erst nach "Bestellung aktualisieren"). */
+.checkout-item-row--pending-delete {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* ============================================================
    CHECKOUT PRODUCT GROUP
 ============================================================ */
 
