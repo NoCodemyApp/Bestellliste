@@ -1133,7 +1133,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 .cart-drawer-handle {
   width: 36px; height: 4px;
   border-radius: var(--radius-full);
-  background: var(--border-strong);
+  background: var(--muted);
   margin: var(--sp-3) auto var(--sp-1);
   flex-shrink: 0;
 }
