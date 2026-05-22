@@ -236,15 +236,17 @@ function removeGoSignalBanner() {
 
 // Lieferanten Logo anzeigen lassen
 async function renderGoSupplierLogo(supplierId) {
-  // Bestehendes Logo-Banner entfernen
   document.getElementById('go-supplier-logo-banner')?.remove();
   if (!supplierId) return;
 
-  // Logo-URL aus Supabase laden
   const { data } = await db.from('suppliers')
     .select('logo_url')
     .eq('id', supplierId)
     .maybeSingle();
+  
+  if (window.goSession) {
+    window.goSession.supplierLogo = data?.logo_url || null;
+  }
 
   if (!data?.logo_url) return;
 
