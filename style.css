@@ -1139,6 +1139,9 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 }
 */
 
+
+/* ===== DEBUG ====*/
+
 .cart-drawer-handle-wrap {
   display: flex;
   justify-content: center;
@@ -1157,6 +1160,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   flex-shrink: 0;
 }
 
+/*===== DEBUG ====*/
 
 
 .cart-drawer-header {
