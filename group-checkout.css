@@ -128,7 +128,7 @@
 }
 
 .go-signal-label {
-  font-size: 11px;
+  font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .07em;
@@ -161,6 +161,26 @@
 }
 .go-signal-leave-btn:hover  { background: rgba(224,85,105,.22); transform: none; }
 .go-signal-leave-btn:active { transform: scale(.96); opacity: 1; }
+
+/* ============================================================
+   GO SUPPLIER LOGO BANNER
+============================================================ */
+
+.go-supplier-logo-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.go-supplier-logo-img {
+  max-height: 56px;
+  max-width: 220px;
+  width: auto;
+  object-fit: contain;
+}
 
 /* ============================================================
    PANEL (Fullscreen Desktop)
