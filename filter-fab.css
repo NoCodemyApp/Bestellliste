@@ -8,7 +8,8 @@
   position: fixed;
   top: calc(var(--header-h) + 12px);
   left: 50%;
-  transform: translateX(-50%) translateY(calc(-1 * (var(--header-h) + 60px)));
+ /*transform: translateX(-50%) translateY(calc(-1 * (var(--header-h) + 60px)));*/
+  transform: translateX(-50%) translateY(-124px);
   z-index: 90;
 
   /* Pill shape */
