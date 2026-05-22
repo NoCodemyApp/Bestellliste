@@ -125,6 +125,7 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   // FIX: supplierName übergeben, nicht supplierId
   if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
   if (typeof loadGoCart === 'function') await loadGoCart();
+  history.pushState({ view: 'go-products' }, '', location.href);
 }
 
 function deactivateGoMode() {
@@ -300,6 +301,7 @@ function openGroupPanel() {
   panel.setAttribute('aria-hidden', 'false');
   openPanelOverlay();
   renderPanelContent();
+  history.pushState({ view: 'go-panel' }, '', location.href);
 }
 
 function closeGroupPanel() {
