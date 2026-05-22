@@ -777,15 +777,61 @@ async function confirmGoCartItems(user) {
     return;
   }
 
-  const { error: updErr } = await db.from('group_order_cart')
-    .update({ confirmed: true })
-    .eq('user_id', user.id)
-    .eq('group_order_id', sess.groupOrderId)
-    .eq('confirmed', false);
+  // Pro Item prüfen, ob bereits eine confirmed=true-Zeile derselben Variante
+  // (Produkt + Größe) existiert:
+  //  - Wenn ja: Menge auf die bestehende Zeile addieren und die unbestätigte
+  //    Zeile löschen. Damit bleibt die Bereich-2-Tabelle frei von Duplikaten
+  //    und der UNIQUE-Index (user, go, product, size, confirmed) wird nicht verletzt.
+  //  - Wenn nein: confirmed=true setzen (Zeile wandert in Bereich 2).
+  for (const item of openItems) {
+    const clothingId = item.clothing_size_id || null;
+    const weightId   = item.weight_size_id   || null;
 
-  if (updErr) {
-    setOrderMessage('Fehler beim Hinzufügen zur Bestellung: ' + updErr.message, true);
-    return;
+    let confQ = db.from('group_order_cart')
+      .select('id, quantity')
+      .eq('user_id', user.id)
+      .eq('group_order_id', sess.groupOrderId)
+      .eq('product_id', item.product_id)
+      .eq('confirmed', true);
+    if (clothingId)      confQ = confQ.eq('clothing_size_id', clothingId);
+    else                 confQ = confQ.is('clothing_size_id', null);
+    if (weightId)        confQ = confQ.eq('weight_size_id', weightId);
+    else                 confQ = confQ.is('weight_size_id', null);
+
+    const { data: existingConfirmed, error: confLoadErr } = await confQ.maybeSingle();
+    if (confLoadErr) {
+      setOrderMessage('Fehler beim Prüfen bestehender Positionen: ' + confLoadErr.message, true);
+      return;
+    }
+
+    if (existingConfirmed) {
+      // Mengen-Merge: confirmed=true-Zeile erhält die addierte Menge,
+      // die unbestätigte Zeile wird gelöscht.
+      const mergedQty = Number(existingConfirmed.quantity || 0) + Number(item.quantity || 0);
+      const { error: mergeErr } = await db.from('group_order_cart')
+        .update({ quantity: mergedQty })
+        .eq('id', existingConfirmed.id);
+      if (mergeErr) {
+        setOrderMessage('Fehler beim Zusammenführen: ' + mergeErr.message, true);
+        return;
+      }
+      const { error: delErr } = await db.from('group_order_cart')
+        .delete()
+        .eq('id', item.id);
+      if (delErr) {
+        setOrderMessage('Fehler beim Aufräumen der Warenkorb-Zeile: ' + delErr.message, true);
+        return;
+      }
+    } else {
+      // Keine bestehende Bereich-2-Zeile — einfach bestätigen.
+      const { error: confErr } = await db.from('group_order_cart')
+        .update({ confirmed: true })
+        .eq('id', item.id);
+      if (confErr) {
+        setOrderMessage('Fehler beim Hinzufügen zur Bestellung: ' + confErr.message, true);
+        return;
+      }
+    }
   }
 
   setOrderMessage('Zur Sammelbestellung hinzugefügt.');
