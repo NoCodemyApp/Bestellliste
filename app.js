@@ -76,7 +76,7 @@ if (!cartBadgeBtn || !cartDrawer || !cartOverlay || !filterDrawer || !filterTogg
 
 // Filter State
 let allProducts = [];
-let activeFilters = { category: null, supplier: null };
+let activeFilters = { category: new Set(), supplier: new Set() };
 
 // ============================================================
 // DRAWER HELPERS
@@ -141,7 +141,8 @@ if (filterFab) {
   filterFab.addEventListener("click", openFilterDrawer);
 }
 
-// Swipe-down Cart-Handle Drawer schliessen
+// Swipe-down Cart-Handle Drawer löst Swipe-close aus
+let touchStartY = 0;
 let swipeFromHandle = false;
 const cartDrawerHandle = cartDrawer.querySelector(".cart-drawer-handle");
 
@@ -229,7 +230,7 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
   }
 
   container.innerHTML = values.map(val => {
-    const isActive = activeFilters[filterKey] === val;
+    const isActive = activeFilters[filterKey].has(val);         
     return `<button
       type="button"
       class="filter-chip${isActive ? ' filter-chip--active' : ''}"
@@ -242,7 +243,11 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-filter-key");
       const val = btn.getAttribute("data-filter-val");
-      activeFilters[key] = activeFilters[key] === val ? null : val;
+      if (activeFilters[key].has(val)) {                         
+        activeFilters[key].delete(val);
+      } else {
+        activeFilters[key].add(val);
+      }
       buildFilterChips(allProducts);
       applyFilters();
     });
@@ -256,8 +261,8 @@ function applyFilters() {
   // damit der Kategorie-Filter nur innerhalb des passenden Sortiments arbeitet.
   const goSupplierId = window.goSession?.supplierId || null;
   let filtered = allProducts.filter(p => {
-    const matchCat = !category || p.category === category;
-    const matchSup = !supplier || p.suppliers?.name  === supplier;
+    const matchCat   = category.size === 0 || category.has(p.category);
+    const matchSup   = supplier.size === 0 || supplier.has(p.suppliers?.name);
     const matchGoSup = !goSupplierId || p.supplier_id === goSupplierId;
     return matchCat && matchSup && matchGoSup;
   });
@@ -267,7 +272,7 @@ function applyFilters() {
 
 function updateFilterUI() {
   const { category, supplier } = activeFilters;
-  const total = (category ? 1 : 0) + (supplier ? 1 : 0);
+  const total = category.size + supplier.size;                   
 
   filterActiveCount.textContent = total;
   filterActiveCount.classList.toggle("hidden", total === 0);
@@ -293,19 +298,19 @@ function updateFilterUI() {
     tag.className = "active-filter-tag";
     tag.innerHTML = `${escapeHtml(label)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     tag.addEventListener("click", () => {
-      activeFilters[key] = null;
+      activeFilters[key].delete(label);                         
       buildFilterChips(allProducts);
       applyFilters();
     });
     activeFilterBar.appendChild(tag);
   };
 
-  if (category) addTag(category, "category");
-  if (supplier) addTag(supplier, "supplier");
+  category.forEach(val => addTag(val, "category"));             
+  supplier.forEach(val => addTag(val, "supplier"));
 }
 
 function resetFilters() {
-  activeFilters = { category: null, supplier: null };
+  activeFilters = { category: new Set(), supplier: new Set() };  
   buildFilterChips(allProducts);
   applyFilters();
 }
@@ -960,7 +965,7 @@ async function updateUI() {
     cartList.innerHTML = "";
     updateCartBadge(0);
     allProducts = [];
-    activeFilters = { category: null, supplier: null };
+    activeFilters = { category: new Set(), supplier: new Set() };
     teardownGroupOrders();
   }
 }
