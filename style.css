@@ -1383,7 +1383,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 
 /* ============================================================
    FILTER FAB — Fixed Floating Pill (Mobile only)
-   ============================================================ */
+   ============================================================ 
 
 .filter-fab {
   position: fixed;
@@ -1391,7 +1391,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%) translateY(0) scale(1);
   z-index: 150;
-
+*
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1423,7 +1423,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
     background   var(--dur-fast) ease,
     border-color var(--dur-fast) ease;
 }
-
+*
 .filter-fab.filter-fab--visible {
   opacity: 1;
   pointer-events: all;
@@ -1480,6 +1480,7 @@ body.drawer-open { overflow: hidden; touch-action: none; }
   line-height: 1;
   margin-left: 2px;
 }
+*/
 
 /* ============================================================
    GO SUBMITTED ITEMS — Inline in Checkout
