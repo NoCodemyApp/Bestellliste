@@ -15,6 +15,7 @@ function openCheckout() {
   _checkoutSnapshot = null;
   renderCheckout();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+   history.pushState({ view: 'checkout' }, '')
 }
 
 function closeCheckout() {
