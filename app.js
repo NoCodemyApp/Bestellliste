@@ -1023,3 +1023,18 @@ document.addEventListener("click", () => {
 db.auth.onAuthStateChange(() => { setTimeout(() => { updateUI(); }, 0); });
 
 updateUI();
+
+
+// ============================================================
+// Browser-Zurück-Taste: Ansichten schließen statt Shop verlassen
+// ============================================================
+
+window.addEventListener('popstate', () => {
+  if (!checkoutSection.classList.contains('hidden')) {
+    closeCheckout();
+  } else if (cartDrawer.classList.contains('cart-drawer--open')) {
+    closeCartDrawer();
+  } else if (filterDrawer.classList.contains('filter-drawer--open')) {
+    closeFilterDrawer();
+  }
+});
