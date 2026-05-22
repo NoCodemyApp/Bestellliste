@@ -590,6 +590,14 @@
   flex-wrap: wrap;
 }
 
+.cart-supplier-logo {
+  max-height: 32px;
+  max-width: 120px;
+  width: auto;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
 .checkout-supplier-badge {
   display: flex;
   align-items: center;
