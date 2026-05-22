@@ -1032,6 +1032,10 @@ updateUI();
 window.addEventListener('popstate', () => {
   if (!checkoutSection.classList.contains('hidden')) {
     closeCheckout();
+  } else if (document.getElementById('go-panel')?.classList.contains('go-panel--open')) {
+    closeGroupPanel();
+  } else if (window.goSession) {
+    deactivateGoMode();
   } else if (cartDrawer.classList.contains('cart-drawer--open')) {
     closeCartDrawer();
   } else if (filterDrawer.classList.contains('filter-drawer--open')) {
