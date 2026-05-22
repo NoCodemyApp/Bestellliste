@@ -141,10 +141,19 @@ if (filterFab) {
   filterFab.addEventListener("click", openFilterDrawer);
 }
 
-// Swipe-down Cart Drawer schliessen
-let touchStartY = 0;
-cartDrawer.addEventListener("touchstart", e => { touchStartY = e.touches[0].clientY; }, { passive: true });
-cartDrawer.addEventListener("touchend",   e => { if (e.changedTouches[0].clientY - touchStartY > 60) closeCartDrawer(); }, { passive: true });
+// Swipe-down Cart-Handle Drawer schliessen
+let swipeFromHandle = false;
+const cartDrawerHandle = cartDrawer.querySelector(".cart-drawer-handle");
+
+cartDrawerHandle.addEventListener("touchstart", e => {
+  touchStartY = e.touches[0].clientY;
+  swipeFromHandle = true;
+}, { passive: true });
+
+cartDrawer.addEventListener("touchend", e => {
+  if (swipeFromHandle && e.changedTouches[0].clientY - touchStartY > 60) closeCartDrawer();
+  swipeFromHandle = false;
+}, { passive: true });
 
 // Swipe-left Filter Drawer schliessen
 let touchStartX = 0;
