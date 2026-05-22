@@ -40,30 +40,30 @@ if (cartDrawerSubmit) cartDrawerSubmit.addEventListener('click', () => openCheck
 // CART LABELS — GO-Modus
 // ============================================================
 
-function updateCartLabelsForGo(supplierName) {
+function updateCartLabelsForGo() {
+  const sess = window.goSession;
+  if (!sess) return;
+  const supplierName = sess.supplierName || '';
+  const supplierLogo = sess.supplierLogo || null;
+
+  const logoOrName = supplierLogo
+    ? `<img src="${escapeHtml(supplierLogo)}"
+            alt="${escapeHtml(supplierName)}"
+            class="cart-supplier-logo"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='inline';">
+       <span class="cart-supplier-name" style="display:none;">${escapeHtml(supplierName)}</span>`
+    : `<span class="cart-supplier-name">${escapeHtml(supplierName)}</span>`;
+
+  const label = `<span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>`;
+
   const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
-  if (cartHeadH2) {
-    cartHeadH2.innerHTML = `
-      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;">Sammelbestellung</span>
-      ${escapeHtml(supplierName)}`;
-  }
+  if (cartHeadH2) cartHeadH2.innerHTML = label + logoOrName;
+
   const drawerTitle = document.querySelector('.cart-drawer-title');
-  if (drawerTitle) {
-    drawerTitle.innerHTML = `
-      <span style="display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1;margin-bottom:1px;">Sammelbestellung</span>
-      ${escapeHtml(supplierName)}`;
-  }
+  if (drawerTitle) drawerTitle.innerHTML = label + logoOrName;
+
   const badgeBtn = document.getElementById('cart-badge-btn');
   if (badgeBtn) badgeBtn.setAttribute('aria-label', `Sammelbestellung ${supplierName}`);
-}
-
-function resetCartLabels() {
-  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
-  if (cartHeadH2) cartHeadH2.innerHTML = 'Warenkorb';
-  const drawerTitle = document.querySelector('.cart-drawer-title');
-  if (drawerTitle) drawerTitle.innerHTML = 'Warenkorb';
-  const badgeBtn = document.getElementById('cart-badge-btn');
-  if (badgeBtn) badgeBtn.setAttribute('aria-label', 'Warenkorb');
 }
 
 // ============================================================
