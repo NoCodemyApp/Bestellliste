@@ -1129,10 +1129,12 @@ body.drawer-open { overflow: hidden; touch-action: none; }
 
 @media (min-width: 1024px) { .cart-drawer { display: none !important; } }
 
+
 .cart-drawer-handle {
   width: 36px; height: 4px;
   border-radius: var(--radius-full);
-  background: var(--border-strong);
+  /*background: var(--border-strong);*/
+  background: rgba(255,255,255,0.28);
   margin: var(--sp-3) auto var(--sp-1);
   flex-shrink: 0;
 }
