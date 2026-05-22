@@ -121,6 +121,7 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   window.goSession = { groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
+  await renderGoSupplierLogo(supplierId);
   filterProductsForGo(supplierId);
   // FIX: supplierName übergeben, nicht supplierId
   if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
@@ -161,7 +162,7 @@ function deactivateGoMode() {
   }
 }
 
-// FIX #5: Direkter ===-Vergleich (kein toLowerCase auf UUID)
+
 function filterProductsForGo(supplierId) {
   if (typeof allProducts === 'undefined') return;
 
@@ -231,6 +232,29 @@ function renderGoSignalBanner() {
 
 function removeGoSignalBanner() {
   document.getElementById('go-signal-banner')?.remove();
+}
+
+// Lieferanten Logo anzeigen lassen
+async function renderGoSupplierLogo(supplierId) {
+  // Bestehendes Logo-Banner entfernen
+  document.getElementById('go-supplier-logo-banner')?.remove();
+  if (!supplierId) return;
+
+  // Logo-URL aus Supabase laden
+  const { data } = await db.from('suppliers')
+    .select('logo_url')
+    .eq('id', supplierId)
+    .maybeSingle();
+
+  if (!data?.logo_url) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'go-supplier-logo-banner';
+  banner.className = 'go-supplier-logo-banner';
+  banner.innerHTML = `<img src="${escapeHtml(data.logo_url)}" alt="Lieferanten-Logo" class="go-supplier-logo-img">`;
+
+  const ps = document.getElementById('products-section');
+  ps?.parentNode?.insertBefore(banner, ps);
 }
 
 // ============================================================
