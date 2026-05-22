@@ -171,13 +171,13 @@
   justify-content: center;
   align-items: center;
   padding: 20px 24px;
-  background: var(--surface);
+  background: var(--mute);
   border-bottom: 1px solid var(--border);
 }
 
 .go-supplier-logo-img {
-  max-height: 120px;
-  max-width: 280px;
+  max-height: 220px;
+  max-width: 380px;
   width: auto;
   object-fit: contain;
 }
