@@ -21,8 +21,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 8px 20px;
-  background: rgba(1, 105, 111, 0.12);
-  border-bottom: 1px solid rgba(1, 105, 111, 0.25);
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--accent-dim-2);
   font-size: 13px;
   color: var(--text);
   flex-wrap: wrap;
@@ -41,9 +41,9 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #01b0b8;
+  background: var(--accent);
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(1,176,184,.6);
+  box-shadow: 0 0 6px var(--accent-dim-2);
   animation: go-pulse 2s ease-in-out infinite;
 }
 
@@ -60,8 +60,8 @@
 }
 
 .go-open-btn {
-  background: #01696f;
-  color: #fff;
+  background: var(--accent);
+  color: #111;
   border: none;
   border-radius: 6px;
   padding: 6px 14px;
@@ -70,31 +70,31 @@
   cursor: pointer;
   white-space: nowrap;
   min-height: 32px;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
   font-family: inherit;
 }
-.go-open-btn:hover  { background: #018a92; transform: none; }
+.go-open-btn:hover  { background: var(--accent-hover); transform: none; }
 .go-open-btn:active { transform: scale(.96); opacity: 1; }
 
 .go-create-btn {
   background: none;
-  border: 1.5px solid rgba(1,105,111,.5);
-  color: #01b0b8;
+  border: 1.5px solid var(--accent-dim-2);
+  color: var(--accent);
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
   font-family: inherit;
   min-height: 32px;
   white-space: nowrap;
 }
-.go-create-btn:hover  { background: rgba(1,105,111,.15); border-color: #01696f; color: #fff; transform: none; }
+.go-create-btn:hover  { background: var(--accent-dim); border-color: var(--accent); color: var(--text); transform: none; }
 .go-create-btn:active { transform: scale(.96); opacity: 1; }
 
 /* ============================================================
-   SIGNAL BANNER (aktive GO-Sitzung — Signalfarbe)
+   SIGNAL BANNER (aktive GO-Sitzung)
 ============================================================ */
 
 .go-signal-banner {
@@ -103,8 +103,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px;
-  background: linear-gradient(90deg, rgba(1,176,184,.18) 0%, rgba(1,105,111,.12) 100%);
-  border-bottom: 2px solid #01b0b8;
+  background: linear-gradient(90deg, var(--accent-dim-2) 0%, var(--accent-dim) 100%);
+  border-bottom: 2px solid var(--accent);
   font-size: 13px;
   flex-wrap: wrap;
 }
@@ -121,9 +121,9 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #01b0b8;
+  background: var(--accent);
   flex-shrink: 0;
-  box-shadow: 0 0 0 3px rgba(1,176,184,.25);
+  box-shadow: 0 0 0 3px var(--accent-dim);
   animation: go-pulse 1.5s ease-in-out infinite;
 }
 
@@ -132,7 +132,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .07em;
-  color: #01b0b8;
+  color: var(--accent);
 }
 
 .go-signal-supplier {
@@ -156,7 +156,7 @@
   white-space: nowrap;
   min-height: 32px;
   font-family: inherit;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
   flex-shrink: 0;
 }
 .go-signal-leave-btn:hover  { background: rgba(224,85,105,.22); transform: none; }
@@ -164,9 +164,6 @@
 
 /* ============================================================
    PANEL (Fullscreen Desktop)
-   Hinweis: position/inset/background/overflow-y kommen aus
-   .app-panel (panel-base.css). Hier nur fachlicher z-index +
-   GO-spezifisches display-Verhalten und die GO-Slide-In-Animation.
 ============================================================ */
 
 .go-panel {
@@ -186,10 +183,6 @@
 
 /* ============================================================
    MOBILE BOTTOM-SHEET
-   WICHTIG: Diese Regeln duerfen NICHT durch generische
-   panel-base.css-Regeln ueberschrieben werden. Da diese Datei
-   nach panel-base.css geladen wird und gleiche Spezifitaet
-   besitzt, gewinnt die spaetere Regel (Quellenreihenfolge).
 ============================================================ */
 
 @media (max-width: 1023px) {
@@ -227,8 +220,7 @@
 }
 
 /* ============================================================
-   PANEL INNER (Desktop = generisch via .app-panel-inner,
-   Mobile = GO-spezifisches Bottom-Sheet-Layout)
+   PANEL INNER
 ============================================================ */
 
 @media (max-width: 1023px) {
@@ -256,8 +248,7 @@
 }
 
 /* ============================================================
-   PANEL HEADER (Desktop = generisch via .app-panel-header,
-   Mobile = GO-spezifisches Padding / kein bottom-margin)
+   PANEL HEADER
 ============================================================ */
 
 @media (max-width: 1023px) {
@@ -265,9 +256,7 @@
 }
 
 /* ============================================================
-   PANEL BACK-BUTTON (Desktop = generisch via .app-panel-back-btn,
-   ergaenzt um GO-fachliches flex-shrink + :active.
-   Mobile = ausgeblendet, dafuer .go-panel-close-btn sichtbar.)
+   PANEL BACK-BUTTON
 ============================================================ */
 
 .go-panel-back-btn {
@@ -354,8 +343,8 @@
 ============================================================ */
 
 .go-join-btn {
-  background: #01696f;
-  color: #fff;
+  background: var(--accent);
+  color: #111;
   border: none;
   border-radius: 6px;
   padding: 7px 16px;
@@ -364,22 +353,22 @@
   cursor: pointer;
   white-space: nowrap;
   min-height: 34px;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
   font-family: inherit;
 }
-.go-join-btn:hover  { background: #018a92; transform: none; }
+.go-join-btn:hover  { background: var(--accent-hover); transform: none; }
 .go-join-btn:active { transform: scale(.96); opacity: 1; }
 .go-join-btn.go-join-btn--active {
-  background: rgba(1,176,184,.15);
-  color: #01b0b8;
-  border: 1px solid rgba(1,176,184,.35);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim-2);
 }
 .go-join-btn.go-join-btn--goto {
-  background: rgba(1,176,184,.1);
-  color: #01b0b8;
-  border: 1px solid rgba(1,176,184,.3);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim-2);
 }
-.go-join-btn.go-join-btn--goto:hover { background: rgba(1,176,184,.2); }
+.go-join-btn.go-join-btn--goto:hover { background: var(--accent-dim-2); }
 
 .go-undo-btn {
   background: none;
@@ -393,7 +382,7 @@
   white-space: nowrap;
   min-height: 34px;
   font-family: inherit;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 .go-undo-btn:hover  { background: rgba(224,85,105,.1); color: #ffaab4; border-color: rgba(224,85,105,.3); transform: none; }
 .go-undo-btn:active { transform: scale(.96); opacity: 1; }
@@ -412,7 +401,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 14px;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
 }
 .go-edit-btn:hover  { background: var(--surface-3); border-color: var(--border-strong); transform: none; }
 .go-edit-btn:active { transform: scale(.9); opacity: 1; }
@@ -453,13 +442,13 @@
   font-family: inherit;
   background: var(--surface-2);
   color: var(--text);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
   outline: none;
   min-height: 0;
 }
-.go-input:focus { border-color: #01696f; box-shadow: 0 0 0 3px rgba(1,105,111,.15); }
+.go-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
 
-.go-error { font-size: .8125rem; color: #ffaab4; min-height: 16px; margin: 0; }
+.go-error { font-size: .8125rem; color: var(--danger); min-height: 16px; margin: 0; }
 .go-value-readonly { font-size: .9375rem; font-weight: 600; color: var(--text); padding: 8px 0; margin: 0; }
 
 /* ============================================================
@@ -490,7 +479,7 @@
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -512,7 +501,7 @@
   color: var(--muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 .go-modal-close:hover  { background: var(--surface-4); color: var(--text); transform: none; }
 .go-modal-close:active { transform: scale(.88); opacity: 1; }
@@ -540,9 +529,9 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(1,176,184,.15);
-  border: 2px solid rgba(1,176,184,.4);
-  color: #01b0b8;
+  background: var(--accent-dim);
+  border: 2px solid var(--accent-dim-2);
+  color: var(--accent);
   font-size: 22px;
   font-weight: 700;
   display: flex;
@@ -574,8 +563,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(1,176,184,.1);
-  border: 1px solid rgba(1,176,184,.3);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-dim-2);
   border-radius: 20px;
   padding: 4px 12px 4px 10px;
 }
@@ -590,7 +579,7 @@
 .checkout-supplier-name {
   font-size: 13px;
   font-weight: 700;
-  color: #01b0b8;
+  color: var(--accent);
 }
 
 /* ============================================================
@@ -599,7 +588,7 @@
 
 #go-submitted-wrap {
   margin-top: 24px;
-  border: 1px solid rgba(1,176,184,.25);
+  border: 1px solid var(--accent-dim-2);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -610,17 +599,17 @@
   justify-content: space-between;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(1,176,184,.08);
-  border-bottom: 1px solid rgba(1,176,184,.2);
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--accent-dim-2);
   font-size: .8125rem;
   font-weight: 600;
   color: var(--muted);
 }
 
 .go-submitted-badge {
-  background: rgba(1,176,184,.15);
-  border: 1px solid rgba(1,176,184,.3);
-  color: #01b0b8;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-dim-2);
+  color: var(--accent);
   border-radius: 99px;
   padding: 2px 10px;
   font-size: 11px;
@@ -653,7 +642,7 @@
 
 #go-banner-error {
   font-size: .8125rem;
-  color: #ffaab4;
+  color: var(--danger);
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -676,7 +665,7 @@
   cursor: pointer;
   min-height: 38px;
   font-family: inherit;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
 }
 .go-btn-primary:hover  { background: var(--accent-hover); transform: none; }
 .go-btn-primary:active { transform: scale(.97); opacity: 1; }
@@ -692,20 +681,18 @@
   cursor: pointer;
   min-height: 38px;
   font-family: inherit;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
 }
 .go-btn-secondary:hover  { background: var(--surface-4); transform: none; }
 .go-btn-secondary:active { transform: scale(.97); opacity: 1; }
 
 /* ============================================================
    GO CHECKOUT — Zwei-Bereich-Layout
-   Bereich 1: Warenkorb (confirmed = false)
-   Bereich 2: Meine Bestellung (confirmed = true)
 ============================================================ */
 
 .go-checkout-area {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e5e7eb);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1rem 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -716,43 +703,35 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   margin: 0 0 0.75rem;
-  color: var(--text, #111);
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .go-checkout-empty {
-  color: var(--muted, #6b7280);
+  color: var(--muted);
   font-size: 0.9rem;
   padding: 0.75rem 0.25rem;
   margin: 0;
 }
 
-/* ------------------------------------------------------------
-   Bereich 2 ("Meine Bestellung") visuell hervorheben
-   — Teal-Farbschema analog zu .checkout-supplier-badge
------------------------------------------------------------- */
+/* Bereich 2 ("Meine Bestellung") visuell hervorheben */
 #go-order-section.go-checkout-area {
-  background: rgba(1,176,184,.06);
-  border-color: rgba(1,176,184,.3);
+  background: var(--accent-dim);
+  border-color: var(--accent-dim-2);
 }
 
 #go-order-section .go-checkout-area-title {
-  color: #01b0b8;
+  color: var(--accent);
 }
 
-/* ------------------------------------------------------------
-   Lokal als "gelöscht" markierte Bereich-2-Zeile (Toggle)
-   Deutlicher diagonaler Strich über die gesamte Zeilenbreite
------------------------------------------------------------- */
+/* Lokal als "geloescht" markierte Zeile */
 .checkout-item-row.is-pending-removed {
   position: relative;
   opacity: 0.55;
 }
 
-/* Diagonaler Strich über die volle Breite der Zeile.
-   linear-gradient mit transparentem Hintergrund + 2px Linie bei 50%. */
 .checkout-item-row.is-pending-removed::after {
   content: "";
   position: absolute;
@@ -764,23 +743,20 @@
   background: linear-gradient(
     to top right,
     transparent calc(50% - 1.5px),
-    var(--danger, #e05569) calc(50% - 1.5px),
-    var(--danger, #e05569) calc(50% + 1.5px),
+    var(--danger) calc(50% - 1.5px),
+    var(--danger) calc(50% + 1.5px),
     transparent calc(50% + 1.5px)
   );
   z-index: 2;
 }
 
-/* Mengen-Stepper und Remove-Button bleiben klickbar (oberhalb des Strichs) */
 .checkout-item-row.is-pending-removed .qty-stepper-btn,
 .checkout-item-row.is-pending-removed .checkout-remove-btn {
   position: relative;
   z-index: 3;
 }
 
-/* ------------------------------------------------------------
-   Gruppen-Header: durchgestrichen, wenn alle Items getoggelt
------------------------------------------------------------- */
+/* Gruppen-Header: durchgestrichen, wenn alle Items getoggelt */
 .checkout-product-group.is-all-removed .checkout-product-header {
   position: relative;
   opacity: 0.55;
@@ -797,33 +773,25 @@
   background: linear-gradient(
     to top right,
     transparent calc(50% - 1.5px),
-    var(--danger, #e05569) calc(50% - 1.5px),
-    var(--danger, #e05569) calc(50% + 1.5px),
+    var(--danger) calc(50% - 1.5px),
+    var(--danger) calc(50% + 1.5px),
     transparent calc(50% + 1.5px)
   );
   z-index: 2;
 }
 
-/* ------------------------------------------------------------
-   Mülleimer-Icon in der Bestellübersicht (Bereich 1+2):
-   immer rot, beim Hover stärkeres Rot
------------------------------------------------------------- */
+/* Muelleimer-Icon */
 .checkout-remove-btn {
-  color: var(--danger, #e05569);
+  color: var(--danger);
 }
 
 .checkout-remove-btn:hover,
 .checkout-remove-btn:focus-visible {
-  color: var(--danger-hover, #f0687a);
+  color: var(--danger-hover);
   background: rgba(224, 85, 105, 0.14);
 }
 
-/* ------------------------------------------------------------
-   Produkte ohne Größen/Varianten:
-   einzeilige Darstellung — Größen-/Preis-Zelle entfernt,
-   Grid wird auf 3 Spalten reduziert (Menge | Spacer | Trash).
-   Der Preis steht ausschließlich im Gruppen-Header.
------------------------------------------------------------- */
+/* Produkte ohne Groessen/Varianten */
 .checkout-product-group--no-size .checkout-item-row {
   grid-template-columns: 1fr 120px 36px;
 }
@@ -834,4 +802,3 @@
 .checkout-product-group--no-size .checkout-item-row > .checkout-remove-btn {
   grid-column: 3;
 }
-
