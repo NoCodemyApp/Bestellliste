@@ -26,8 +26,10 @@ function closeCheckout() {
     productsSection.classList.remove('hidden');
     filterProductsForGo(window.goSession.supplierId);
     renderGoSignalBanner();
+    if (typeof loadGoCart === 'function') loadGoCart(); // ← NEU
   } else {
     productsSection.classList.remove('hidden');
+    if (typeof loadCart === 'function') loadCart();    // ← NEU
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
