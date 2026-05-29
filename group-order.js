@@ -121,6 +121,7 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   window.goSession = { groupOrderId, supplierId, supplierName, supplierLogo, isCreator, deadline };
   closeGroupPanel();
   renderGoSignalBanner();
+  await renderGoSupplierLogo(supplierId);
   filterProductsForGo(supplierId);
   // FIX: supplierName übergeben, nicht supplierId
   if (typeof updateCartLabelsForGo === 'function') updateCartLabelsForGo(supplierName);
@@ -128,9 +129,10 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   history.pushState({ view: 'go-products' }, '', location.href);
 }
 
-function deactivateGoMode() {
+async function deactivateGoMode() {
   window.goSession = null;
   removeGoSignalBanner();
+  document.getElementById('go-supplier-logo-banner')?.remove();
   if (typeof resetCartLabels === 'function') resetCartLabels();
 
   // GO-Mode-Klassen entfernen — Sidebar/Filter wieder im Normalzustand
@@ -154,14 +156,15 @@ function deactivateGoMode() {
   if (triggerBar) triggerBar.style.display = '';
 
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
-    activeFilters = { category: null, supplier: null };
+    activeFilters = { category: new Set(), supplier: new Set() };
     buildFilterChips(allProducts);
     renderProducts(allProducts);
     updateFilterUI();
   }
+  if (typeof loadCart === 'function') await loadCart();
 }
 
-// FIX #5: Direkter ===-Vergleich (kein toLowerCase auf UUID)
+
 function filterProductsForGo(supplierId) {
   if (typeof allProducts === 'undefined') return;
 
@@ -200,7 +203,7 @@ function filterProductsForGo(supplierId) {
   // Kategorie-Chips neu aufbauen — nur Kategorien des aktuellen Lieferanten
   if (typeof buildFilterChips === 'function') {
     if (typeof activeFilters !== 'undefined') {
-      activeFilters = { category: null, supplier: null };
+      activeFilters = { category: new Set(), supplier: new Set() };
     }
     buildFilterChips(filtered);
     if (typeof updateFilterUI === 'function') updateFilterUI();
@@ -231,6 +234,31 @@ function renderGoSignalBanner() {
 
 function removeGoSignalBanner() {
   document.getElementById('go-signal-banner')?.remove();
+}
+
+// Lieferanten Logo anzeigen lassen
+async function renderGoSupplierLogo(supplierId) {
+  document.getElementById('go-supplier-logo-banner')?.remove();
+  if (!supplierId) return;
+
+  const { data } = await db.from('suppliers')
+    .select('logo_url')
+    .eq('id', supplierId)
+    .maybeSingle();
+  
+  if (window.goSession) {
+    window.goSession.supplierLogo = data?.logo_url || null;
+  }
+
+  if (!data?.logo_url) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'go-supplier-logo-banner';
+  banner.className = 'go-supplier-logo-banner';
+  banner.innerHTML = `<img src="${escapeHtml(data.logo_url)}" alt="Lieferanten-Logo" class="go-supplier-logo-img">`;
+
+  const ps = document.getElementById('products-section');
+  ps?.parentNode?.insertBefore(banner, ps);
 }
 
 // ============================================================
