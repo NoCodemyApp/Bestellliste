@@ -201,7 +201,7 @@ function filterProductsForGo(supplierId) {
   // Kategorie-Chips neu aufbauen — nur Kategorien des aktuellen Lieferanten
   if (typeof buildFilterChips === 'function') {
     if (typeof activeFilters !== 'undefined') {
-      activeFilters = { category: null, supplier: null };
+      activeFilters = { category: new Set(), supplier: new Set() };
     }
     buildFilterChips(filtered);
     if (typeof updateFilterUI === 'function') updateFilterUI();
