@@ -129,7 +129,7 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
   history.pushState({ view: 'go-products' }, '', location.href);
 }
 
-function deactivateGoMode() {
+async function deactivateGoMode() {
   window.goSession = null;
   removeGoSignalBanner();
   if (typeof resetCartLabels === 'function') resetCartLabels();
@@ -155,11 +155,12 @@ function deactivateGoMode() {
   if (triggerBar) triggerBar.style.display = '';
 
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
-    activeFilters = { category: null, supplier: null };
+    activeFilters = { category: new Set(), supplier: new Set() };
     buildFilterChips(allProducts);
     renderProducts(allProducts);
     updateFilterUI();
   }
+  if (typeof loadCart === 'function') await loadCart();
 }
 
 
