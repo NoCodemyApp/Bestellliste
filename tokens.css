@@ -6,28 +6,28 @@
 
 :root {
   /* Surfaces */
-  --bg:              #000000;
-  --surface:         #0d0d0d;
-  --surface-2:       #141414;
-  --surface-3:       #1a1a1a;
-  --surface-4:       #212121;
-  --surface-glass:   rgba(13, 13, 13, 0.85);
+  --bg:              #0c0d0f;
+  --surface:         #141618;
+  --surface-2:       #1a1d21;
+  --surface-3:       #20242a;
+  --surface-4:       #272c34;
+  --surface-glass:   rgba(20, 22, 24, 0.85);
 
   /* Text */
-  --text:            #ececec;
-  --muted:           #888888;
-  --faint:           #444444;
-  --text-inverse:    #000000;
+  --text:            #f0f2f5;
+  --muted:           #8b939f;
+  --faint:           #454d57;
+  --text-inverse:    #0c0d0f;
 
   /* Borders */
   --border:          rgba(255,255,255,0.08);
   --border-strong:   rgba(255,255,255,0.14);
 
-  /* Accent — red */
-  --accent:          #ff0000;
-  --accent-hover:    #ff3333;
-  --accent-dim:      rgba(255,0,0,0.12);
-  --accent-dim-2:    rgba(255,0,0,0.22);
+  /* Accent — warm amber */
+  --accent:          #f4b158;
+  --accent-hover:    #ffbf69;
+  --accent-dim:      rgba(244,177,88,0.12);
+  --accent-dim-2:    rgba(244,177,88,0.22);
 
   /* Semantic */
   --danger:          #e05569;
