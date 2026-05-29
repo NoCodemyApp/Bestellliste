@@ -912,9 +912,13 @@ async function updateUI() {
     document.getElementById("user-menu-btn").classList.remove("hidden");
     document.getElementById("user-dropdown-email").textContent = session.user.email || "";
     await loadProducts();
-    await loadCart();
     await initGroupOrders();
-  } else {
+    if (window.goSession) {
+      await loadGoCart();
+    } else {
+      await loadCart();
+    }
+    } else {
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     cartSection.classList.add("hidden");
