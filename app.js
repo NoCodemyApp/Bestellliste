@@ -367,44 +367,6 @@ function syncDrawer(totalText, itemCount) {
   if (cartDrawerMsg) cartDrawerMsg.textContent = "";
 }
 
-// ============================================================
-// GO-MODUS: Warenkorb-Header auf Supplier-Logo/Name umstellen
-// ============================================================
-
-function updateCartLabelsForGo(supplierId) {
-  const sess = window.goSession;
-  const supplierName = sess?.supplierName || supplierId;
-  const supplierLogo = sess?.supplierLogo || null;
-
-  // Desktop Warenkorb-Titel
-  const cartHeading = cartSection?.querySelector(".section-head h2");
-  if (cartHeading) {
-    if (supplierLogo) {
-      cartHeading.innerHTML = `
-        <img src="${escapeHtml(supplierLogo)}" alt="${escapeHtml(supplierName)}"
-             style="height:24px;max-width:80px;object-fit:contain;vertical-align:middle;margin-right:6px;"
-             onerror="this.style.display='none';this.nextSibling.style.display='inline';">
-        <span style="display:none;">${escapeHtml(supplierName)}</span>
-        <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:4px;">Sammelbestellung</span>`;
-    } else {
-      cartHeading.textContent = supplierName + " – Sammelbestellung";
-    }
-  }
-
-  // Mobile Drawer-Titel
-  const drawerTitle = cartDrawer?.querySelector(".cart-drawer-title");
-  if (drawerTitle) {
-    drawerTitle.textContent = supplierName + " – Sammelbestellung";
-  }
-}
-
-function resetCartLabels() {
-  const cartHeading = cartSection?.querySelector(".section-head h2");
-  if (cartHeading) cartHeading.textContent = "Warenkorb";
-
-  const drawerTitle = cartDrawer?.querySelector(".cart-drawer-title");
-  if (drawerTitle) drawerTitle.textContent = "Warenkorb";
-}
 
 // ============================================================
 // GO-MODUS: group_order_cart laden und rendern
@@ -950,9 +912,13 @@ async function updateUI() {
     document.getElementById("user-menu-btn").classList.remove("hidden");
     document.getElementById("user-dropdown-email").textContent = session.user.email || "";
     await loadProducts();
-    await loadCart();
     await initGroupOrders();
-  } else {
+    if (window.goSession) {
+      await loadGoCart();
+    } else {
+      await loadCart();
+    }
+    } else {
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     cartSection.classList.add("hidden");
