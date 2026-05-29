@@ -1,0 +1,192 @@
+/* ============================================================
+   BESTELLLISTE — colors.css
+   Zentrale Farbsteuerung für alle UI-Komponenten.
+   Diese Datei VOR tokens.css, style.css und allen anderen
+   CSS-Dateien laden — oder tokens.css ersetzen.
+
+   Änderungen hier wirken sich auf die gesamte App aus:
+   Buttons · Schrift · Hintergrund · Produktkacheln · Banner · usw.
+   ============================================================ */
+
+:root {
+
+  /* ===========================================================
+     HINTERGRUND & OBERFLÄCHEN
+     bg            → Seiten-Hintergrund
+     surface       → Karten / Panels (z. B. Produktkacheln, Cart)
+     surface-2     → Inputs, Dropdown-Hintergrund
+     surface-3     → Sekundär-Buttons, Qty-Stepper, Chips
+     surface-4     → Hover-Zustand von surface-3-Elementen
+     surface-glass → Header (sticky, mit Blur)
+     =========================================================== */
+  --bg:            #0c0d0f;               /* Seiten-Hintergrund            */
+  --surface:       #141618;               /* Karten / Panels               */
+  --surface-2:     #1a1d21;               /* Inputs, Dropdowns             */
+  --surface-3:     #20242a;               /* Sekundär-Buttons, Stepper     */
+  --surface-4:     #272c34;               /* Hover auf surface-3           */
+  --surface-glass: rgba(20, 22, 24, 0.85);/* Header Glassmorphism           */
+
+  /* ===========================================================
+     SCHRIFTFARBEN
+     text         → Haupt-Fließtext
+     muted        → Untertext, Labels, Meta-Infos
+     faint        → Placeholder-Text in Inputs
+     text-inverse → Text auf Accent-Buttons (dunkler Kontrast)
+     =========================================================== */
+  --text:          #f0f2f5;               /* Haupt-Schrift                 */
+  --muted:         #8b939f;               /* Sekundär-Schrift / Labels     */
+  --faint:         #454d57;               /* Placeholder in Inputs         */
+  --text-inverse:  #0c0d0f;               /* Text auf Amber-Buttons        */
+
+  /* ===========================================================
+     RAHMEN / BORDERS
+     border        → Standard-Rahmen (Karten, Inputs, Trennlinien)
+     border-strong → Fokus-Zustand, hervorgehobene Rahmen
+     =========================================================== */
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* ===========================================================
+     ACCENT — Primärfarbe (Amber/Orange)
+     Wird verwendet für:
+       · Primär-Buttons (Hintergrund)
+       · Preise & Gesamtbeträge
+       · Fokus-Ringe bei Inputs
+       · Badge / Counter-Punkte
+       · Filter-Chips (aktiv)
+       · Cart-Drawer Submit-Button
+       · Logo-Farbe im Header
+       · Animationen (productFlash, cartPulse)
+     =========================================================== */
+  --accent:        #f4b158;               /* Haupt-Akzentfarbe (Amber)     */
+  --accent-hover:  #ffbf69;               /* Hover auf Accent-Elementen    */
+  --accent-dim:    rgba(244, 177, 88, 0.12); /* Hintergrund aktive Chips   */
+  --accent-dim-2:  rgba(244, 177, 88, 0.22); /* Hover aktive Chips         */
+
+  /* ===========================================================
+     SEMANTISCHE FARBEN
+     danger        → Löschen-Button, Fehler-Meldungen
+     danger-hover  → Hover auf Danger-Elementen
+     success       → Erfolgs-Feedback (z. B. nach Submit)
+     =========================================================== */
+  --danger:        #e05569;               /* Löschen / Fehler              */
+  --danger-hover:  #f0687a;               /* Hover auf Danger              */
+  --success:       #6fcf8b;               /* Erfolgs-Meldungen             */
+
+  /* ===========================================================
+     GROUP-ORDER (GO) — Teal-Farbpalette
+     Wird verwendet für:
+       · GO-Trigger-Bar & Signal-Banner
+       · GO-Buttons (Join, Open, Create)
+       · GO-Supplier-Badge im Checkout
+       · GO-submitted-Badge & Header
+       · GO-Input-Fokus
+     =========================================================== */
+  --go-accent:         #01b0b8;           /* Teal Primär                   */
+  --go-accent-btn:     #01696f;           /* Teal Button (dunkel)          */
+  --go-accent-btn-hover: #018a92;         /* Teal Button Hover             */
+  --go-bg-dim:         rgba(1, 176, 184, 0.10); /* Teal-Hintergrund light */
+  --go-bg-banner:      rgba(1, 176, 184, 0.18); /* Signal-Banner Hintergrund */
+  --go-border:         rgba(1, 105, 111, 0.25); /* Teal-Rahmen standard    */
+  --go-border-strong:  rgba(1, 176, 184, 0.30); /* Teal-Rahmen stark      */
+  --go-border-banner:  #01b0b8;           /* Signal-Banner Unterlinie      */
+
+  /* ===========================================================
+     BUTTONS — Übersicht aller Varianten
+
+     Primär-Button (button, .btn-primary, .btn-checkout-open,
+                    .cart-drawer-submit-btn, .go-btn-primary):
+       Hintergrund  → --accent
+       Text         → --text-inverse  (#111)
+       Hover        → --accent-hover
+
+     Sekundär-Button (button.secondary, .btn-outline,
+                      .go-btn-secondary):
+       Hintergrund  → --surface-3
+       Text         → --text
+       Rahmen       → --border-strong
+       Hover        → --surface-4
+
+     Danger/Remove-Button (.remove-btn, .go-signal-leave-btn,
+                           .go-submitted-remove):
+       Hintergrund  → rgba(--danger, 0.12)
+       Text         → #ffaab4  (helles Rosa)
+       Rahmen       → rgba(--danger, 0.28)
+
+     Icon-Button (.cart-btn, .cart-drawer-close,
+                  .filter-drawer-close, .user-menu-btn):
+       Hintergrund  → --surface-3
+       Text/Icon    → --muted
+       Hover        → --surface-4 / --text
+
+     GO-Open/Join-Button (.go-open-btn, .go-join-btn):
+       Hintergrund  → --go-accent-btn
+       Text         → #fff
+       Hover        → --go-accent-btn-hover
+     =========================================================== */
+
+  /* ===========================================================
+     PRODUKTKACHELN (.product-card)
+     Hintergrund     → --surface
+     Rahmen normal   → --border
+     Rahmen hover    → --border-strong
+     Preis           → --accent
+     Titel-Text      → --text
+     Bild-Hintergrund → #f3f3f3  (weißer Bildbereich — wird NICHT
+                        von Dunkel-Tokens beeinflusst, bewusst hell)
+     =========================================================== */
+  --product-card-bg:           var(--surface);
+  --product-card-border:       var(--border);
+  --product-card-border-hover: var(--border-strong);
+  --product-image-bg:          #f3f3f3;   /* Bildbereich (bewusst hell)    */
+  --product-price-color:       var(--accent);
+
+  /* ===========================================================
+     BANNER & TRIGGER-BAR
+
+     GO-Trigger-Bar (ruhiger Zustand):
+       Hintergrund → rgba(--go-accent-btn, 0.12)
+       Rahmen      → --go-border
+
+     GO-Signal-Banner (aktive Sitzung — leuchtendes Teal):
+       Hintergrund → --go-bg-banner bis --go-bg-dim (Gradient)
+       Rahmen unten → --go-border-banner
+
+     GO-Supplier-Logo-Banner:
+       Hintergrund  → rgba(--go-accent, 0.08)
+       Rahmen unten → rgba(--go-accent, 0.20)
+     =========================================================== */
+  --banner-go-trigger-bg:      rgba(1, 105, 111, 0.12);
+  --banner-go-trigger-border:  rgba(1, 105, 111, 0.25);
+  --banner-go-signal-border:   #01b0b8;
+  --banner-go-logo-bg:         rgba(1, 176, 184, 0.08);
+  --banner-go-logo-border:     rgba(1, 176, 184, 0.20);
+
+  /* ===========================================================
+     FILTER-CHIPS & TAGS
+     Inaktiv:
+       Hintergrund  → --surface-2
+       Rahmen       → --border-strong
+       Text         → --muted
+     Aktiv:
+       Hintergrund  → --accent-dim
+       Rahmen       → --accent
+       Text         → --accent
+     =========================================================== */
+  --chip-bg:           var(--surface-2);
+  --chip-border:       var(--border-strong);
+  --chip-text:         var(--muted);
+  --chip-active-bg:    var(--accent-dim);
+  --chip-active-border:var(--accent);
+  --chip-active-text:  var(--accent);
+
+  /* ===========================================================
+     AUTH-SEITE (Login / Registrierung)
+     Karten-Hintergrund → --surface
+     Logo-Farbe         → --accent
+     Überschrift        → --text
+     Unterzeile         → --muted
+     =========================================================== */
+  --auth-card-bg:    var(--surface);
+  --auth-logo-color: var(--accent);
+}
