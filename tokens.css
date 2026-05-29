@@ -65,7 +65,7 @@
      surface-glass → Header (sticky, mit Blur)
      =========================================================== */
   --bg:            #0c0d0f;                  /* Seiten-Hintergrund            */
-  --surface:       #141618;                  /* Karten / Panels               */
+  --surface:       #ff0000;                  /* Karten / Panels       #141618        */
   --surface-2:     #1a1d21;                  /* Inputs, Dropdowns             */
   --surface-3:     #20242a;                  /* Sekundär-Buttons, Stepper     */
   --surface-4:     #272c34;                  /* Hover auf surface-3           */
