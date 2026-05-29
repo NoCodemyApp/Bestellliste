@@ -13,6 +13,10 @@ function openCheckout() {
   checkoutSection.classList.add('checkout-enter');
   closeCartDrawer();
   _checkoutSnapshot = null;
+  // ← NEU: Inhalte sofort leeren, bevor async renderCheckout() lädt
+  if (checkoutList)   checkoutList.innerHTML = '';
+  if (goCartListEl)   goCartListEl.innerHTML = '';
+  if (goOrderListEl)  goOrderListEl.innerHTML = '';
   renderCheckout();
   history.pushState({ view: 'checkout' }, '', location.href);
   window.scrollTo({ top: 0, behavior: 'smooth' });
