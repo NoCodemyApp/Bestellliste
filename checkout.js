@@ -68,6 +68,17 @@ function updateCartLabelsForGo() {
   if (badgeBtn) badgeBtn.setAttribute('aria-label', `Sammelbestellung ${supplierName}`);
 }
 
+function resetCartLabels() {
+  const cartHeadH2 = document.querySelector('#cart-section .section-head h2');
+  if (cartHeadH2) cartHeadH2.innerHTML = 'Warenkorb';
+
+  const drawerTitle = document.querySelector('.cart-drawer-title');
+  if (drawerTitle) drawerTitle.innerHTML = 'Warenkorb';
+
+  const badgeBtn = document.getElementById('cart-badge-btn');
+  if (badgeBtn) badgeBtn.setAttribute('aria-label', 'Warenkorb öffnen');
+}
+
 // ============================================================
 // CHECKOUT HEADER — GO-Modus: Supplier-Label + Logo
 // ============================================================
