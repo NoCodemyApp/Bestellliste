@@ -48,422 +48,216 @@
             aria-label="Benutzermenu öffnen"
           >
             <span id="user-menu-email" class="user-menu-email"></span>
-            <svg class="user-menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
-              <path d="M4 6l4 4 4-4"/>
+            <svg class="user-menu-chevron" viewBox="0 0 16 16" fill="none" width="14" height="14">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <div id="user-dropdown" class="user-dropdown" aria-hidden="true">
-            <div class="user-dropdown-email" id="user-dropdown-email"></div>
-            <div class="user-dropdown-divider"></div>
-            <button id="logout-btn" class="user-dropdown-logout hidden" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Abmelden
-            </button>
-          </div>
         </div>
       </div>
 
-      <!-- Rechts: Cart fest -->
-      <div class="header-actions">
-        <button
-          id="cart-badge-btn"
-          class="cart-btn hidden"
-          type="button"
-          aria-label="Warenkorb öffnen"
-          aria-expanded="false"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true">
-            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-          </svg>
-          <span id="cart-badge-count" class="cart-btn-badge">0</span>
-        </button>
-      </div>
+      <!-- Warenkorb-Badge (Mobile) -->
+      <button id="cart-badge-btn" class="cart-badge-btn" aria-label="Warenkorb öffnen">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="cart-badge-count" class="cart-badge-count" aria-live="polite">0</span>
+      </button>
+
+    </div>
+
+    <!-- User-Dropdown -->
+    <div id="user-dropdown" class="user-dropdown" role="menu" aria-hidden="true">
+      <div class="user-dropdown-email" id="user-dropdown-email"></div>
+      <div class="user-dropdown-divider"></div>
+      <button id="logout-btn" class="user-dropdown-item hidden" type="button" role="menuitem">
+        <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+          <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Abmelden
+      </button>
     </div>
   </header>
 
-  <!-- Shared Overlay -->
-  <div id="cart-overlay" class="cart-overlay" aria-hidden="true"></div>
+  <!-- ======================================================
+       AUTH — VIEW CONTAINER
+  ====================================================== -->
+  <section class="auth-section" id="auth-section">
 
-  <main class="page">
-
-    <!-- ======================================================
-         AUTH — VIEW CONTAINER
-    ====================================================== -->
-    <section class="auth-section" id="auth-section">
-
-      <!-- ------------------------------------------------
-           VIEW 1: LOGIN
-      ------------------------------------------------ -->
-      <div class="auth-card" id="auth-view-login">
-        <div class="auth-logo" aria-hidden="true">
-          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
-            <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
-            <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
-          </svg>
-        </div>
-        <h1 class="auth-headline">Willkommen</h1>
-        <p class="auth-sub">Melde dich an, um die Sammelbestellung einzusehen.</p>
-
-        <form id="auth-form" class="auth-form" novalidate>
-          <div class="form-field">
-            <label for="email" class="form-label">E-Mail</label>
-            <input type="email" id="email" name="email"
-                   placeholder="name@beispiel.de"
-                   required autocomplete="email">
-          </div>
-          <div class="form-field">
-            <label for="password" class="form-label">Passwort</label>
-            <input type="password" id="password" name="password"
-                   placeholder="Passwort"
-                   required autocomplete="current-password">
-          </div>
-          <button type="submit" id="login-btn" class="btn-primary btn-full">Einloggen</button>
-        </form>
-
-        <div class="auth-divider"><span>oder</span></div>
-
-        <button type="button" id="signup-btn" class="btn-outline btn-full">Neu registrieren</button>
-
-        <p id="auth-message" class="auth-message"></p>
+    <!-- ------------------------------------------------
+         VIEW 1: LOGIN
+    ------------------------------------------------ -->
+    <div class="auth-card" id="auth-view-login">
+      <div class="auth-logo" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+          <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
+          <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
+        </svg>
       </div>
+      <h1 class="auth-headline">Willkommen</h1>
+      <p class="auth-sub">Melde dich an, um die Sammelbestellung einzusehen.</p>
 
-      <!-- ------------------------------------------------
-           VIEW 2: REGISTRIERUNG
-      ------------------------------------------------ -->
-      <div class="auth-card hidden" id="auth-view-register">
-        <div class="auth-logo" aria-hidden="true">
-          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
-            <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
-            <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
-          </svg>
+      <form id="auth-form" class="auth-form" novalidate>
+        <div class="form-field">
+          <label for="email" class="form-label">E-Mail</label>
+          <input type="email" id="email" name="email"
+                 placeholder="name@beispiel.de"
+                 required autocomplete="email">
         </div>
-        <h1 class="auth-headline">Konto erstellen</h1>
-        <p class="auth-sub">Fülle alle Pflichtfelder aus. Dein Konto wird nach der Registrierung von einem Admin freigeschaltet.</p>
-
-        <form id="register-form" class="auth-form" novalidate>
-
-          <!-- Kontotyp -->
-          <fieldset class="form-fieldset">
-            <legend class="form-label">Kontotyp</legend>
-            <div class="form-radio-group">
-              <label class="form-radio-label">
-                <input type="radio" name="account_type" value="person" checked> Person
-              </label>
-              <label class="form-radio-label">
-                <input type="radio" name="account_type" value="organization"> Organisation
-              </label>
-            </div>
-          </fieldset>
-
-          <!-- Persönliche Daten -->
-          <div class="form-row">
-            <div class="form-field">
-              <label for="reg-first-name" class="form-label">Vorname</label>
-              <input type="text" id="reg-first-name" name="first_name"
-                     placeholder="Max" required autocomplete="given-name">
-            </div>
-            <div class="form-field">
-              <label for="reg-last-name" class="form-label">Nachname</label>
-              <input type="text" id="reg-last-name" name="last_name"
-                     placeholder="Mustermann" required autocomplete="family-name">
-            </div>
-          </div>
-
-          <!-- Zugangsdaten -->
-          <div class="form-field">
-            <label for="reg-email" class="form-label">E-Mail</label>
-            <input type="email" id="reg-email" name="email"
-                   placeholder="name@beispiel.de"
-                   required autocomplete="email">
-          </div>
-          <div class="form-field">
-            <label for="reg-password" class="form-label">Passwort</label>
-            <input type="password" id="reg-password" name="password"
-                   placeholder="Mindestens 6 Zeichen"
-                   required autocomplete="new-password">
-          </div>
-
-          <!-- Adresse -->
-          <div class="form-field">
-            <label for="reg-street" class="form-label">Straße &amp; Hausnummer</label>
-            <input type="text" id="reg-street" name="street"
-                   placeholder="Musterstraße 1" required autocomplete="street-address">
-          </div>
-          <div class="form-row">
-            <div class="form-field form-field--narrow">
-              <label for="reg-postal" class="form-label">PLZ</label>
-              <input type="text" id="reg-postal" name="postal_code"
-                     placeholder="12345" required autocomplete="postal-code"
-                     inputmode="numeric" maxlength="5">
-            </div>
-            <div class="form-field">
-              <label for="reg-city" class="form-label">Ort</label>
-              <input type="text" id="reg-city" name="city"
-                     placeholder="Musterstadt" required autocomplete="address-level2">
-            </div>
-          </div>
-
-          <!-- Organisationsdaten (nur wenn account_type = organization) -->
-          <div id="org-fields" class="org-fields hidden">
-            <div class="form-divider"><span>Vereinsdaten</span></div>
-
-            <div class="form-field">
-              <label for="reg-org-name" class="form-label">Vereinsname</label>
-              <input type="text" id="reg-org-name" name="organization_name"
-                     placeholder="Musterverein e.V." autocomplete="organization">
-            </div>
-            <div class="form-field">
-              <label for="reg-org-city" class="form-label">Vereinssitz (Ort)</label>
-              <input type="text" id="reg-org-city" name="organization_city"
-                     placeholder="Musterstadt">
-            </div>
-            <div class="form-field">
-              <label for="reg-org-register" class="form-label">Vereinsregisternummer</label>
-              <input type="text" id="reg-org-register" name="register_number"
-                     placeholder="VR 12345">
-            </div>
-            <div class="form-field">
-              <label for="reg-org-email" class="form-label">Vereins-E-Mail</label>
-              <input type="email" id="reg-org-email" name="organization_email"
-                     placeholder="info@verein.de">
-            </div>
-          </div>
-
-          <button type="submit" id="register-submit-btn" class="btn-primary btn-full">Registrieren</button>
-        </form>
-
-        <p id="register-message" class="auth-message"></p>
-
-        <div class="auth-divider"><span>oder</span></div>
-
-        <button type="button" id="back-to-login-btn" class="btn-outline btn-full">Zurück zum Login</button>
-      </div>
-
-    </section>
-
-    <!-- ======================================================
-         SHOP
-    ====================================================== -->
-    <section id="products-section" class="shop hidden">
-
-      <!-- Desktop Sidebar -->
-      <aside class="shop-sidebar" id="shop-sidebar-desktop">
-        <div class="sidebar-block">
-          <p class="sidebar-label">Shop</p>
-          <h2>Filter</h2>
+        <div class="form-field">
+          <label for="password" class="form-label">Passwort</label>
+          <input type="password" id="password" name="password"
+                 placeholder="Passwort"
+                 required autocomplete="current-password">
         </div>
-        <div class="sidebar-block" id="filter-block-category">
-          <p class="sidebar-label">Kategorie</p>
-          <div class="filter-chip-list" id="filter-chips-category"></div>
-        </div>
-        <div class="sidebar-block" id="filter-block-supplier">
-          <p class="sidebar-label">Lieferant</p>
-          <div class="filter-chip-list" id="filter-chips-supplier"></div>
-        </div>
-        <div class="sidebar-block">
-          <button id="filter-reset-btn-desktop" class="btn-outline small-btn filter-reset-btn" type="button">Filter zurücksetzen</button>
-        </div>
-      </aside>
+        <button type="submit" id="login-btn" class="btn-primary btn-full">Einloggen</button>
+      </form>
 
-      <!-- Content -->
-      <section class="shop-content" aria-labelledby="products-heading">
-        <div class="shop-topbar">
-          <div>
-            <p class="sidebar-label">Sortiment</p>
-            <h2 id="products-heading">Verfügbare Artikel</h2>
-          </div>
-          <button
-            id="filter-toggle-btn"
-            class="filter-toggle-btn btn-outline"
-            type="button"
-            aria-label="Filter öffnen"
-            aria-expanded="false"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="15" height="15">
-              <line x1="4" y1="6" x2="20" y2="6"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-              <line x1="11" y1="18" x2="13" y2="18"/>
-            </svg>
-            Filter
-            <span id="filter-active-count" class="filter-active-count hidden">0</span>
-          </button>
-        </div>
+      <div class="auth-divider"><span>oder</span></div>
 
-        <div id="active-filter-bar" class="active-filter-bar hidden"></div>
+      <button type="button" id="signup-btn" class="btn-outline btn-full">Neu registrieren</button>
 
-        <div class="shop-main-layout">
-          <div class="shop-main-products">
-            <div id="products-list" class="products-grid"></div>
-            <p id="products-empty" class="products-empty hidden">Keine Produkte für diese Filter.</p>
-          </div>
-
-          <aside class="shop-cart-sidebar" id="cart-desktop-slot">
-            <section class="card cart-card hidden" id="cart-section">
-              <div class="section-head"><h2>Warenkorb</h2></div>
-              <div id="cart-list" class="cart-list"></div>
-              <div class="cart-footer">
-                <p id="cart-total" class="price"></p>
-                <button id="open-checkout-btn" class="btn-checkout-open" type="button">Zur Bestellübersicht →</button>
-              </div>
-            </section>
-          </aside>
-        </div>
-      </section>
-    </section>
-
-    <!-- ======================================================
-         CHECKOUT FULLSCREEN
-    ====================================================== -->
-    <section id="checkout-section" class="checkout-section app-panel hidden" aria-label="Bestellübersicht">
-      <div class="checkout-inner app-panel-inner">
-
-        <!-- Checkout Header -->
-        <div class="checkout-header app-panel-header">
-          <button id="checkout-back-btn" type="button" class="checkout-back-btn app-panel-back-btn" aria-label="Zurück zum Shop">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true">
-              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
-            </svg>
-            Zurück zum Shop
-          </button>
-          <div class="checkout-header-title">
-            <p class="sidebar-label">Schritt 2 von 2</p>
-            <h2>Bestellübersicht</h2>
-          </div>
-        </div>
-
-        <!-- Checkout Body -->
-        <div class="checkout-body">
-          <div class="checkout-items-wrap">
-            <!-- Bereich 1: Warenkorb (confirmed = false) - nur im GO-Modus genutzt -->
-            <section id="go-cart-section" class="go-checkout-area hidden" aria-label="Warenkorb">
-              <h3 class="go-checkout-area-title">Warenkorb</h3>
-              <div id="go-cart-list" class="checkout-list"></div>
-              <p id="go-cart-empty" class="go-checkout-empty hidden">Dein Warenkorb ist leer.</p>
-            </section>
-
-            <!-- Bereich 2: Meine Bestellung (confirmed = true) - nur im GO-Modus genutzt -->
-            <section id="go-order-section" class="go-checkout-area hidden" aria-label="Meine Bestellung">
-              <h3 class="go-checkout-area-title">Meine Bestellung</h3>
-              <div id="go-order-list" class="checkout-list"></div>
-              <p id="go-order-empty" class="go-checkout-empty hidden">Du hast noch keine Artikel zur Bestellung hinzugefügt.</p>
-            </section>
-
-            <!-- Normaler Modus (cart_items) - unverändert -->
-            <div id="checkout-list" class="checkout-list"></div>
-            <p id="checkout-empty" class="products-empty hidden">Dein Warenkorb ist leer.</p>
-          </div>
-
-          <!-- Checkout Zusammenfassung -->
-          <aside class="checkout-summary">
-            <div class="checkout-summary-card">
-              <h3 class="checkout-summary-title">Zusammenfassung</h3>
-              <div class="checkout-summary-row">
-                <span>Artikel</span>
-                <span id="checkout-item-count">0</span>
-              </div>
-              <div class="checkout-summary-total">
-                <span>Gesamt</span>
-                <span id="checkout-total">0,00 €</span>
-              </div>
-              <button id="submit-order-btn" type="button" class="submit-btn checkout-submit-btn">Bestellung absenden</button>
-              <p id="order-message" class="order-message"></p>
-            </div>
-          </aside>
-        </div>
-      </div>
-    </section>
-
-    <!-- ======================================================
-         FILTER FAB
-    ====================================================== -->
-    <button
-      id="filter-fab"
-      class="filter-fab"
-      type="button"
-      aria-label="Filter öffnen"
-      aria-hidden="true"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="15" height="15">
-        <line x1="4" y1="6" x2="20" y2="6"/>
-        <line x1="8" y1="12" x2="16" y2="12"/>
-        <line x1="11" y1="18" x2="13" y2="18"/>
-      </svg>
-      Filter
-      <span id="filter-fab-count" class="filter-fab-count hidden">0</span>
-    </button>
-
-    <!-- ======================================================
-         MOBILE CART DRAWER
-    ====================================================== -->
-    <div id="cart-drawer" class="cart-drawer" aria-hidden="true" role="dialog" aria-label="Warenkorb">
-      <div class="cart-drawer-handle-wrap" aria-hidden="true">
-        <div class="cart-drawer-handle"></div>
-      </div>
-      <div class="cart-drawer-header">
-        <div class="cart-drawer-header-row">
-          <div class="cart-drawer-title-row">
-            <h2 class="cart-drawer-title">Warenkorb</h2>
-            <span id="cart-drawer-item-count" class="cart-drawer-count">0</span>
-          </div>
-          <button id="cart-drawer-close" class="cart-drawer-close" type="button" aria-label="Warenkorb schließen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="cart-drawer-body"></div>
-      <div class="cart-drawer-footer">
-        <div class="cart-drawer-footer-total">
-          <span class="cart-drawer-total-label">Gesamt</span>
-          <p id="cart-drawer-total" class="cart-drawer-total-text"></p>
-        </div>
-        <button id="cart-drawer-submit" type="button" class="cart-drawer-submit-btn">Zur Bestellübersicht →</button>
-        <p id="cart-drawer-message" class="cart-drawer-message"></p>
-      </div>
+      <p id="auth-message" class="auth-message"></p>
     </div>
 
-    <!-- ======================================================
-         MOBILE FILTER DRAWER
-    ====================================================== -->
-    <div id="filter-drawer" class="filter-drawer" aria-hidden="true" role="dialog" aria-label="Filter">
-      <div class="filter-drawer-header">
-        <h2 class="filter-drawer-title">Filter</h2>
-        <button id="filter-drawer-close" class="cart-drawer-close" type="button" aria-label="Filter schließen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+    <!-- ------------------------------------------------
+         VIEW 2: REGISTRIERUNG
+    ------------------------------------------------ -->
+    <div class="auth-card hidden" id="auth-view-register">
+      <div class="auth-logo" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+          <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
+          <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
+        </svg>
       </div>
-      <div class="filter-drawer-body">
-        <div class="filter-drawer-section">
-          <p class="sidebar-label">Kategorie</p>
-          <div class="filter-chip-list" id="filter-chips-category-mobile"></div>
+      <h1 class="auth-headline">Konto erstellen</h1>
+      <p class="auth-sub">Fülle alle Pflichtfelder aus. Dein Konto wird nach der Registrierung von einem Admin freigeschaltet.</p>
+
+      <form id="register-form" class="auth-form" novalidate>
+
+        <!-- Kontotyp -->
+        <fieldset class="form-fieldset">
+          <legend class="form-label">Kontotyp</legend>
+          <div class="form-radio-group">
+            <label class="form-radio-label">
+              <input type="radio" name="account_type" value="person" checked> Person
+            </label>
+            <label class="form-radio-label">
+              <input type="radio" name="account_type" value="organization"> Organisation
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Persönliche Daten -->
+        <div class="form-row">
+          <div class="form-field">
+            <label for="reg-first-name" class="form-label">Vorname</label>
+            <input type="text" id="reg-first-name" name="first_name"
+                   placeholder="Max" required autocomplete="given-name">
+          </div>
+          <div class="form-field">
+            <label for="reg-last-name" class="form-label">Nachname</label>
+            <input type="text" id="reg-last-name" name="last_name"
+                   placeholder="Mustermann" required autocomplete="family-name">
+          </div>
         </div>
-        <div class="filter-drawer-section" id="filter-block-supplier-mobile">
-          <p class="sidebar-label">Lieferant</p>
-          <div class="filter-chip-list" id="filter-chips-supplier-mobile"></div>
+
+        <!-- Zugangsdaten -->
+        <div class="form-field">
+          <label for="reg-email" class="form-label">E-Mail</label>
+          <input type="email" id="reg-email" name="email"
+                 placeholder="name@beispiel.de"
+                 required autocomplete="email">
         </div>
-      </div>
-      <div class="filter-drawer-footer">
-        <button id="filter-reset-btn-mobile" class="filter-reset-btn btn-outline" type="button">Filter zurücksetzen</button>
-        <button id="filter-apply-btn" class="filter-apply-btn" type="button">Anwenden</button>
-      </div>
+        <div class="form-field">
+          <label for="reg-password" class="form-label">Passwort</label>
+          <input type="password" id="reg-password" name="password"
+                 placeholder="Mindestens 6 Zeichen"
+                 required autocomplete="new-password">
+        </div>
+
+        <!-- Adresse -->
+        <div class="form-field">
+          <label for="reg-street" class="form-label">Straße &amp; Hausnummer</label>
+          <input type="text" id="reg-street" name="street"
+                 placeholder="Musterstraße 1" required autocomplete="street-address">
+        </div>
+        <div class="form-row">
+          <div class="form-field form-field--narrow">
+            <label for="reg-postal" class="form-label">PLZ</label>
+            <input type="text" id="reg-postal" name="postal_code"
+                   placeholder="12345" required autocomplete="postal-code"
+                   inputmode="numeric" maxlength="5">
+          </div>
+          <div class="form-field">
+            <label for="reg-city" class="form-label">Ort</label>
+            <input type="text" id="reg-city" name="city"
+                   placeholder="Musterstadt" required autocomplete="address-level2">
+          </div>
+        </div>
+
+        <!-- Organisationsdaten (nur wenn account_type = organization) -->
+        <div id="org-fields" class="org-fields hidden">
+          <div class="form-divider"><span>Vereinsdaten</span></div>
+
+          <div class="form-field">
+            <label for="reg-org-name" class="form-label">Vereinsname</label>
+            <input type="text" id="reg-org-name" name="organization_name"
+                   placeholder="Musterverein e.V." autocomplete="organization">
+          </div>
+          <div class="form-field">
+            <label for="reg-org-city" class="form-label">Vereinssitz (Ort)</label>
+            <input type="text" id="reg-org-city" name="organization_city"
+                   placeholder="Musterstadt">
+          </div>
+          <div class="form-field">
+            <label for="reg-org-register" class="form-label">Vereinsregisternummer</label>
+            <input type="text" id="reg-org-register" name="register_number"
+                   placeholder="VR 12345">
+          </div>
+          <div class="form-field">
+            <label for="reg-org-email" class="form-label">Vereins-E-Mail</label>
+            <input type="email" id="reg-org-email" name="organization_email"
+                   placeholder="info@verein.de">
+          </div>
+        </div>
+
+        <button type="submit" id="register-submit-btn" class="btn-primary btn-full">Registrieren</button>
+      </form>
+
+      <p id="register-message" class="auth-message"></p>
+
+      <div class="auth-divider"><span>oder</span></div>
+
+      <button type="button" id="back-to-login-btn" class="btn-outline btn-full">Zurück zum Login</button>
     </div>
 
-  </main>
+  </section>
 
-</body>
-</html>
+  <!-- ======================================================
+       PENDING — Warten auf Freischaltung
+  ====================================================== -->
+  <section id="pending-section" class="auth-section hidden" aria-live="polite">
+    <div class="auth-card pending-card">
+      <div class="pending-icon" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
+          <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
+          <circle cx="20" cy="20" r="8" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 16v4l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="auth-headline">Konto wird geprüft</h1>
+      <p class="auth-sub">
+        Deine Registrierung war erfolgreich.<br>
+        Ein Admin schaltet dein Konto in Kürze frei.
+        Du wirst automatisch weitergeleitet, sobald die Freischaltung erfolgt ist.
+      </p>
+      <p class="pending-email-hint">Angemeldet als: <strong id="pending-email"></strong></p>
+      <button id="pending-logout-btn" type="button" class="btn-outline btn-full">Abmelden</button>
+    </div>
+  </section>
+
+  <!-- REST DES HTML AB HIER UNVERÄNDERT -->

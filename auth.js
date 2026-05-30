@@ -90,24 +90,61 @@ accountTypeRadios.forEach((radio) => {
 
 // ============================================================
 // AUTH STATE — CustomEvent an app.js
+// Sendet approvalStatus mit — app.js entscheidet über View.
+// Kein signOut() mehr hier bei non-approved.
 // ============================================================
 
-async function dispatchAuthChanged(session) {
-  if (session?.user) {
-    const { data: profile } = await db
-      .from('user_profiles')
-      .select('approval_status')
-      .eq('id', session.user.id)
-      .single();
+let realtimeChannel = null;
 
-    if (!profile || profile.approval_status !== 'approved') {
-      await db.auth.signOut();
-      document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session: null } }));
-      return;
-    }
+async function dispatchAuthChanged(session) {
+  // Alte Realtime-Subscription aufräumen
+  if (realtimeChannel) {
+    db.removeChannel(realtimeChannel);
+    realtimeChannel = null;
   }
 
-  document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session } }));
+  if (!session?.user) {
+    document.dispatchEvent(new CustomEvent("auth:changed", {
+      detail: { session: null, approvalStatus: null }
+    }));
+    return;
+  }
+
+  // approval_status aus user_profiles lesen
+  const { data: profile } = await db
+    .from("user_profiles")
+    .select("approval_status")
+    .eq("id", session.user.id)
+    .single();
+
+  const approvalStatus = profile?.approval_status ?? "pending";
+
+  document.dispatchEvent(new CustomEvent("auth:changed", {
+    detail: { session, approvalStatus }
+  }));
+
+  // Realtime: sofort ausloggen wenn status von approved zu etwas anderem wechselt
+  if (approvalStatus === "approved") {
+    realtimeChannel = db
+      .channel("profile-status-" + session.user.id)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "user_profiles",
+          filter: "id=eq." + session.user.id,
+        },
+        async (payload) => {
+          const newStatus = payload.new?.approval_status;
+          if (newStatus !== "approved") {
+            await db.auth.signOut();
+            // onAuthStateChange feuert danach automatisch
+          }
+        }
+      )
+      .subscribe();
+  }
 }
 
 db.auth.onAuthStateChange((_event, session) => {
@@ -127,11 +164,11 @@ authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email    = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  if (!email || !password) { setMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
+  if (!email || !password) { setAuthMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-  if (error) { setMessage(error.message, true); return; }
-  if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
-  setMessage("");
+  if (error) { setAuthMessage(error.message, true); return; }
+  if (!data?.session?.user) { setAuthMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
+  setAuthMessage("");
 });
 
 // ============================================================
@@ -202,12 +239,10 @@ registerForm.addEventListener("submit", async (event) => {
   registerForm.reset();
   orgFields.classList.add("hidden");
 
-  // Nach 2,5 Sekunden zum Login-View zurückwechseln,
-  // damit die Erfolgsmeldung noch kurz lesbar ist.
   setTimeout(() => {
     showLoginView();
     setAuthMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
-  }, 500);
+  }, 2500);
 });
 
 // ============================================================
@@ -218,6 +253,11 @@ logoutBtn.addEventListener("click", async () => {
   const { error } = await db.auth.signOut();
   if (error) { setAuthMessage(`Fehler beim Abmelden: ${error.message}`, true); return; }
   showLoginView();
+});
+
+// Pending-View Logout-Button
+document.getElementById("pending-logout-btn")?.addEventListener("click", async () => {
+  await db.auth.signOut();
 });
 
 // ============================================================
