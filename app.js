@@ -498,11 +498,6 @@ function setOrderMessage(text, isError = false) {
   if (cartDrawerMsg) { cartDrawerMsg.textContent = text; cartDrawerMsg.style.color = isError ? "#a12c45" : "#666"; }
 }
 
-function setMessage(text, isError = false) {
-  authMessage.textContent = text;
-  authMessage.style.color = isError ? "#a12c45" : "#666";
-}
-
 function formatPrice(value) {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(Number(value || 0));
 }
