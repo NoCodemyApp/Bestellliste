@@ -1,5 +1,7 @@
 // ============================================================
-// auth.js — Supabase Auth & UI-State
+// auth.js — Supabase Auth (Login, Registrierung, Logout)
+// Keine DOM-Abhängigkeiten außer auth-section + eigene Felder.
+// Kommunikation mit app.js über CustomEvent "auth:changed".
 // ============================================================
 
 // ============================================================
@@ -15,7 +17,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // ============================================================
-// DOM-REFERENZEN
+// DOM-REFERENZEN (nur auth-eigene Elemente)
 // ============================================================
 
 const authSection    = document.getElementById("auth-section");
@@ -28,15 +30,16 @@ const signupBtn      = document.getElementById("signup-btn");
 const authMessage    = document.getElementById("auth-message");
 
 // Registrierung
-const registerForm   = document.getElementById("register-form");
-const backToLoginBtn = document.getElementById("back-to-login-btn");
-const registerMsg    = document.getElementById("register-message");
-const orgFields      = document.getElementById("org-fields");
+const registerForm      = document.getElementById("register-form");
+const backToLoginBtn    = document.getElementById("back-to-login-btn");
+const registerMsg       = document.getElementById("register-message");
+const orgFields         = document.getElementById("org-fields");
 const accountTypeRadios = document.querySelectorAll("input[name='account_type']");
 
-// Shared
-const logoutBtn      = document.getElementById("logout-btn");
-const userBox        = document.getElementById("user-menu-email");
+// Logout + User-Menu
+const logoutBtn    = document.getElementById("logout-btn");
+const userMenuBtn  = document.getElementById("user-menu-btn");
+const userDropdown = document.getElementById("user-dropdown");
 
 // ============================================================
 // HELPERS
@@ -82,54 +85,26 @@ accountTypeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     const isOrg = document.querySelector("input[name='account_type']:checked")?.value === "organization";
     orgFields.classList.toggle("hidden", !isOrg);
-    // required-Attribute setzen/entfernen
-    orgFields.querySelectorAll("input").forEach((inp) => {
-      inp.required = isOrg;
-    });
+    orgFields.querySelectorAll("input").forEach((inp) => { inp.required = isOrg; });
   });
 });
 
 // ============================================================
-// UI-STATE: Eingeloggt / Ausgeloggt
+// AUTH STATE — CustomEvent an app.js
 // ============================================================
 
-async function updateUI() {
-  const { data: { session }, error } = await db.auth.getSession();
-  if (error) { setMessage(`Sitzung konnte nicht geladen werden: ${error.message}`, true); return; }
-
-  if (session?.user) {
-    authSection.classList.add("hidden");
-    productsSection.classList.remove("hidden");
-    cartSection.classList.remove("hidden");
-    logoutBtn.classList.remove("hidden");
-    userBox.textContent = session.user.email || "";
-    document.getElementById("user-menu-btn").classList.remove("hidden");
-    document.getElementById("user-dropdown-email").textContent = session.user.email || "";
-    await loadProducts();
-    await initGroupOrders();
-    if (window.goSession) {
-      await loadGoCart();
-    } else {
-      await loadCart();
-    }
-  } else {
-    showLoginView();
-    authSection.classList.remove("hidden");
-    productsSection.classList.add("hidden");
-    cartSection.classList.add("hidden");
-    checkoutSection.classList.add("hidden");
-    logoutBtn.classList.add("hidden");
-    userBox.textContent = "";
-    document.getElementById("user-menu-btn").classList.add("hidden");
-    document.getElementById("user-dropdown-email").textContent = "";
-    productsList.innerHTML = "";
-    cartList.innerHTML = "";
-    updateCartBadge(0);
-    allProducts = [];
-    activeFilters = { category: new Set(), supplier: new Set() };
-    teardownGroupOrders();
-  }
+function dispatchAuthChanged(session) {
+  document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session } }));
 }
+
+db.auth.onAuthStateChange((_event, session) => {
+  dispatchAuthChanged(session);
+});
+
+// Initialer State beim Laden
+db.auth.getSession().then(({ data: { session } }) => {
+  dispatchAuthChanged(session);
+});
 
 // ============================================================
 // AUTH EVENT LISTENER: Login
@@ -143,21 +118,15 @@ authForm.addEventListener("submit", async (event) => {
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   if (error) { setMessage(error.message, true); return; }
   if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
-  setMessage("Login erfolgreich.");
-  await updateUI();
+  setMessage("");
 });
 
 // ============================================================
-// AUTH EVENT LISTENER: Zur Registrierung wechseln
+// AUTH EVENT LISTENER: View-Wechsel
 // ============================================================
 
-signupBtn.addEventListener("click", () => {
-  showRegisterView();
-});
-
-backToLoginBtn.addEventListener("click", () => {
-  showLoginView();
-});
+signupBtn.addEventListener("click", () => showRegisterView());
+backToLoginBtn.addEventListener("click", () => showLoginView());
 
 // ============================================================
 // AUTH EVENT LISTENER: Registrierung
@@ -166,50 +135,34 @@ backToLoginBtn.addEventListener("click", () => {
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const email       = document.getElementById("reg-email").value.trim();
-  const password    = document.getElementById("reg-password").value;
-  const first_name  = document.getElementById("reg-first-name").value.trim();
-  const last_name   = document.getElementById("reg-last-name").value.trim();
-  const street      = document.getElementById("reg-street").value.trim();
-  const postal_code = document.getElementById("reg-postal").value.trim();
-  const city        = document.getElementById("reg-city").value.trim();
+  const email        = document.getElementById("reg-email").value.trim();
+  const password     = document.getElementById("reg-password").value;
+  const first_name   = document.getElementById("reg-first-name").value.trim();
+  const last_name    = document.getElementById("reg-last-name").value.trim();
+  const street       = document.getElementById("reg-street").value.trim();
+  const postal_code  = document.getElementById("reg-postal").value.trim();
+  const city         = document.getElementById("reg-city").value.trim();
   const account_type = document.querySelector("input[name='account_type']:checked")?.value || "person";
 
-  // Pflichtfeld-Prüfung
   if (!email || !password || !first_name || !last_name || !street || !postal_code || !city) {
     setRegMessage("Bitte alle Pflichtfelder ausfüllen.", true);
     return;
   }
 
-  // Metadaten zusammenbauen
-  const metadata = {
-    first_name,
-    last_name,
-    account_type,
-    street,
-    postal_code,
-    city,
-  };
+  const metadata = { first_name, last_name, account_type, street, postal_code, city };
 
-  // Organisationsfelder nur wenn account_type = organization
   if (account_type === "organization") {
     const organization_name  = document.getElementById("reg-org-name").value.trim();
     const organization_city  = document.getElementById("reg-org-city").value.trim();
     const register_number    = document.getElementById("reg-org-register").value.trim();
     const organization_email = document.getElementById("reg-org-email").value.trim();
-
     if (!organization_name || !organization_city || !register_number || !organization_email) {
       setRegMessage("Bitte alle Vereinsdaten ausfüllen.", true);
       return;
     }
-
-    metadata.organization_name  = organization_name;
-    metadata.organization_city  = organization_city;
-    metadata.register_number    = register_number;
-    metadata.organization_email = organization_email;
+    Object.assign(metadata, { organization_name, organization_city, register_number, organization_email });
   }
 
-  // Supabase signUp
   const submitBtn = document.getElementById("register-submit-btn");
   submitBtn.disabled = true;
   submitBtn.textContent = "Wird registriert…";
@@ -226,17 +179,12 @@ registerForm.addEventListener("submit", async (event) => {
   submitBtn.disabled = false;
   submitBtn.textContent = "Registrieren";
 
-  if (error) {
-    setRegMessage(error.message, true);
-    return;
-  }
-
+  if (error) { setRegMessage(error.message, true); return; }
   if (data?.user?.identities?.length === 0) {
     setRegMessage("Diese E-Mail ist bereits registriert.", true);
     return;
   }
 
-  // Erfolg
   setRegMessage("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse. Danach wird dein Konto von einem Admin freigeschaltet.");
   registerForm.reset();
   orgFields.classList.add("hidden");
@@ -249,16 +197,12 @@ registerForm.addEventListener("submit", async (event) => {
 logoutBtn.addEventListener("click", async () => {
   const { error } = await db.auth.signOut();
   if (error) { setMessage(`Fehler beim Abmelden: ${error.message}`, true); return; }
-  setMessage("Abgemeldet.");
-  await updateUI();
+  showLoginView();
 });
 
 // ============================================================
 // USER MENU DROPDOWN TOGGLE
 // ============================================================
-
-const userMenuBtn  = document.getElementById("user-menu-btn");
-const userDropdown = document.getElementById("user-dropdown");
 
 userMenuBtn.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -273,11 +217,3 @@ document.addEventListener("click", () => {
   userMenuBtn.setAttribute("aria-expanded", "false");
   userDropdown.setAttribute("aria-hidden", "true");
 });
-
-// ============================================================
-// AUTH STATE CHANGE + INITIALISIERUNG
-// ============================================================
-
-db.auth.onAuthStateChange(() => { setTimeout(() => { updateUI(); }, 0); });
-
-updateUI();

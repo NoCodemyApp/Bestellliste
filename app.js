@@ -1,4 +1,3 @@
-
 // ============================================================
 // SHARED XSS HELPER (wird auch in group-order.js genutzt)
 // ============================================================
@@ -12,14 +11,14 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+// ============================================================
+// DOM-REFERENZEN
+// ============================================================
+
 const authSection     = document.getElementById("auth-section");
 const productsSection = document.getElementById("products-section");
 const cartSection     = document.getElementById("cart-section");
 const checkoutSection = document.getElementById("checkout-section");
-const authForm        = document.getElementById("auth-form");
-const signupBtn       = document.getElementById("signup-btn");
-const logoutBtn       = document.getElementById("logout-btn");
-const authMessage     = document.getElementById("auth-message");
 const userBox         = document.getElementById("user-menu-email");
 const productsList    = document.getElementById("products-list");
 const cartList        = document.getElementById("cart-list");
@@ -70,6 +69,44 @@ if (!cartBadgeBtn || !cartDrawer || !cartOverlay || !filterDrawer || !filterTogg
 // Filter State
 let allProducts = [];
 let activeFilters = { category: new Set(), supplier: new Set() };
+
+// ============================================================
+// UI-STATE: Reagiert auf auth:changed von auth.js
+// ============================================================
+
+document.addEventListener("auth:changed", async ({ detail: { session } }) => {
+  if (session?.user) {
+    authSection.classList.add("hidden");
+    productsSection.classList.remove("hidden");
+    cartSection.classList.remove("hidden");
+    document.getElementById("logout-btn").classList.remove("hidden");
+    userBox.textContent = session.user.email || "";
+    document.getElementById("user-menu-btn").classList.remove("hidden");
+    document.getElementById("user-dropdown-email").textContent = session.user.email || "";
+    await loadProducts();
+    await initGroupOrders();
+    if (window.goSession) {
+      await loadGoCart();
+    } else {
+      await loadCart();
+    }
+  } else {
+    authSection.classList.remove("hidden");
+    productsSection.classList.add("hidden");
+    cartSection.classList.add("hidden");
+    checkoutSection.classList.add("hidden");
+    document.getElementById("logout-btn").classList.add("hidden");
+    userBox.textContent = "";
+    document.getElementById("user-menu-btn").classList.add("hidden");
+    document.getElementById("user-dropdown-email").textContent = "";
+    productsList.innerHTML = "";
+    cartList.innerHTML = "";
+    updateCartBadge(0);
+    allProducts = [];
+    activeFilters = { category: new Set(), supplier: new Set() };
+    teardownGroupOrders();
+  }
+});
 
 // ============================================================
 // DRAWER HELPERS
@@ -223,7 +260,7 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
   }
 
   container.innerHTML = values.map(val => {
-    const isActive = activeFilters[filterKey].has(val);         
+    const isActive = activeFilters[filterKey].has(val);
     return `<button
       type="button"
       class="filter-chip${isActive ? ' filter-chip--active' : ''}"
@@ -236,7 +273,7 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-filter-key");
       const val = btn.getAttribute("data-filter-val");
-      if (activeFilters[key].has(val)) {                         
+      if (activeFilters[key].has(val)) {
         activeFilters[key].delete(val);
       } else {
         activeFilters[key].add(val);
@@ -249,9 +286,6 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
 
 function applyFilters() {
   const { category, supplier } = activeFilters;
-  // Im GO-Modus ist der Lieferant durch die Sammelbestellung fix
-  // (window.goSession.supplierId). Wir wenden ihn zusätzlich an,
-  // damit der Kategorie-Filter nur innerhalb des passenden Sortiments arbeitet.
   const goSupplierId = window.goSession?.supplierId || null;
   let filtered = allProducts.filter(p => {
     const matchCat   = category.size === 0 || category.has(p.category);
@@ -265,7 +299,7 @@ function applyFilters() {
 
 function updateFilterUI() {
   const { category, supplier } = activeFilters;
-  const total = category.size + supplier.size;                   
+  const total = category.size + supplier.size;
 
   filterActiveCount.textContent = total;
   filterActiveCount.classList.toggle("hidden", total === 0);
@@ -291,19 +325,19 @@ function updateFilterUI() {
     tag.className = "active-filter-tag";
     tag.innerHTML = `${escapeHtml(label)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     tag.addEventListener("click", () => {
-      activeFilters[key].delete(label);                         
+      activeFilters[key].delete(label);
       buildFilterChips(allProducts);
       applyFilters();
     });
     activeFilterBar.appendChild(tag);
   };
 
-  category.forEach(val => addTag(val, "category"));             
+  category.forEach(val => addTag(val, "category"));
   supplier.forEach(val => addTag(val, "supplier"));
 }
 
 function resetFilters() {
-  activeFilters = { category: new Set(), supplier: new Set() };  
+  activeFilters = { category: new Set(), supplier: new Set() };
   buildFilterChips(allProducts);
   applyFilters();
 }
@@ -360,7 +394,6 @@ function syncDrawer(totalText, itemCount) {
   if (cartDrawerMsg) cartDrawerMsg.textContent = "";
 }
 
-
 // ============================================================
 // GO-MODUS: group_order_cart laden und rendern
 // ============================================================
@@ -371,8 +404,6 @@ async function loadGoCart() {
 
   const goId = window.goSession.groupOrderId;
 
-  // Sidebar-Warenkorb zeigt nur Artikel, die noch NICHT zur Sammelbestellung
-  // hinzugefügt wurden (confirmed = false).
   const { data, error } = await db
     .from("group_order_cart")
     .select(`id, quantity, product_id,
@@ -462,7 +493,6 @@ async function loadGoCart() {
   cartTotal.textContent = `Gesamt: ${totalText}`;
   syncDrawer(totalText, totalItems);
 
-  // Remove-Handler für GO-Cart
   cartList.addEventListener("click", async (e) => {
     const removeBtn = e.target.closest("[data-remove-go-cart]");
     if (removeBtn) {
@@ -483,8 +513,7 @@ async function loadGoCart() {
 
 async function removeFromGoCart(goCartItemId) {
   const { error } = await db.from("group_order_cart").delete().eq("id", goCartItemId);
-  if (error) { setMessage(`Fehler beim Entfernen: ${error.message}`, true); return; }
-  setMessage("Produkt aus Sammelbestellung entfernt.");
+  if (error) { console.error(`Fehler beim Entfernen: ${error.message}`); return; }
   await loadGoCart();
 }
 
@@ -492,19 +521,23 @@ async function removeFromGoCart(goCartItemId) {
 // HELPERS
 // ============================================================
 
-function setOrderMessage(text, isError = false) {
-  orderMessage.textContent = text;
-  orderMessage.style.color = isError ? "#a12c45" : "#666";
-  if (cartDrawerMsg) { cartDrawerMsg.textContent = text; cartDrawerMsg.style.color = isError ? "#a12c45" : "#666"; }
+function setMessage(text, isError = false) {
+  if (orderMessage) {
+    orderMessage.textContent = text;
+    orderMessage.style.color = isError ? "#a12c45" : "#666";
+  }
+  if (cartDrawerMsg) {
+    cartDrawerMsg.textContent = text;
+    cartDrawerMsg.style.color = isError ? "#a12c45" : "#666";
+  }
 }
 
 function formatPrice(value) {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(Number(value || 0));
 }
 
-
 // ============================================================
-// FETCH CART DATA (pure – keine DOM-Seiteneffekte)
+// FETCH CART DATA
 // ============================================================
 
 async function fetchCartItems(userId) {
@@ -674,8 +707,6 @@ async function loadProducts() {
 
 // ============================================================
 // CART — addToCart
-// GO-Modus:      schreibt in group_order_cart + rendert GO-Warenkorb
-// Normaler Modus: schreibt in cart_items
 // ============================================================
 
 async function addToCart(productId, quantity, selectedSize) {
@@ -687,16 +718,9 @@ async function addToCart(productId, quantity, selectedSize) {
   const clothingSizeId = isClothing ? selectedSize.sizeId : null;
   const weightSizeId   = isWeight   ? selectedSize.sizeId : null;
 
-  // ── GO-Modus: in group_order_cart schreiben ──────────────
   if (window.goSession) {
     const goId = window.goSession.groupOrderId;
 
-    // Nur unbestätigte Cart-Zeilen (confirmed=false) wieder aufmunitionieren.
-    // Eine eventuell bereits bestätigte Zeile (confirmed=true, Bereich 2)
-    // bleibt unberührt — die neue Menge liegt bis zum Submit als separate
-    // confirmed=false-Zeile parallel im Warenkorb (Bereich 1).
-    // Das Mergen mit einer evtl. vorhandenen confirmed=true-Zeile passiert
-    // erst beim Klick auf #submit-order-btn (siehe confirmGoCartItems).
     let goQuery = db.from("group_order_cart")
       .select("id, quantity")
       .eq("user_id", user.id)
@@ -730,7 +754,6 @@ async function addToCart(productId, quantity, selectedSize) {
     }
 
     setMessage("Produkt zur Sammelbestellung hinzugef\u00fcgt.");
-    // GO-Warenkorb neu laden und im Warenkorb-Container anzeigen
     await loadGoCart();
     cartSection.classList.remove("cart-bump");
     void cartSection.offsetWidth;
@@ -738,7 +761,6 @@ async function addToCart(productId, quantity, selectedSize) {
     return;
   }
 
-  // ── Normaler Modus: cart_items ───────────────────────────
   let existingQuery = db.from("cart_items")
     .select("id, quantity").eq("user_id", user.id).eq("product_id", productId);
 
@@ -834,7 +856,6 @@ async function loadCart(highlightProductId = null) {
 
   const totalText = formatPrice(total);
   cartTotal.textContent = `Gesamt: ${totalText}`;
-
   syncDrawer(totalText, totalItems);
 
   cartList.addEventListener("click", async (e) => {
@@ -878,9 +899,8 @@ async function removeFromCart(cartItemId) {
   await loadCart();
 }
 
-
 // ============================================================
-// Browser-Zurück-Taste: Ansichten schließen statt Shop verlassen
+// Browser-Zurück-Taste
 // ============================================================
 
 window.addEventListener('popstate', () => {
