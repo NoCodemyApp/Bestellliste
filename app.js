@@ -531,6 +531,7 @@ function setMessage(text, isError = false) {
     cartDrawerMsg.style.color = isError ? "#a12c45" : "#666";
   }
 }
+const setOrderMessage = setMessage; //in checkout.js als setOrderMessage 
 
 function formatPrice(value) {
   return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(Number(value || 0));
