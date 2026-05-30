@@ -207,7 +207,7 @@ registerForm.addEventListener("submit", async (event) => {
   setTimeout(() => {
     showLoginView();
     setAuthMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
-  }, 2500);
+  }, 500);
 });
 
 // ============================================================
