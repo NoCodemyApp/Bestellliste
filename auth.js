@@ -92,7 +92,21 @@ accountTypeRadios.forEach((radio) => {
 // AUTH STATE — CustomEvent an app.js
 // ============================================================
 
-function dispatchAuthChanged(session) {
+async function dispatchAuthChanged(session) {
+  if (session?.user) {
+    const { data: profile } = await db
+      .from('user_profiles')
+      .select('approval_status')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile || profile.approval_status !== 'approved') {
+      await db.auth.signOut();
+      document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session: null } }));
+      return;
+    }
+  }
+
   document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session } }));
 }
 
@@ -113,11 +127,11 @@ authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email    = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  if (!email || !password) { setAuthMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
+  if (!email || !password) { setMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-  if (error) { setAuthMessage(error.message, true); return; }
-  if (!data?.session?.user) { setAuthMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
-  setAuthMessage("");
+  if (error) { setMessage(error.message, true); return; }
+  if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
+  setMessage("");
 });
 
 // ============================================================
