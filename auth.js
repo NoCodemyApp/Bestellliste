@@ -44,7 +44,7 @@ const userDropdown = document.getElementById("user-dropdown");
 // HELPERS
 // ============================================================
 
-function setMessage(text, isError = false) {
+function setAuthMessage(text, isError = false) {
   authMessage.textContent = text;
   authMessage.style.color = isError ? "#a12c45" : "#666";
 }
@@ -67,7 +67,7 @@ async function getCurrentUser() {
 function showLoginView() {
   authViewLogin.classList.remove("hidden");
   authViewReg.classList.add("hidden");
-  setMessage("");
+  setAuthMessage("");
 }
 
 function showRegisterView() {
@@ -113,11 +113,11 @@ authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email    = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  if (!email || !password) { setMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
+  if (!email || !password) { setAuthMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-  if (error) { setMessage(error.message, true); return; }
-  if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
-  setMessage("");
+  if (error) { setAuthMessage(error.message, true); return; }
+  if (!data?.session?.user) { setAuthMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
+  setAuthMessage("");
 });
 
 // ============================================================
@@ -195,7 +195,7 @@ registerForm.addEventListener("submit", async (event) => {
 
 logoutBtn.addEventListener("click", async () => {
   const { error } = await db.auth.signOut();
-  if (error) { setMessage(`Fehler beim Abmelden: ${error.message}`, true); return; }
+  if (error) { setAuthMessage(`Fehler beim Abmelden: ${error.message}`, true); return; }
   showLoginView();
 });
 
