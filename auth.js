@@ -1,7 +1,5 @@
 // ============================================================
 // auth.js — Supabase Auth & UI-State
-// Ausgelagert aus app.js (Refactoring)
-// Abhängigkeiten: db (Supabase-Client), escapeHtml(), updateUI-Callbacks
 // ============================================================
 
 // ============================================================
@@ -17,7 +15,31 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // ============================================================
-// HELPERS (Auth-spezifisch)
+// DOM-REFERENZEN
+// ============================================================
+
+const authSection    = document.getElementById("auth-section");
+const authViewLogin  = document.getElementById("auth-view-login");
+const authViewReg    = document.getElementById("auth-view-register");
+
+// Login
+const authForm       = document.getElementById("auth-form");
+const signupBtn      = document.getElementById("signup-btn");
+const authMessage    = document.getElementById("auth-message");
+
+// Registrierung
+const registerForm   = document.getElementById("register-form");
+const backToLoginBtn = document.getElementById("back-to-login-btn");
+const registerMsg    = document.getElementById("register-message");
+const orgFields      = document.getElementById("org-fields");
+const accountTypeRadios = document.querySelectorAll("input[name='account_type']");
+
+// Shared
+const logoutBtn      = document.getElementById("logout-btn");
+const userBox        = document.getElementById("user-menu-email");
+
+// ============================================================
+// HELPERS
 // ============================================================
 
 function setMessage(text, isError = false) {
@@ -25,11 +47,47 @@ function setMessage(text, isError = false) {
   authMessage.style.color = isError ? "#a12c45" : "#666";
 }
 
+function setRegMessage(text, isError = false) {
+  registerMsg.textContent = text;
+  registerMsg.style.color = isError ? "#a12c45" : "#666";
+}
+
 async function getCurrentUser() {
   const { data: { user }, error } = await db.auth.getUser();
   if (error) return null;
   return user;
 }
+
+// ============================================================
+// VIEW-WECHSEL
+// ============================================================
+
+function showLoginView() {
+  authViewLogin.classList.remove("hidden");
+  authViewReg.classList.add("hidden");
+  setMessage("");
+}
+
+function showRegisterView() {
+  authViewLogin.classList.add("hidden");
+  authViewReg.classList.remove("hidden");
+  setRegMessage("");
+}
+
+// ============================================================
+// ORGANISATIONS-FELDER TOGGLE
+// ============================================================
+
+accountTypeRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    const isOrg = document.querySelector("input[name='account_type']:checked")?.value === "organization";
+    orgFields.classList.toggle("hidden", !isOrg);
+    // required-Attribute setzen/entfernen
+    orgFields.querySelectorAll("input").forEach((inp) => {
+      inp.required = isOrg;
+    });
+  });
+});
 
 // ============================================================
 // UI-STATE: Eingeloggt / Ausgeloggt
@@ -55,6 +113,7 @@ async function updateUI() {
       await loadCart();
     }
   } else {
+    showLoginView();
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     cartSection.classList.add("hidden");
@@ -89,17 +148,98 @@ authForm.addEventListener("submit", async (event) => {
 });
 
 // ============================================================
+// AUTH EVENT LISTENER: Zur Registrierung wechseln
+// ============================================================
+
+signupBtn.addEventListener("click", () => {
+  showRegisterView();
+});
+
+backToLoginBtn.addEventListener("click", () => {
+  showLoginView();
+});
+
+// ============================================================
 // AUTH EVENT LISTENER: Registrierung
 // ============================================================
 
-signupBtn.addEventListener("click", async () => {
-  const email    = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  if (!email || !password) { setMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
-  const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: "https://bestellliste.bastian-jonas.workers.dev/" } });
-  if (error) { setMessage(error.message, true); return; }
-  if (data?.user?.identities?.length === 0) { setMessage("Diese E-Mail ist bereits registriert oder konnte nicht neu angelegt werden.", true); return; }
-  setMessage("Registrierung erfolgreich. Bitte E-Mail bestaetigen.");
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const email       = document.getElementById("reg-email").value.trim();
+  const password    = document.getElementById("reg-password").value;
+  const first_name  = document.getElementById("reg-first-name").value.trim();
+  const last_name   = document.getElementById("reg-last-name").value.trim();
+  const street      = document.getElementById("reg-street").value.trim();
+  const postal_code = document.getElementById("reg-postal").value.trim();
+  const city        = document.getElementById("reg-city").value.trim();
+  const account_type = document.querySelector("input[name='account_type']:checked")?.value || "person";
+
+  // Pflichtfeld-Prüfung
+  if (!email || !password || !first_name || !last_name || !street || !postal_code || !city) {
+    setRegMessage("Bitte alle Pflichtfelder ausfüllen.", true);
+    return;
+  }
+
+  // Metadaten zusammenbauen
+  const metadata = {
+    first_name,
+    last_name,
+    account_type,
+    street,
+    postal_code,
+    city,
+  };
+
+  // Organisationsfelder nur wenn account_type = organization
+  if (account_type === "organization") {
+    const organization_name  = document.getElementById("reg-org-name").value.trim();
+    const organization_city  = document.getElementById("reg-org-city").value.trim();
+    const register_number    = document.getElementById("reg-org-register").value.trim();
+    const organization_email = document.getElementById("reg-org-email").value.trim();
+
+    if (!organization_name || !organization_city || !register_number || !organization_email) {
+      setRegMessage("Bitte alle Vereinsdaten ausfüllen.", true);
+      return;
+    }
+
+    metadata.organization_name  = organization_name;
+    metadata.organization_city  = organization_city;
+    metadata.register_number    = register_number;
+    metadata.organization_email = organization_email;
+  }
+
+  // Supabase signUp
+  const submitBtn = document.getElementById("register-submit-btn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Wird registriert…";
+
+  const { data, error } = await db.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: "https://bestellliste.bastian-jonas.workers.dev/",
+      data: metadata,
+    },
+  });
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Registrieren";
+
+  if (error) {
+    setRegMessage(error.message, true);
+    return;
+  }
+
+  if (data?.user?.identities?.length === 0) {
+    setRegMessage("Diese E-Mail ist bereits registriert.", true);
+    return;
+  }
+
+  // Erfolg
+  setRegMessage("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse. Danach wird dein Konto von einem Admin freigeschaltet.");
+  registerForm.reset();
+  orgFields.classList.add("hidden");
 });
 
 // ============================================================
