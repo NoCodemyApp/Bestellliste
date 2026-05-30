@@ -104,7 +104,7 @@ document.addEventListener("auth:changed", async ({ detail: { session } }) => {
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: new Set(), supplier: new Set() };
-    teardownGroupOrders();
+    if (typeof teardownGroupOrders === 'function') teardownGroupOrders();
   }
 });
 
