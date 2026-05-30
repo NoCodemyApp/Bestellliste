@@ -28,6 +28,7 @@ function teardownGroupOrders() {
   blockedSuppliers  = new Set();
   window.goSession  = null;
   if (groupOrderChannel) { db.removeChannel(groupOrderChannel); groupOrderChannel = null; }
+   document.getElementById('go-trigger-bar')?.remove();
   updateTriggerBar();
   closeGroupPanel();
   deactivateGoMode();
