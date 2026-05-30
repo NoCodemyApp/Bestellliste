@@ -20,7 +20,6 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // DOM-REFERENZEN (nur auth-eigene Elemente)
 // ============================================================
 
-const authSection    = document.getElementById("auth-section");
 const authViewLogin  = document.getElementById("auth-view-login");
 const authViewReg    = document.getElementById("auth-view-register");
 
