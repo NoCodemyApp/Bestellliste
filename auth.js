@@ -201,6 +201,13 @@ registerForm.addEventListener("submit", async (event) => {
   setRegMessage("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse. Danach wird dein Konto von einem Admin freigeschaltet.");
   registerForm.reset();
   orgFields.classList.add("hidden");
+
+  // Nach 2,5 Sekunden zum Login-View zurückwechseln,
+  // damit die Erfolgsmeldung noch kurz lesbar ist.
+  setTimeout(() => {
+    showLoginView();
+    setAuthMessage("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
+  }, 2500);
 });
 
 // ============================================================
