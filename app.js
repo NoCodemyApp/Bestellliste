@@ -15,7 +15,6 @@ function escapeHtml(str) {
 // DOM-REFERENZEN
 // ============================================================
 
-const authSection     = document.getElementById("auth-section");
 const productsSection = document.getElementById("products-section");
 const cartSection     = document.getElementById("cart-section");
 const checkoutSection = document.getElementById("checkout-section");
