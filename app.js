@@ -70,6 +70,10 @@ if (!cartBadgeBtn || !cartDrawer || !cartOverlay || !filterDrawer || !filterTogg
 let allProducts = [];
 let activeFilters = { category: new Set(), supplier: new Set() };
 
+if (typeof db === "undefined" || typeof getCurrentUser === "undefined") {
+  console.error("auth.js muss vor app.js geladen werden.");
+}
+
 // ============================================================
 // UI-STATE: Reagiert auf auth:changed von auth.js
 // ============================================================

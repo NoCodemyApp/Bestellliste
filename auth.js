@@ -59,6 +59,9 @@ async function getCurrentUser() {
   if (error) return null;
   return user;
 }
+// auth.js — nach den Definitionen einfügen:
+window.db = db;
+window.getCurrentUser = getCurrentUser;
 
 // ============================================================
 // VIEW-WECHSEL
@@ -130,7 +133,7 @@ authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email    = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  if (!email || !password) { setMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
+  if (!email || !password) { setAuthMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   if (error) { setMessage(error.message, true); return; }
   if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
