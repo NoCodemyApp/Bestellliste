@@ -214,6 +214,43 @@ let touchStartX = 0;
 filterDrawer.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive: true });
 filterDrawer.addEventListener("touchend",   e => { if (touchStartX - e.changedTouches[0].clientX > 60) closeFilterDrawer(); }, { passive: true });
 
+// Globale Delegations-Listener für cartList und cartDrawerBody
+cartList.addEventListener("click", async (e) => {
+  const removeGoCart = e.target.closest("[data-remove-go-cart]");
+  if (removeGoCart) { await removeFromGoCart(removeGoCart.getAttribute("data-remove-go-cart")); return; }
+
+  const removeCart = e.target.closest("[data-remove-cart]");
+  if (removeCart) { await removeFromCart(removeCart.getAttribute("data-remove-cart")); return; }
+
+  const scrollBtn = e.target.closest("[data-scroll-to-product]");
+  if (scrollBtn) {
+    const productId = scrollBtn.getAttribute("data-scroll-to-product");
+    const card = document.querySelector(`[data-product-card="${productId}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("product-card-highlight");
+    setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
+  }
+});
+
+cartDrawerBody.addEventListener("click", async (e) => {
+  const removeBtn = e.target.closest("[data-remove-cart]");
+  if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
+
+  const scrollBtn = e.target.closest("[data-scroll-to-product]");
+  if (scrollBtn) {
+    const productId = scrollBtn.getAttribute("data-scroll-to-product");
+    closeCartDrawer();
+    setTimeout(() => {
+      const card = document.querySelector(`[data-product-card="${productId}"]`);
+      if (!card) return;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.classList.add("product-card-highlight");
+      setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
+    }, 320);
+  }
+});
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     closeCartDrawer();
@@ -396,24 +433,6 @@ function syncDrawer(totalText, itemCount) {
 
   cartDrawerTotal.textContent = totalText;
 
-  cartDrawerBody.addEventListener("click", async (e) => {
-    const removeBtn = e.target.closest("[data-remove-cart]");
-    if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
-
-    const scrollBtn = e.target.closest("[data-scroll-to-product]");
-    if (scrollBtn) {
-      const productId = scrollBtn.getAttribute("data-scroll-to-product");
-      closeCartDrawer();
-      setTimeout(() => {
-        const card = document.querySelector(`[data-product-card="${productId}"]`);
-        if (!card) return;
-        card.scrollIntoView({ behavior: "smooth", block: "center" });
-        card.classList.add("product-card-highlight");
-        setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
-      }, 320);
-    }
-  }, { once: true });
-
   if (cartDrawerMsg) cartDrawerMsg.textContent = "";
 }
 
@@ -515,23 +534,7 @@ async function loadGoCart() {
   const totalText = formatPrice(total);
   cartTotal.textContent = `Gesamt: ${totalText}`;
   syncDrawer(totalText, totalItems);
-
-  cartList.addEventListener("click", async (e) => {
-    const removeBtn = e.target.closest("[data-remove-go-cart]");
-    if (removeBtn) {
-      await removeFromGoCart(removeBtn.getAttribute("data-remove-go-cart"));
-      return;
-    }
-    const scrollBtn = e.target.closest("[data-scroll-to-product]");
-    if (scrollBtn) {
-      const productId = scrollBtn.getAttribute("data-scroll-to-product");
-      const card = document.querySelector(`[data-product-card="${productId}"]`);
-      if (!card) return;
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.add("product-card-highlight");
-      setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
-    }
-  }, { once: true });
+  
 }
 
 async function removeFromGoCart(goCartItemId) {
@@ -881,21 +884,6 @@ async function loadCart(highlightProductId = null) {
   const totalText = formatPrice(total);
   cartTotal.textContent = `Gesamt: ${totalText}`;
   syncDrawer(totalText, totalItems);
-
-  cartList.addEventListener("click", async (e) => {
-    const removeBtn = e.target.closest("[data-remove-cart]");
-    if (removeBtn) { await removeFromCart(removeBtn.getAttribute("data-remove-cart")); return; }
-
-    const scrollBtn = e.target.closest("[data-scroll-to-product]");
-    if (scrollBtn) {
-      const productId = scrollBtn.getAttribute("data-scroll-to-product");
-      const card = document.querySelector(`[data-product-card="${productId}"]`);
-      if (!card) return;
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.add("product-card-highlight");
-      setTimeout(() => card.classList.remove("product-card-highlight"), 1600);
-    }
-  }, { once: true });
 
   if (highlightProductId && !isMobile()) {
     const newCartItem = cartList.querySelector(`[data-cart-product-id="${highlightProductId}"]`);
