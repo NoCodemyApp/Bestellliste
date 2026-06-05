@@ -100,14 +100,17 @@ async function dispatchAuthChanged(session) {
       .eq('id', session.user.id)
       .single();
 
-    if (!profile || profile.approval_status !== 'approved') {
-      await db.auth.signOut();
-      document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session: null } }));
-      return;
-    }
+    const approvalStatus = profile?.approval_status ?? 'pending';
+
+    document.dispatchEvent(new CustomEvent("auth:changed", {
+      detail: { session, approvalStatus }
+    }));
+    return;
   }
 
-  document.dispatchEvent(new CustomEvent("auth:changed", { detail: { session } }));
+  document.dispatchEvent(new CustomEvent("auth:changed", {
+    detail: { session: null, approvalStatus: null }
+  }));
 }
 
 db.auth.onAuthStateChange((_event, session) => {
