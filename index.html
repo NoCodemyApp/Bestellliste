@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./group-checkout.css">
   <link rel="stylesheet" href="./filter-fab.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="auth.js"></script>
   <script defer src="./app.js"></script>
   <script defer src="./checkout.js"></script>
   <script defer src="./group-order.js"></script>
@@ -93,10 +94,14 @@
   <main class="page">
 
     <!-- ======================================================
-         AUTH
+         AUTH — VIEW CONTAINER
     ====================================================== -->
     <section class="auth-section" id="auth-section">
-      <div class="auth-card">
+
+      <!-- ------------------------------------------------
+           VIEW 1: LOGIN
+      ------------------------------------------------ -->
+      <div class="auth-card" id="auth-view-login">
         <div class="auth-logo" aria-hidden="true">
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
             <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
@@ -129,6 +134,120 @@
 
         <p id="auth-message" class="auth-message"></p>
       </div>
+
+      <!-- ------------------------------------------------
+           VIEW 2: REGISTRIERUNG
+      ------------------------------------------------ -->
+      <div class="auth-card hidden" id="auth-view-register">
+        <div class="auth-logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+            <rect width="40" height="40" rx="12" fill="currentColor" opacity="0.1"/>
+            <path d="M8 13h4l3 11L19 15h5l3 9L30 13h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="20" cy="30" r="1.8" fill="currentColor"/>
+          </svg>
+        </div>
+        <h1 class="auth-headline">Konto erstellen</h1>
+        <p class="auth-sub">Fülle alle Pflichtfelder aus. Dein Konto wird nach der Registrierung von einem Admin freigeschaltet.</p>
+
+        <form id="register-form" class="auth-form" novalidate>
+
+          <!-- Kontotyp -->
+          <fieldset class="form-fieldset">
+            <legend class="form-label">Kontotyp</legend>
+            <div class="form-radio-group">
+              <label class="form-radio-label">
+                <input type="radio" name="account_type" value="person" checked> Person
+              </label>
+              <label class="form-radio-label">
+                <input type="radio" name="account_type" value="organization"> Organisation
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Persönliche Daten -->
+          <div class="form-row">
+            <div class="form-field">
+              <label for="reg-first-name" class="form-label">Vorname</label>
+              <input type="text" id="reg-first-name" name="first_name"
+                     placeholder="Max" required autocomplete="given-name">
+            </div>
+            <div class="form-field">
+              <label for="reg-last-name" class="form-label">Nachname</label>
+              <input type="text" id="reg-last-name" name="last_name"
+                     placeholder="Mustermann" required autocomplete="family-name">
+            </div>
+          </div>
+
+          <!-- Zugangsdaten -->
+          <div class="form-field">
+            <label for="reg-email" class="form-label">E-Mail</label>
+            <input type="email" id="reg-email" name="email"
+                   placeholder="name@beispiel.de"
+                   required autocomplete="email">
+          </div>
+          <div class="form-field">
+            <label for="reg-password" class="form-label">Passwort</label>
+            <input type="password" id="reg-password" name="password"
+                   placeholder="Mindestens 6 Zeichen"
+                   required autocomplete="new-password">
+          </div>
+
+          <!-- Adresse -->
+          <div class="form-field">
+            <label for="reg-street" class="form-label">Straße &amp; Hausnummer</label>
+            <input type="text" id="reg-street" name="street"
+                   placeholder="Musterstraße 1" required autocomplete="street-address">
+          </div>
+          <div class="form-row">
+            <div class="form-field form-field--narrow">
+              <label for="reg-postal" class="form-label">PLZ</label>
+              <input type="text" id="reg-postal" name="postal_code"
+                     placeholder="12345" required autocomplete="postal-code"
+                     inputmode="numeric" maxlength="5">
+            </div>
+            <div class="form-field">
+              <label for="reg-city" class="form-label">Ort</label>
+              <input type="text" id="reg-city" name="city"
+                     placeholder="Musterstadt" required autocomplete="address-level2">
+            </div>
+          </div>
+
+          <!-- Organisationsdaten (nur wenn account_type = organization) -->
+          <div id="org-fields" class="org-fields hidden">
+            <div class="form-divider"><span>Vereinsdaten</span></div>
+
+            <div class="form-field">
+              <label for="reg-org-name" class="form-label">Vereinsname</label>
+              <input type="text" id="reg-org-name" name="organization_name"
+                     placeholder="Musterverein e.V." autocomplete="organization">
+            </div>
+            <div class="form-field">
+              <label for="reg-org-city" class="form-label">Vereinssitz (Ort)</label>
+              <input type="text" id="reg-org-city" name="organization_city"
+                     placeholder="Musterstadt">
+            </div>
+            <div class="form-field">
+              <label for="reg-org-register" class="form-label">Vereinsregisternummer</label>
+              <input type="text" id="reg-org-register" name="register_number"
+                     placeholder="VR 12345">
+            </div>
+            <div class="form-field">
+              <label for="reg-org-email" class="form-label">Vereins-E-Mail</label>
+              <input type="email" id="reg-org-email" name="organization_email"
+                     placeholder="info@verein.de">
+            </div>
+          </div>
+
+          <button type="submit" id="register-submit-btn" class="btn-primary btn-full">Registrieren</button>
+        </form>
+
+        <p id="register-message" class="auth-message"></p>
+
+        <div class="auth-divider"><span>oder</span></div>
+
+        <button type="button" id="back-to-login-btn" class="btn-outline btn-full">Zurück zum Login</button>
+      </div>
+
     </section>
 
     <!-- ======================================================
