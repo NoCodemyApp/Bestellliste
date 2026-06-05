@@ -59,6 +59,9 @@ async function getCurrentUser() {
   if (error) return null;
   return user;
 }
+// auth.js — nach den Definitionen einfügen:
+window.db = db;
+window.getCurrentUser = getCurrentUser;
 
 // ============================================================
 // VIEW-WECHSEL
