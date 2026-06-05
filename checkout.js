@@ -419,14 +419,6 @@ function renderCartItemsList(data) {
   checkoutTotal.textContent    = formatPrice(total);
   checkoutItemCount.textContent = totalItems;
 
-  checkoutList.addEventListener('click', async (e) => {
-    const incBtn    = e.target.closest('[data-qty-inc]');
-    const decBtn    = e.target.closest('[data-qty-dec]');
-    const removeBtn = e.target.closest('[data-checkout-remove]');
-    if (incBtn)    { await updateCheckoutItemQty(incBtn.getAttribute('data-qty-inc'),    1); return; }
-    if (decBtn)    { await updateCheckoutItemQty(decBtn.getAttribute('data-qty-dec'),   -1); return; }
-    if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute('data-checkout-remove')); }
-  }, { once: true });
 }
 
 // ============================================================
@@ -1042,6 +1034,22 @@ if (goOrderListEl) {
     if (removeBtn) { goOrderLocalRemove(removeBtn.getAttribute('data-go-order-remove')); }
   });
 }
+
+// ============================================================
+// NORMALER CHECKOUT — Click-Delegation (qty +/-, remove)
+// ============================================================
+if (checkoutList) {
+  checkoutList.addEventListener('click', async (e) => {
+    const incBtn    = e.target.closest('[data-qty-inc]');
+    const decBtn    = e.target.closest('[data-qty-dec]');
+    const removeBtn = e.target.closest('[data-checkout-remove]');
+
+    if (incBtn)    { await updateCheckoutItemQty(incBtn.getAttribute('data-qty-inc'), 1); return; }
+    if (decBtn)    { await updateCheckoutItemQty(decBtn.getAttribute('data-qty-dec'), -1); return; }
+    if (removeBtn) { await removeCheckoutItem(removeBtn.getAttribute('data-checkout-remove')); }
+  });
+}
+
 
 // Beim Verlassen des Checkouts lokale Edits verwerfen,
 // damit sie nicht beim nächsten Öffnen wieder erscheinen.
