@@ -74,8 +74,25 @@ let activeFilters = { category: new Set(), supplier: new Set() };
 // UI-STATE: Reagiert auf auth:changed von auth.js
 // ============================================================
 
-document.addEventListener("auth:changed", async ({ detail: { session } }) => {
+document.addEventListener("auth:changed", async ({ detail: { session, approvalStatus } }) => {
+  const pendingSection = document.getElementById("pending-section");
+
   if (session?.user) {
+    if (approvalStatus !== "approved") {
+      // Pending-View: eingeloggt, aber noch nicht freigeschalten
+      authSection.classList.add("hidden");
+      pendingSection?.classList.remove("hidden");
+      productsSection.classList.add("hidden");
+      cartSection.classList.add("hidden");
+      checkoutSection.classList.add("hidden");
+      document.getElementById("logout-btn").classList.remove("hidden");
+      document.getElementById("user-menu-btn").classList.add("hidden");
+      userBox.textContent = "";
+      return;
+    }
+
+    // Approved — normaler App-Start
+    pendingSection?.classList.add("hidden");
     authSection.classList.add("hidden");
     productsSection.classList.remove("hidden");
     cartSection.classList.remove("hidden");
@@ -91,6 +108,8 @@ document.addEventListener("auth:changed", async ({ detail: { session } }) => {
       await loadCart();
     }
   } else {
+    // Ausgeloggt — alles zurücksetzen
+    pendingSection?.classList.add("hidden");
     authSection.classList.remove("hidden");
     productsSection.classList.add("hidden");
     cartSection.classList.add("hidden");
@@ -104,7 +123,7 @@ document.addEventListener("auth:changed", async ({ detail: { session } }) => {
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: new Set(), supplier: new Set() };
-    if (typeof teardownGroupOrders === 'function') teardownGroupOrders();
+    if (typeof teardownGroupOrders === "function") teardownGroupOrders();
   }
 });
 
