@@ -116,9 +116,6 @@ async function dispatchAuthChanged(session) {
   }));
 }
 
-db.auth.onAuthStateChange((_event, session) => {
-  dispatchAuthChanged(session);
-});
 
 // Initialer State beim Laden
 db.auth.getSession().then(({ data: { session } }) => {
