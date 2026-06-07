@@ -127,6 +127,8 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: new Set(), supplier: new Set() };
+    buildFilterChips([]);     // leert alle Chip-Container
+    updateFilterUI();         // versteckt active-filter-bar und Badge
     if (typeof teardownGroupOrders === "function") teardownGroupOrders();
   }
 });
