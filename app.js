@@ -83,6 +83,7 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
 
   if (session?.user) {
     if (approvalStatus !== "approved") {
+      // Pending-View: eingeloggt, aber noch nicht freigeschalten
       authSection.classList.add("hidden");
       pendingSection?.classList.remove("hidden");
       productsSection.classList.add("hidden");
@@ -99,7 +100,6 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     authSection.classList.add("hidden");
     productsSection.classList.remove("hidden");
     cartSection.classList.remove("hidden");
-    document.getElementById("shop-sidebar-desktop")?.classList.remove("hidden"); // ← NEU
     document.getElementById("logout-btn").classList.remove("hidden");
     userBox.textContent = session.user.email || "";
     document.getElementById("user-menu-btn").classList.remove("hidden");
@@ -127,9 +127,6 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: new Set(), supplier: new Set() };
-    buildFilterChips([]);
-    updateFilterUI();
-    document.getElementById("shop-sidebar-desktop")?.classList.add("hidden"); // ← NEU
     if (typeof teardownGroupOrders === "function") teardownGroupOrders();
   }
 });
