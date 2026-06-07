@@ -132,6 +132,7 @@ async function activateGoMode(groupOrderId, supplierId, supplierName, supplierLo
 
 async function deactivateGoMode() {
   window.goSession = null;
+  window.__goSupplierFilter = null;
   removeGoSignalBanner();
   document.getElementById('go-supplier-logo-banner')?.remove();
   if (typeof resetCartLabels === 'function') resetCartLabels();
