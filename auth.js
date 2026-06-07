@@ -95,7 +95,14 @@ accountTypeRadios.forEach((radio) => {
 // AUTH STATE — CustomEvent an app.js
 // ============================================================
 
+let _lastSessionId = undefined;
+
 async function dispatchAuthChanged(session) {
+  const uid = session?.user?.id ?? null;
+
+  if (_lastSessionId === uid) return;
+  _lastSessionId = uid;
+
   if (session?.user) {
     const { data: profile } = await db
       .from('user_profiles')
@@ -116,6 +123,10 @@ async function dispatchAuthChanged(session) {
   }));
 }
 
+db.auth.onAuthStateChange((_event, session) => {
+  _lastSessionId = undefined;
+  dispatchAuthChanged(session);
+});
 
 // Initialer State beim Laden
 db.auth.getSession().then(({ data: { session } }) => {
