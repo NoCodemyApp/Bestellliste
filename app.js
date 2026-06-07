@@ -327,6 +327,8 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
     return;
   }
 
+  container.closest(".sidebar-block, .filter-drawer-section")?.classList.remove("hidden");
+
   container.innerHTML = values.map(val => {
     const isActive = activeFilters[filterKey].has(val);
     return `<button
