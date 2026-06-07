@@ -281,7 +281,7 @@ ul[role="list"] { list-style: none; }
 }
 
 .user-dropdown-logout {
-  display: flex !important;
+  display: flex;
   align-items: center;
   gap: var(--sp-2);
   width: 100%;
