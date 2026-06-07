@@ -127,6 +127,12 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     updateCartBadge(0);
     allProducts = [];
     activeFilters = { category: new Set(), supplier: new Set() };
+    buildFilterChips([]);     // setzt alle sidebar-blocks und filter-sections auf hidden
+    updateFilterUI();         // setzt active-filter-bar auf hidden, Badge auf 0
+    // Optional, falls Topbar/Sidebar noch eigene hidden-Klasse brauchen:
+    document.getElementById("shop-sidebar-desktop")?.classList.add("hidden");
+    document.querySelector(".shop-topbar")?.classList.add("hidden");
+
     if (typeof teardownGroupOrders === "function") teardownGroupOrders();
   }
 });
