@@ -101,6 +101,7 @@ async function dispatchAuthChanged(session) {
   const uid = session?.user?.id ?? null;
 
   if (_lastSessionId === uid) return;
+  if (_lastSessionId === "__signed_out__" && uid !== null) return;
   _lastSessionId = uid;
 
   if (session?.user) {
@@ -125,6 +126,11 @@ async function dispatchAuthChanged(session) {
 
 db.auth.onAuthStateChange((_event, session) => {
   _lastSessionId = undefined;
+  if (_event === "SIGNED_OUT") {
+    _lastSessionId = "__signed_out__";
+    dispatchAuthChanged(null);
+    return;
+  }
   dispatchAuthChanged(session);
 });
 
