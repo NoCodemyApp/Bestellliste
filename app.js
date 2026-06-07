@@ -129,7 +129,6 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     activeFilters = { category: new Set(), supplier: new Set() };
     buildFilterChips([]);
     updateFilterUI();
-    document.querySelectorAll(".sidebar-block").forEach(el => el.classList.add("hidden"));
     if (typeof teardownGroupOrders === "function") teardownGroupOrders();
   }
 });
