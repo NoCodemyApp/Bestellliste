@@ -68,7 +68,7 @@ if (!cartBadgeBtn || !cartDrawer || !cartOverlay || !filterDrawer || !filterTogg
 
 // Filter State
 let allProducts = [];
-let activeFilters = { category: new Set(), supplier: new Set() };
+let activeFilters = { category: new Set(), supplier: new Set(), brand: new Set() };
 
 if (typeof db === "undefined" || typeof getCurrentUser === "undefined") {
   console.error("auth.js muss vor app.js geladen werden.");
@@ -128,7 +128,7 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     cartList.innerHTML = "";
     updateCartBadge(0);
     allProducts = [];
-    activeFilters = { category: new Set(), supplier: new Set() };
+    activeFilters = { category: new Set(), supplier: new Set(), brand: new Set() };
     buildFilterChips([]);     // setzt alle sidebar-blocks und filter-sections auf hidden
     updateFilterUI();         // setzt active-filter-bar auf hidden, Badge auf 0
     // Optional, falls Topbar/Sidebar noch eigene hidden-Klasse brauchen:
@@ -311,14 +311,21 @@ document.addEventListener("keydown", e => {
 function buildFilterChips(products) {
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
   const suppliers  = [...new Set(products.map(p => p.suppliers?.name).filter(Boolean))].sort();
+  const brands     = [...new Set(products.map(p => p.brands?.name).filter(Boolean))].sort();
 
-  renderChips("filter-chips-category",        categories, "category", false);
-  renderChips("filter-chips-supplier",         suppliers,  "supplier",  false);
-  renderChips("filter-chips-category-mobile",  categories, "category", true);
-  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier",  true);
+  const sourceProducts = window.__goSupplierFilter
+    ? allProducts.filter(p => p.supplier_id === window.__goSupplierFilter)
+    : allProducts;
+
+  renderChips("filter-chips-category",        categories, "category", sourceProducts);
+  renderChips("filter-chips-supplier",         suppliers,  "supplier",  sourceProducts);
+  renderChips("filter-chips-brand",            brands,     "brand",     sourceProducts);
+  renderChips("filter-chips-category-mobile",  categories, "category", sourceProducts);
+  renderChips("filter-chips-supplier-mobile",  suppliers,  "supplier",  sourceProducts);
+  renderChips("filter-chips-brand-mobile",     brands,     "brand",     sourceProducts);
 }
 
-function renderChips(containerId, values, filterKey, isMobileDrawer) {
+function renderChips(containerId, values, filterKey, sourceProducts) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -348,28 +355,29 @@ function renderChips(containerId, values, filterKey, isMobileDrawer) {
       } else {
         activeFilters[key].add(val);
       }
-      buildFilterChips(allProducts);
+      buildFilterChips(sourceProducts);
       applyFilters();
     });
   });
 }
 
 function applyFilters() {
-  const { category, supplier } = activeFilters;
+  const { category, supplier, brand } = activeFilters;
   const goSupplierId = window.goSession?.supplierId || null;
   let filtered = allProducts.filter(p => {
     const matchCat   = category.size === 0 || category.has(p.category);
     const matchSup   = supplier.size === 0 || supplier.has(p.suppliers?.name);
+    const matchBrand = brand.size === 0    || brand.has(p.brands?.name);
     const matchGoSup = !goSupplierId || p.supplier_id === goSupplierId;
-    return matchCat && matchSup && matchGoSup;
+    return matchCat && matchSup && matchBrand && matchGoSup;
   });
   renderProducts(filtered);
   updateFilterUI();
 }
 
 function updateFilterUI() {
-  const { category, supplier } = activeFilters;
-  const total = category.size + supplier.size;
+  const { category, supplier, brand } = activeFilters;
+  const total = category.size + supplier.size + brand.size;
 
   filterActiveCount.textContent = total;
   filterActiveCount.classList.toggle("hidden", total === 0);
@@ -396,7 +404,7 @@ function updateFilterUI() {
     tag.innerHTML = `${escapeHtml(label)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     tag.addEventListener("click", () => {
       activeFilters[key].delete(label);
-      buildFilterChips(allProducts);
+      buildFilterChips(sourceProducts);
       applyFilters();
     });
     activeFilterBar.appendChild(tag);
@@ -404,10 +412,11 @@ function updateFilterUI() {
 
   category.forEach(val => addTag(val, "category"));
   supplier.forEach(val => addTag(val, "supplier"));
+  brand.forEach(val => addTag(val, "brand"));
 }
 
 function resetFilters() {
-  activeFilters = { category: new Set(), supplier: new Set() };
+  activeFilters = { category: new Set(), supplier: new Set(), brand: new Set() };
   buildFilterChips(allProducts);
   applyFilters();
 }
