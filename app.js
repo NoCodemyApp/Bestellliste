@@ -104,6 +104,8 @@ document.addEventListener("auth:changed", async ({ detail: { session, approvalSt
     userBox.textContent = session.user.email || "";
     document.getElementById("user-menu-btn").classList.remove("hidden");
     document.getElementById("user-dropdown-email").textContent = session.user.email || "";
+    document.getElementById("shop-sidebar-desktop")?.classList.remove("hidden");  // ← NEU
+    document.querySelector(".shop-topbar")?.classList.remove("hidden");            // ← NEU
     await loadProducts();
     await initGroupOrders();
     if (window.goSession) {
