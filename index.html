@@ -207,9 +207,14 @@
 
           <!-- Adresse -->
           <div class="form-field">
-            <label for="reg-street" class="form-label">Straße &amp; Hausnummer</label>
+            <label for="reg-street" class="form-label">Straße</label>
             <input type="text" id="reg-street" name="street"
-                   placeholder="Musterstraße 1" required autocomplete="street-address">
+                   placeholder="Musterstraße" required autocomplete="street-address">
+            
+            <div class="form-field">
+            <label for="reg-street" class="form-label">Hausnummer</label>
+            <input type="text" id="reg-street" name="street"
+                   placeholder="161" required autocomplete="street-address">
           </div>
           <div class="form-row">
             <div class="form-field form-field--narrow">
@@ -534,9 +539,15 @@
       </div>
       <form id="address-form" novalidate>
         <div class="address-form-group">
-          <label class="form-label" for="address-street">Straße &amp; Hausnummer</label>
+          <label class="form-label" for="address-street">Straße</label>
           <input id="address-street" class="form-input" type="text"
-                 placeholder="z.B. Musterstraße 12" autocomplete="street-address" required />
+                 placeholder="Musterstraße" autocomplete="street-address" required />
+          
+              <div class="address-form-group">
+          <label class="form-label" for="address-street">Hausnummer</label>
+          <input id="address-street" class="form-input" type="text"
+                 placeholder="1312" autocomplete="street-address" required />
+
         </div>
         <div class="address-form-row">
           <div class="address-form-group address-form-group--postal">
