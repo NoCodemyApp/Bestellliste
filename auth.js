@@ -239,21 +239,3 @@ logoutBtn.addEventListener("click", async () => {
   if (error) { setAuthMessage(`Fehler beim Abmelden: ${error.message}`, true); return; }
   showLoginView();
 });
-
-// ============================================================
-// USER MENU DROPDOWN TOGGLE
-// ============================================================
-
-userMenuBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  const isOpen = userDropdown.classList.contains("user-dropdown--open");
-  userDropdown.classList.toggle("user-dropdown--open", !isOpen);
-  userMenuBtn.setAttribute("aria-expanded", String(!isOpen));
-  userDropdown.setAttribute("aria-hidden", String(isOpen));
-});
-
-document.addEventListener("click", () => {
-  userDropdown.classList.remove("user-dropdown--open");
-  userMenuBtn.setAttribute("aria-expanded", "false");
-  userDropdown.setAttribute("aria-hidden", "true");
-});
