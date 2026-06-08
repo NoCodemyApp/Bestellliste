@@ -16,6 +16,7 @@
   const addressMessage    = document.getElementById("address-message");
   const addressSubmitBtn  = document.getElementById("address-submit-btn");
   const fieldStreet  = document.getElementById("address-street");
+  const fieldHouse  = document.getElementById("address-house");
   const fieldPostal  = document.getElementById("address-postal");
   const fieldCity    = document.getElementById("address-city");
 
@@ -56,9 +57,10 @@
         .single();
 
       if (error) throw error;
-      fieldStreet.value = data?.street      ?? "";
-      fieldPostal.value = data?.postal_code ?? "";
-      fieldCity.value   = data?.city        ?? "";
+      fieldStreet.value = data?.street        ?? "";
+      fieldPostal.value = data?.house_number  ?? "";
+      fieldPostal.value = data?.postal_code   ?? "";
+      fieldCity.value   = data?.city          ?? "";
       setAddressMessage("", false);
     } catch (err) {
       setAddressMessage("Fehler beim Laden: " + err.message, true);
@@ -87,11 +89,12 @@
   // ── ADRESSE SPEICHERN ─────────────────────────────────────
   addressForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const street      = fieldStreet.value.trim();
-    const postal_code = fieldPostal.value.trim();
-    const city        = fieldCity.value.trim();
+    const street        = fieldStreet.value.trim();
+    const house_number  = fieldStreet.value.trim();
+    const postal_code   = fieldPostal.value.trim();
+    const city          = fieldCity.value.trim();
 
-    if (!street || !postal_code || !city) {
+    if (!street || !house_number || !postal_code || !city) {
       setAddressMessage("Bitte alle Felder ausfüllen.", true);
       return;
     }
@@ -105,7 +108,7 @@
 
       const { error } = await window.db
         .from("user_profiles")
-        .update({ street, postal_code, city })
+        .update({ street, house_number, postal_code, city })
         .eq("id", user.id);
 
       if (error) throw error;
