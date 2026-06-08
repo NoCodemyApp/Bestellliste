@@ -51,7 +51,7 @@
       if (!user) { setAddressMessage("Kein angemeldeter Nutzer gefunden.", true); return; }
 
       const { data, error } = await window.db
-        .from("user_profiles")
+        .from("user_addresses")
         .select("street, house_number, postal_code, city")
         .eq("id", user.id)
         .single();
@@ -107,7 +107,7 @@
       if (!user) throw new Error("Kein angemeldeter Nutzer.");
 
       const { error } = await window.db
-        .from("user_profiles")
+        .from("user_addresses")
         .update({ street, house_number, postal_code, city })
         .eq("id", user.id);
 
