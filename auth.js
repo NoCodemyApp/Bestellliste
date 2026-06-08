@@ -149,9 +149,9 @@ authForm.addEventListener("submit", async (event) => {
   const password = document.getElementById("password").value;
   if (!email || !password) { setAuthMessage("Bitte E-Mail und Passwort eingeben.", true); return; }
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-  if (error) { setMessage(error.message, true); return; }
-  if (!data?.session?.user) { setMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
-  setMessage("");
+  if (error) { setAuthMessage(error.message, true); return; }
+  if (!data?.session?.user) { setAuthMessage("Login war erfolgreich, aber es wurde keine Session gefunden.", true); return; }
+  setAuthMessage("");
 });
 
 // ============================================================
@@ -178,7 +178,7 @@ registerForm.addEventListener("submit", async (event) => {
   const city         = document.getElementById("reg-city").value.trim();
   const account_type = document.querySelector("input[name='account_type']:checked")?.value || "person";
 
-  if (!email || !password || !first_name || !last_name || !street || || !house_number || !postal_code || !city) {
+  if (!email || !password || !first_name || !last_name || !street || !house_number || !postal_code || !city) {
     setRegMessage("Bitte alle Pflichtfelder ausfüllen.", true);
     return;
   }
@@ -193,7 +193,7 @@ registerForm.addEventListener("submit", async (event) => {
     const organization_postal_code   = document.getElementById("reg-org-postal").value.trim();
     const register_number            = document.getElementById("reg-org-register").value.trim();
     const organization_email         = document.getElementById("reg-org-email").value.trim();
-    if (!organization_name || !organization_street || || !organization_house_number || || !organization_house_number || || !organization_city || || !organization_postal_code || !register_number || !organization_email) {
+    if (!organization_name || !organization_street || !organization_house_number || !organization_house_number || !organization_city || !organization_postal_code || !register_number || !organization_email) {
       setRegMessage("Bitte alle Vereinsdaten ausfüllen.", true);
       return;
     }
