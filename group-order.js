@@ -158,7 +158,7 @@ async function deactivateGoMode() {
   if (triggerBar) triggerBar.style.display = '';
 
   if (typeof allProducts !== 'undefined' && allProducts.length > 0) {
-    activeFilters = { category: new Set(), supplier: new Set() };
+    activeFilters = { category: new Set(), supplier: new Set(), brand: new Set() };
     buildFilterChips(allProducts);
     renderProducts(allProducts);
     updateFilterUI();
@@ -205,7 +205,7 @@ function filterProductsForGo(supplierId) {
   // Kategorie-Chips neu aufbauen — nur Kategorien des aktuellen Lieferanten
   if (typeof buildFilterChips === 'function') {
     if (typeof activeFilters !== 'undefined') {
-      activeFilters = { category: new Set(), supplier: new Set() };
+      activeFilters = { category: new Set(), supplier: new Set(), brand: new Set() };
     }
     buildFilterChips(filtered);
     if (typeof updateFilterUI === 'function') updateFilterUI();
