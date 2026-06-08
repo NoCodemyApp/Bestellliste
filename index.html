@@ -242,16 +242,15 @@
               <input type="text" id="reg-org-name" name="organization_name"
                      placeholder="Musterverein e.V." autocomplete="organization">
               
+                <div class="form-field">
+                  <label for="reg-org-street" class="form-label">Vereinssitz (Straße)</label>
+                  <input type="text" id="reg-org-street" name="organization_street" placeholder="Musterweg">
                 </div>
-            <div class="form-field">
-              <label for="reg-org-street" class="form-label">Vereinssitz (Straße)</label>
-              <input type="text" id="reg-org-street" name="organization_street"
-                     placeholder="Musterweg">
-              
-                 <div class="form-field">
-              <label for="reg-org-house" class="form-label">Hausnummer</label>
-              <input type="text" id="reg-org-house" name="organization_house_number"
-                     placeholder="161">
+                
+                <div class="form-field">
+                  <label for="reg-org-house" class="form-label">Hausnummer</label>
+                  <input type="text" id="reg-org-house" name="organization_house_number" placeholder="161">
+                </div>
 
                 </div>
             <div class="form-field">
@@ -556,8 +555,8 @@
           
               <div class="address-form-group">
           <label class="form-label" for="address-house">Hausnummer</label>
-          <input id="address-street" class="form-input" type="text"
-                 placeholder="1312" autocomplete="street-address" required />
+          <input id="address-house" class="form-input" type="text"
+                 placeholder="1312" autocomplete="house-number" required />
 
         </div>
         <div class="address-form-row">
