@@ -206,29 +206,32 @@
           </div>
 
           <!-- Adresse -->
-          <div class="form-field">
-            <label for="reg-street" class="form-label">Straße</label>
-            <input type="text" id="reg-street" name="street"
-                   placeholder="Musterstraße" required autocomplete="street-address">
+            <div class="form-field">
+              <label for="reg-street" class="form-label">Straße</label>
+              <input type="text" id="reg-street" name="street"
+                     placeholder="Musterstraße" required autocomplete="street-address">
+            </div>
             
             <div class="form-field">
-            <label for="reg-house" class="form-label">Hausnummer</label>
-            <input type="text" id="reg-house" name="house_number"
-                   placeholder="161" required autocomplete="street-address">
-          </div>
-          <div class="form-row">
-            <div class="form-field form-field--narrow">
-              <label for="reg-postal" class="form-label">PLZ</label>
-              <input type="text" id="reg-postal" name="postal_code"
-                     placeholder="13121" required autocomplete="postal-code"
-                     inputmode="numeric" maxlength="5">
+              <label for="reg-house" class="form-label">Hausnummer</label>
+              <input type="text" id="reg-house" name="house_number"
+                     placeholder="12" required autocomplete="off">
             </div>
-            <div class="form-field">
-              <label for="reg-city" class="form-label">Ort</label>
-              <input type="text" id="reg-city" name="city"
-                     placeholder="Musterstadt" required autocomplete="address-level2">
+            
+            <div class="form-row">
+              <div class="form-field form-field--narrow">
+                <label for="reg-postal" class="form-label">PLZ</label>
+                <input type="text" id="reg-postal" name="postal_code"
+                       placeholder="13121" required autocomplete="postal-code"
+                       inputmode="numeric" maxlength="5">
+              </div>
+              <div class="form-field">
+                <label for="reg-city" class="form-label">Ort</label>
+                <input type="text" id="reg-city" name="city"
+                       placeholder="Musterstadt" required autocomplete="address-level2">
+              </div>
             </div>
-          </div>
+           
 
           <!-- Organisationsdaten (nur wenn account_type = organization) -->
           <div id="org-fields" class="org-fields hidden">
