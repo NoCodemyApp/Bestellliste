@@ -51,7 +51,7 @@
 
       const { data, error } = await window.db
         .from("user_profiles")
-        .select("street, postal_code, city")
+        .select("street, house_number, postal_code, city")
         .eq("id", user.id)
         .single();
 
