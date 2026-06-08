@@ -53,14 +53,14 @@
       const { data, error } = await window.db
         .from("user_addresses")
         .select("street, house_number, postal_code, city")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .single();
 
       if (error) throw error;
-      fieldStreet.value = data?.street        ?? "";
-      fieldPostal.value = data?.house_number  ?? "";
-      fieldPostal.value = data?.postal_code   ?? "";
-      fieldCity.value   = data?.city          ?? "";
+      fieldStreet.value = data?.street       ?? "";
+      fieldHouse.value  = data?.house_number ?? "";
+      fieldPostal.value = data?.postal_code  ?? "";
+      fieldCity.value   = data?.city         ?? "";
       setAddressMessage("", false);
     } catch (err) {
       setAddressMessage("Fehler beim Laden: " + err.message, true);
@@ -90,7 +90,7 @@
   addressForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const street        = fieldStreet.value.trim();
-    const house_number  = fieldStreet.value.trim();
+    const house_number  = fieldHouse.value.trim();
     const postal_code   = fieldPostal.value.trim();
     const city          = fieldCity.value.trim();
 
@@ -109,7 +109,7 @@
       const { error } = await window.db
         .from("user_addresses")
         .update({ street, house_number, postal_code, city })
-        .eq("id", user.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
       setAddressMessage("Adresse erfolgreich gespeichert.", false);
