@@ -212,8 +212,8 @@
                    placeholder="Musterstraße" required autocomplete="street-address">
             
             <div class="form-field">
-            <label for="reg-street" class="form-label">Hausnummer</label>
-            <input type="text" id="reg-street" name="street"
+            <label for="reg-house" class="form-label">Hausnummer</label>
+            <input type="text" id="reg-house" name="house_number"
                    placeholder="161" required autocomplete="street-address">
           </div>
           <div class="form-row">
@@ -238,21 +238,29 @@
               <label for="reg-org-name" class="form-label">Vereinsname</label>
               <input type="text" id="reg-org-name" name="organization_name"
                      placeholder="Musterverein e.V." autocomplete="organization">
+              
+                </div>
+            <div class="form-field">
+              <label for="reg-org-street" class="form-label">Vereinssitz (Straße)</label>
+              <input type="text" id="reg-org-street" name="organization_street"
+                     placeholder="Musterweg">
+              
+                 <div class="form-field">
+              <label for="reg-org-house" class="form-label">Hausnummer</label>
+              <input type="text" id="reg-org-house" name="organization_house_number"
+                     placeholder="161">
+
+                </div>
+            <div class="form-field">
+              <label for="reg-org-postal" class="form-label">Vereinssitz (PLZ)</label>
+              <input type="text" id="reg-org-postal" name="organization_postal"
+                     placeholder="13121">   
+                   
             </div>
             <div class="form-field">
               <label for="reg-org-city" class="form-label">Vereinssitz (Ort)</label>
               <input type="text" id="reg-org-city" name="organization_city"
                      placeholder="Musterstadt">
-              </div>
-            <div class="form-field">
-              <label for="reg-org-city" class="form-label">Vereinssitz (Straße + Hausnummer)</label>
-              <input type="text" id="reg-org-city" name="organization_city"
-                     placeholder="Musterweg 161">
-              </div>
-            <div class="form-field">
-              <label for="reg-org-city" class="form-label">Vereinssitz (PLZ)</label>
-              <input type="text" id="reg-org-city" name="organization_city"
-                     placeholder="13121">
               
             </div>
             <div class="form-field">
@@ -544,7 +552,7 @@
                  placeholder="Musterstraße" autocomplete="street-address" required />
           
               <div class="address-form-group">
-          <label class="form-label" for="address-street">Hausnummer</label>
+          <label class="form-label" for="address-house">Hausnummer</label>
           <input id="address-street" class="form-input" type="text"
                  placeholder="1312" autocomplete="street-address" required />
 
@@ -571,6 +579,8 @@
     </div>
   </div>
 
+
+            
   </main>
 </body>
 </html>
