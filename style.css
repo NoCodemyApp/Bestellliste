@@ -313,6 +313,58 @@ ul[role="list"] { list-style: none; }
 
 .user-dropdown-logout:active { transform: scale(0.97) !important; opacity: 1; }
 
+/* ── USER DROPDOWN ITEM ─────────────────────────────────── */
+.user-dropdown-item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm); background: transparent; border: none;
+  color: var(--muted); font-size: var(--text-sm); font-weight: 500;
+  cursor: pointer; text-align: left;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+@media (hover: hover) {
+  .user-dropdown-item:hover { background: var(--surface-3); color: var(--text); }
+}
+.user-dropdown-item:active { transform: scale(0.97); }
+
+/* ── ADRESSÄNDERUNG MODAL ───────────────────────────────── */
+.address-modal { position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: var(--sp-4); }
+.address-modal--hidden { display: none; }
+.address-modal-backdrop { position: absolute; inset: 0;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+.address-modal-panel { position: relative; z-index: 1;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 420px; padding: var(--sp-6);
+  animation: modal-in 180ms var(--ease-out) both; }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); } }
+.address-modal-header { display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: var(--sp-5); }
+.address-modal-title { font-size: var(--text-base); font-weight: 600; color: var(--text); margin: 0; }
+.address-modal-close { display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease; }
+@media (hover: hover) {
+  .address-modal-close:hover { background: var(--surface-3); color: var(--text); } }
+.address-form-group { display: flex; flex-direction: column;
+  gap: var(--sp-1); margin-bottom: var(--sp-4); }
+.address-form-row { display: grid; grid-template-columns: 110px 1fr; gap: var(--sp-3); }
+.address-form-group--postal, .address-form-group--city { margin-bottom: var(--sp-4); }
+.address-message { font-size: var(--text-xs); min-height: 1.2em;
+  margin-bottom: var(--sp-3); transition: color var(--dur-fast) ease; }
+.address-message--error   { color: #ffaab4; }
+.address-message--success { color: #6daa45; }
+.address-modal-footer { display: flex; gap: var(--sp-3);
+  justify-content: flex-end; margin-top: var(--sp-2); }
+@media (max-width: 480px) {
+  .address-modal-panel { padding: var(--sp-5) var(--sp-4); }
+  .address-modal-footer { flex-direction: column-reverse; }
+  .address-modal-footer button { width: 100%; } }
+
 /* ============================================================
    MAIN LAYOUT
    ============================================================ */
